@@ -25,6 +25,20 @@ class ParsingEntity(metaclass=abc.ABCMeta):
         return parsing_operator
 
     @abc.abstractmethod
+    def __eq__(self, other):
+        pass
+
+    def __ne__(self, other):
+        if not self.__eq__(other):
+            return True
+        else:
+            return False
+
+    @abc.abstractmethod
+    def __contains__(self, item):
+        pass
+
+    @abc.abstractmethod
     def __str__(self):
         pass
 
@@ -50,6 +64,18 @@ class ParsingOperator(ParsingEntity):
         self.operatorType = operator_type
         self.operandA = operand_a
         self.operandB = operand_b
+
+    def __eq__(self, other):
+        if isinstance(other, ParsingOperator):
+            if self.operatorType == other.operatorType and ((self.operandA == other.operandA and self.operandB == other.operandB) or (self.operandA == other.operandB and self.operandB == other.operandA)):
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def __contains__(self, item):
+        pass
 
     def __str__(self):
         pass
@@ -85,6 +111,18 @@ class ParsingCondition(ParsingEntity):
     def __init__(self, character, rel_position=0):
         self.rel_position = rel_position
         self.character = character
+
+    def __eq__(self, other):
+        if isinstance(other, ParsingCondition):
+            if self.rel_position == other.rel_position and self.character == other.character:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def __contains__(self, item):
+        pass
 
     def __str__(self):
         pass
