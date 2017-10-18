@@ -2,6 +2,7 @@
 
 from enum import Enum
 import abc
+import copy
 
 
 class OperatorType(Enum):
@@ -57,10 +58,10 @@ class ParsingOperator(ParsingEntity):
         self.__str__()
 
     def __copy__(self):
-        pass
+        return ParsingOperator(self.operatorType, self.operandA, self.operandB)
 
     def __deepcopy__(self):
-        pass
+        return ParsingOperator(self.operatorType, copy.deepcopy(self.operandA), copy.deepcopy(self.operandB))
 
     def check(self, element, ref_position=0):
         if self.operatorType is OperatorType.AND:
@@ -92,10 +93,10 @@ class ParsingCondition(ParsingEntity):
         self.__str__()
 
     def __copy__(self):
-        pass
+        return ParsingCondition(self.character, self.rel_position)
 
     def __deepcopy__(self):
-        pass
+        self.__copy__()
 
     def check(self, element, ref_position=0):
         element_size = len(element)
