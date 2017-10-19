@@ -11,18 +11,48 @@ class OperatorType(Enum):
     XOR = 'xor'
 
 
-class ParsingEntity(metaclass=abc.ABCMeta):
+class Parsing(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def check(self, element, ref_position):
+        pass
+
+    @abc.abstractmethod
+    def get_max_position(self):
+        pass
+
+    @abc.abstractmethod
+    def get_min_position(self):
+        pass
+
+
+class ParsingEntity(Parsing):
     def __and__(self, other):
-        parsing_operator = ParsingOperator(OperatorType.AND, self, other)
-        return parsing_operator
+        if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
+            parsing_operator = ParsingOperator(OperatorType.AND, self, other)
+            return parsing_operator
+        else:
+            raise TypeError("Operands have to be ParsingEntity's subclasses")
 
     def __or__(self, other):
-        parsing_operator = ParsingOperator(OperatorType.OR, self, other)
-        return parsing_operator
+        if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
+            parsing_operator = ParsingOperator(OperatorType.OR, self, other)
+            return parsing_operator
+        else:
+            raise TypeError("Operands have to be ParsingEntity's subclasses")
 
     def __xor__(self, other):
-        parsing_operator = ParsingOperator(OperatorType.XOR, self, other)
-        return parsing_operator
+        if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
+            parsing_operator = ParsingOperator(OperatorType.XOR, self, other)
+            return parsing_operator
+        else:
+            raise TypeError("Operands have to be ParsingEntity's subclasses")
+
+    def __rshift__(self, other):
+        if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
+            parsing_block = ParsingBlock(self, other)
+            return parsing_block
+        else:
+            raise TypeError("Operands have to be ParsingEntity's subclasses")
 
     @abc.abstractmethod
     def __eq__(self, other):
@@ -52,10 +82,6 @@ class ParsingEntity(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def __deepcopy__(self):
-        pass
-
-    @abc.abstractmethod
-    def check(self, element, ref_position):
         pass
 
 
@@ -106,6 +132,24 @@ class ParsingOperator(ParsingEntity):
             else:
                 return False
 
+    def get_max_position(self):
+        operand_a = self.operandA.get_max_position()
+        operand_b = self.operandB.get_max_position()
+
+        if operand_a < 0 and operand_b < 0:
+            return 0
+        else:
+            return max([operand_a, operand_b])
+
+    def get_min_position(self):
+        operand_a = self.operandA.get_min_position()
+        operand_b = self.operandB.get_min_position()
+
+        if operand_a > 0 and operand_b > 0:
+            return 0
+        else:
+            return min([operand_a, operand_b])
+
 
 class ParsingCondition(ParsingEntity):
     def __init__(self, character, rel_position=0):
@@ -149,3 +193,26 @@ class ParsingCondition(ParsingEntity):
                 raise IndexError('relative position out of range ( 0 <= ref_position + rel_position < len(element) )')
         else:
             raise IndexError('reference position out of range ( 0 <= ref_position < len(element) )')
+
+    def get_min_position(self):
+        return self.rel_position
+
+    def get_max_position(self):
+        return self.rel_position
+
+
+class ParsingBlock(Parsing):
+    def __init__(self, parser, border_condition):
+        self.parser = parser
+        self.borderCondition = border_condition
+
+    def check(self, element, ref_position=0):
+        parser_result = self.parser.check(element, ref_position)
+        border_condition_result = self.borderCondition.check(element, ref_position)
+        return parser_result, border_condition_result
+
+    def get_min_position(self):
+        return min([self.parser.get_min_position(), self.borderCondition.get_min_position()])
+
+    def get_max_position(self):
+        return max([self.parser.get_max_position(), self.borderCondition.get_max_position()])
