@@ -208,7 +208,10 @@ class ParsingBlock(Parsing):
 
     def check(self, element, ref_position=0):
         parser_result = self.parser.check(element, ref_position)
-        border_condition_result = self.borderCondition.check(element, ref_position)
+        if self.borderCondition is not None:
+            border_condition_result = self.borderCondition.check(element, ref_position)
+        else:
+            border_condition_result = False
         return parser_result, border_condition_result
 
     def get_min_position(self):
