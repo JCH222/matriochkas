@@ -195,15 +195,21 @@ class ParsingCondition(ParsingEntity):
             raise IndexError('reference position out of range ( 0 <= ref_position < len(element) )')
 
     def get_min_position(self):
-        return self.rel_position
+        if self.rel_position > 0:
+            return 0
+        else:
+            return self.rel_position
 
     def get_max_position(self):
-        return self.rel_position
+        if self.rel_position < 0:
+            return 0
+        else:
+            return self.rel_position
 
 
 class ParsingStructure(Parsing):
     def __add__(self, other):
-        if isinstance(self, ParsingStructure) or isinstance(other, ParsingStructure):
+        if isinstance(self, ParsingStructure) and (isinstance(other, ParsingStructure) or other is None):
             parsing_pipeline = ParsingPipeline(self)
             if other is not None:
                 parsing_pipeline.add_structure(other)
@@ -229,12 +235,19 @@ class ParsingPipeline(ParsingStructure):
         self.arParsingStructure = list()
         self.arParsingStructure.append(first_parsing_structure)
         self.current_parsing_block_index = 0
+        self.isEnded = False
 
     def check(self, element, ref_position=0):
-        result = self.arParsingStructure[self.current_parsing_block_index].check(element, ref_position)
-        if result[1] and self.current_parsing_block_index < len(self.arParsingStructure)-1:
-            self.current_parsing_block_index += 1
-        return result
+        if not self.isEnded:
+            result = self.arParsingStructure[self.current_parsing_block_index].check(element, ref_position)
+            if result[1]:
+                if self.current_parsing_block_index < len(self.arParsingStructure)-1:
+                    self.current_parsing_block_index += 1
+                else:
+                    self.isEnded = True
+            return result
+        else:
+            return None
 
     def get_min_position(self):
         ar_min_position = list()
@@ -258,6 +271,7 @@ class ParsingPipeline(ParsingStructure):
 
     def reset(self):
         self.current_parsing_block_index = 0
+        self.isEnded = False
 
 
 class ParsingBlock(ParsingStructure):
@@ -274,7 +288,10 @@ class ParsingBlock(ParsingStructure):
         return parser_result, border_condition_result
 
     def get_min_position(self):
-        return min([self.parser.get_min_position(), self.borderCondition.get_min_position()])
+        if self.borderCondition is not None:
+            return min([self.parser.get_min_position(), self.borderCondition.get_min_position()])
+        else:
+            return self.parser.get_min_position()
 
     def get_max_position(self):
         if self.borderCondition is not None:
