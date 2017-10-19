@@ -48,7 +48,7 @@ class ParsingEntity(Parsing):
             raise TypeError("Operands have to be ParsingEntity's subclasses")
 
     def __rshift__(self, other):
-        if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
+        if isinstance(self, ParsingEntity) and (isinstance(other, ParsingEntity) or other is None):
             parsing_block = ParsingBlock(self, other)
             return parsing_block
         else:
@@ -201,7 +201,66 @@ class ParsingCondition(ParsingEntity):
         return self.rel_position
 
 
-class ParsingBlock(Parsing):
+class ParsingStructure(Parsing):
+    def __add__(self, other):
+        if isinstance(self, ParsingStructure) or isinstance(other, ParsingStructure):
+            parsing_pipeline = ParsingPipeline(self)
+            if other is not None:
+                parsing_pipeline.add_structure(other)
+            return parsing_pipeline
+        else:
+            raise TypeError("Operands have to be ParsingStructure's subclasses")
+
+    @abc.abstractmethod
+    def check(self, element, ref_position):
+        pass
+
+    @abc.abstractmethod
+    def get_max_position(self):
+        pass
+
+    @abc.abstractmethod
+    def get_min_position(self):
+        pass
+
+
+class ParsingPipeline(ParsingStructure):
+    def __init__(self, first_parsing_structure):
+        self.arParsingStructure = list()
+        self.arParsingStructure.append(first_parsing_structure)
+        self.current_parsing_block_index = 0
+
+    def check(self, element, ref_position=0):
+        result = self.arParsingStructure[self.current_parsing_block_index].check(element, ref_position)
+        if result[1] and self.current_parsing_block_index < len(self.arParsingStructure)-1:
+            self.current_parsing_block_index += 1
+        return result
+
+    def get_min_position(self):
+        ar_min_position = list()
+        for parsing_structure in self.arParsingStructure:
+            ar_min_position.append(parsing_structure.get_min_position())
+        return min(ar_min_position)
+
+    def get_max_position(self):
+        ar_max_position = list()
+        for parsing_structure in self.arParsingStructure:
+            ar_max_position.append(parsing_structure.get_max_position())
+        return min(ar_max_position)
+
+    def add_structure(self, parsing_structure):
+        if isinstance(parsing_structure, ParsingPipeline):
+            self.arParsingStructure = self.arParsingStructure + parsing_structure.arParsingStructure
+        elif isinstance(parsing_structure, ParsingBlock):
+            self.arParsingStructure.append(parsing_structure)
+        else:
+            raise TypeError("Object to add have to be ParsingStructure's subclasses")
+
+    def reset(self):
+        self.current_parsing_block_index = 0
+
+
+class ParsingBlock(ParsingStructure):
     def __init__(self, parser, border_condition):
         self.parser = parser
         self.borderCondition = border_condition
@@ -218,4 +277,7 @@ class ParsingBlock(Parsing):
         return min([self.parser.get_min_position(), self.borderCondition.get_min_position()])
 
     def get_max_position(self):
-        return max([self.parser.get_max_position(), self.borderCondition.get_max_position()])
+        if self.borderCondition is not None:
+            return max([self.parser.get_max_position(), self.borderCondition.get_max_position()])
+        else:
+            return self.parser.get_max_position()

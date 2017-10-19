@@ -65,3 +65,33 @@ for i in range(0, len(text) - block.get_max_position()):
         print(text[i:i+12+1])
     if result[1]:
         break
+
+
+text = 'Lorem-ipsum-dolor-sit-amet, consectetur-adipiscing-elit, sed-do-eiusmod-tempor-incididunt-ut-labore-et-' \
+       'dolore-magna-aliqua. Ut-enim-ad-minim-veniam, quis-nostrud-exercitation-ullamco-laboris-nisi-ut-aliquip-' \
+       'ex-ea-commodo-consequat. Duis-aute-irure-dolor-in-reprehenderit-in-voluptate-velit-esse-cillum-dolore-eu-' \
+       'fugiat-nulla-pariatur. Excepteur-sint-occaecat-cupidatat-non-proident, sunt-in-culpa-qui-officia-deserunt-' \
+       'mollit-anim-id-est-laborum. -hello world !-HELLO WORLD !-Hello World !-Another Sentence !%Another Sentence !' \
+       '-HELLO World !-'
+
+
+# ParsingPipeline creation
+blocA = (ParsingCondition(',') | (ParsingCondition('.')) & ParsingCondition(' ', rel_position=1)) >> \
+        (ParsingCondition('.') & ParsingCondition(' ', rel_position=1) & ParsingCondition('-', rel_position=2))
+blocB = (ParsingCondition('-') | ParsingCondition('%')) >> None
+pipeline = blocA + blocB
+# ParsingPipeline manipulation
+occurrence_a = 0
+occurrence_b = 0
+occurrence = 0
+for i in range(0, len(text) - pipeline.get_max_position()):
+    result = pipeline.check(text, ref_position=i)
+    if result[0]:
+        occurrence += 1
+    if result[1]:
+        occurrence_a = occurrence
+        occurrence = 0
+occurrence_b = occurrence
+
+print("',' or '.' character before '. -' string : " + str(occurrence_a))
+print("'-' or '%' vahracter after '. -' string : " + str(occurrence_b))
