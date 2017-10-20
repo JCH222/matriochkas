@@ -259,7 +259,7 @@ class ParsingPipeline(ParsingStructure):
         ar_max_position = list()
         for parsing_structure in self.arParsingStructure:
             ar_max_position.append(parsing_structure.get_max_position())
-        return min(ar_max_position)
+        return max(ar_max_position)
 
     def add_structure(self, parsing_structure):
         if isinstance(parsing_structure, ParsingPipeline):
