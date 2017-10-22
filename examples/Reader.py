@@ -19,5 +19,5 @@ pipeline = blocA + blocB
 streamReader = StreamReader(text)
 streamReader2 = StreamReader("Lorem Ipsum.txt", stream_class=open)
 # StreamReader manipulation
-print('parsing from in memory text : ' + str(streamReader.read(pipeline)))
-print("parsing from 'Lorem Ipsum.txt' file : " + str(streamReader2.read(pipeline)))
+print(streamReader.read(pipeline))
+print(streamReader2.read(pipeline))
