@@ -48,7 +48,9 @@ class ParsingResult:
         self.arIndex = ar_index
 
     def __str__(self):
-        return str({'Stream class': str(self.parsingClass.__name__), 'Inputs': str(self.arInput), 'from': str(self.initialCharacterIndex), 'to': str(self.finalCharacterIndex), 'Index result': str(self.arIndex)})
+        return str({'Stream class': str(self.parsingClass.__name__), 'Inputs': str(self.arInput),
+                    'from': str(self.initialCharacterIndex), 'to': str(self.finalCharacterIndex),
+                    'Index result': str(self.arIndex)})
 
     def __repr__(self):
         return 'Parsing result :' + '\n' + '   Stream class : ' + str(self.parsingClass.__name__) + '\n' \
