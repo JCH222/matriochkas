@@ -4,11 +4,16 @@ from io import StringIO
 from collections import deque
 
 
-class StreamReader:
-    def __init__(self, *args, stream_class=StringIO, **kwargs):
+class StreamEntity:
+    def __init__(self, args, kwargs, stream_class=None):
         self.streamClass = stream_class
         self.args = args
         self.kwargs = kwargs
+
+
+class StreamReader(StreamEntity):
+    def __init__(self, *args, stream_class=StringIO, **kwargs):
+        super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class)
 
     def read(self, parsing_pipeline):
         parsing_pipeline.reset()
@@ -37,6 +42,14 @@ class StreamReader:
         else:
             stream.close()
             raise ValueError("Not enough characters to parse : " + str(len(element)))
+
+
+class StreamWriter(StreamEntity):
+    def __init__(self, *args, stream_class=None, **kwargs):
+        super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class)
+
+    def write(self, parsing_result):
+        pass
 
 
 class ParsingResult:
