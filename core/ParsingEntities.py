@@ -11,7 +11,7 @@ class OperatorType(Enum):
     XOR = 'xor'
 
 
-class Parsing(metaclass=abc.ABCMeta):
+class Entity(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def check(self, element, ref_position):
         pass
@@ -25,7 +25,7 @@ class Parsing(metaclass=abc.ABCMeta):
         pass
 
 
-class ParsingEntity(Parsing):
+class ParsingEntity(Entity):
     def __and__(self, other):
         if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
             parsing_operator = ParsingOperator(OperatorType.AND, self, other)
@@ -207,7 +207,7 @@ class ParsingCondition(ParsingEntity):
             return self.rel_position
 
 
-class ParsingStructure(Parsing):
+class ParsingStructure(Entity):
     def __add__(self, other):
         if isinstance(self, ParsingStructure) and (isinstance(other, ParsingStructure) or other is None):
             parsing_pipeline = ParsingPipeline(self)
