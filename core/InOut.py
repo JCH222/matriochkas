@@ -2,9 +2,12 @@
 
 from io import StringIO
 from collections import deque
+import abc
+import copy
 
 
-class StreamEntity:
+class StreamEntity(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
     def __init__(self, args, kwargs, stream_class=None):
         self.streamClass = stream_class
         self.args = args
@@ -48,8 +51,20 @@ class StreamWriter(StreamEntity):
     def __init__(self, *args, stream_class=None, **kwargs):
         super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class)
 
-    def write(self, parsing_result):
-        pass
+    def write(self, parsing_result, parsing_class=None, args=None, kwargs=None):
+        input_parsing_result = copy.deepcopy(parsing_result)
+        if parsing_class is not None:
+            input_parsing_result.parsing_class = parsing_class
+        if args is not None:
+            input_parsing_result.arInput['args'] = args
+        if kwargs is not None:
+            input_parsing_result.arInput['kwargs'] = kwargs
+
+        input_stream = input_parsing_result.streamClass(*input_parsing_result.args, **input_parsing_result.kwargs)
+
+        #TO DO
+
+        return ParsingResult(self.streamClass, self.args, self.kwargs, 0, 0, {})
 
 
 class ParsingResult:
@@ -71,6 +86,16 @@ class ParsingResult:
                + str(self.initialCharacterIndex) + ' to character ' + str(self.finalCharacterIndex) + '\n' \
                + '   Index result : ' + str(self.arIndex)
 
+    def __copy__(self):
+        return ParsingResult(self.parsingClass, self.arInput['args'], self.arInput['kwargs'],
+                             self.initialCharacterIndex, self.finalCharacterIndex, self.arIndex)
+
+    def __deepcopy__(self):
+        copy_ar_input = copy.deepcopy(self.arInput)
+        copy_ar_index = copy.deepcopy(self.arIndex)
+        return ParsingResult(self.parsingClass, copy_ar_input['args'], copy_ar_input['kwargs'],
+                             self.initialCharacterIndex, self.finalCharacterIndex, copy_ar_index)
+
     def check_indexes(self):
         previous_index_value = -1
         for index in self.arIndex:
@@ -82,4 +107,3 @@ class ParsingResult:
                 raise TypeError("Indexes's characters have to be 'str' objects with a length of 1")
 
         return True
-
