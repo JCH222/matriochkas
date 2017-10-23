@@ -1,6 +1,8 @@
 # coding: utf8
 
 from enum import Enum
+from core.Entities import Entity
+
 import abc
 import copy
 
@@ -9,20 +11,6 @@ class OperatorType(Enum):
     AND = 'and'
     OR = 'or'
     XOR = 'xor'
-
-
-class Entity(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def check(self, element, ref_position):
-        pass
-
-    @abc.abstractmethod
-    def get_max_position(self):
-        pass
-
-    @abc.abstractmethod
-    def get_min_position(self):
-        pass
 
 
 class ParsingEntity(Entity):
