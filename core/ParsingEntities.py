@@ -13,20 +13,6 @@ class OperatorType(Enum):
     XOR = 'xor'
 
 
-class Entity(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def check(self, element, ref_position):
-        pass
-
-    @abc.abstractmethod
-    def get_max_position(self):
-        pass
-
-    @abc.abstractmethod
-    def get_min_position(self):
-        pass
-
-
 class ParsingEntity(Entity, metaclass=abc.ABCMeta):
     def __and__(self, other):
         if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
