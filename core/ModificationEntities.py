@@ -1,8 +1,14 @@
 # coding: utf8
 
 from core.ParsingEntities import Entity
+from enum import Enum
 
 import abc
+
+
+class ModificationSide(Enum):
+    LEFT = 0
+    RIGHT = 1
 
 
 class ModificationEntity(Entity):
@@ -34,9 +40,10 @@ class ModificationOperation(ModificationEntity, metaclass=abc.ABCMeta):
 
 
 class ModificationAdd(ModificationOperation):
-    def __init__(self, character, rel_position=0):
+    def __init__(self, character, rel_position=0, modification_side=ModificationSide.RIGHT):
         super(ModificationAdd, self).__init__(rel_position=rel_position)
         self.character = character
+        self.modificationSide = modification_side
 
     def check(self, element, ref_position=0):
         pass
