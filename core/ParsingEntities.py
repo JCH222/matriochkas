@@ -13,7 +13,21 @@ class OperatorType(Enum):
     XOR = 'xor'
 
 
-class ParsingEntity(Entity):
+class Entity(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def check(self, element, ref_position):
+        pass
+
+    @abc.abstractmethod
+    def get_max_position(self):
+        pass
+
+    @abc.abstractmethod
+    def get_min_position(self):
+        pass
+
+
+class ParsingEntity(Entity, metaclass=abc.ABCMeta):
     def __and__(self, other):
         if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
             parsing_operator = ParsingOperator(OperatorType.AND, self, other)
@@ -47,10 +61,7 @@ class ParsingEntity(Entity):
         pass
 
     def __ne__(self, other):
-        if not self.__eq__(other):
-            return True
-        else:
-            return False
+        return not self.__eq__(other)
 
     @abc.abstractmethod
     def __contains__(self, item):
@@ -89,10 +100,27 @@ class ParsingOperator(ParsingEntity):
             return False
 
     def __contains__(self, item):
-        pass
+        if isinstance(item, ParsingEntity):
+            if isinstance(item, ParsingCondition):
+                if item in self.operandA or item in self.operandB:
+                    return True
+                else:
+                    return False
+            elif isinstance(item, ParsingOperator):
+                if self.__eq__(item):
+                    return True
+                else:
+                    if item in self.operandA or item in self.operandB:
+                        return True
+                    else:
+                        return False
+            else:
+                TypeError("Unknown ParsingEntity's subclass")
+        else:
+            raise TypeError("Item have to be ParsingEntity's subclasses")
 
     def __str__(self):
-        pass
+        return 'ParsingOperator object'
 
     def __repr__(self):
         self.__str__()
@@ -154,10 +182,10 @@ class ParsingCondition(ParsingEntity):
             return False
 
     def __contains__(self, item):
-        pass
+        self.__eq__(item)
 
     def __str__(self):
-        pass
+        return 'ParsingCondition object'
 
     def __repr__(self):
         self.__str__()
