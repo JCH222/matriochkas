@@ -2,6 +2,8 @@
 
 from core.ParsingEntities import Entity
 
+import abc
+
 
 class ModificationEntity(Entity):
     def __add__(self, other):
@@ -21,11 +23,28 @@ class ModificationOperator(ModificationEntity):
         pass
 
 
-class ModificationCondition(ModificationEntity):
-    def __init__(self, character, operation_type, rel_position=0):
+class ModificationOperation(ModificationEntity, metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def __init__(self, rel_position=0):
         self.rel_position = rel_position
-        self.operationType = operation_type
+
+    @abc.abstractmethod
+    def check(self, element, ref_position=0):
+        pass
+
+
+class ModificationAdd(ModificationOperation):
+    def __init__(self, character, rel_position=0):
+        super(ModificationAdd, self).__init__(rel_position=rel_position)
         self.character = character
+
+    def check(self, element, ref_position=0):
+        pass
+
+
+class ModificationRemove(ModificationOperation):
+    def __init__(self, rel_position=0):
+        super(ModificationAdd, self).__init__(rel_position=rel_position)
 
     def check(self, element, ref_position=0):
         pass
