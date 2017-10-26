@@ -76,6 +76,32 @@ class ParsingResult:
         self.finalCharacterIndex = final_character_index
         self.arIndex = ar_index
 
+    def __add__(self, other):
+        if isinstance(other, ParsingResult) and isinstance(self, ParsingResult):
+            if ParsingResult.are_from_the_same_parsing(self, other):
+                new_parsing_result = copy.deepcopy(self)
+                for element in other.arIndex:
+                    if element[0] not in new_parsing_result.arIndex:
+                        new_parsing_result.arIndex.append(element)
+                new_parsing_result.arIndex.sort()
+                return new_parsing_result
+            else:
+                ValueError("Operands have to come from the same parsing")
+        else:
+            TypeError("Operands have to be ParsingResult classes or subclasses")
+
+    def __contains__(self, item):
+        if isinstance(item, int):
+            for element in self:
+                if element[0] == item:
+                    return True
+            return False
+        else:
+            for element in self:
+                if element[0] == item[0] and element[1] == item[1]:
+                    return True
+            return False
+
     def __str__(self):
         return str({'Stream class': str(self.parsingClass.__name__), 'Inputs': str(self.arInput),
                     'from': str(self.initialCharacterIndex), 'to': str(self.finalCharacterIndex),
@@ -91,11 +117,22 @@ class ParsingResult:
         return ParsingResult(self.parsingClass, self.arInput['args'], self.arInput['kwargs'],
                              self.initialCharacterIndex, self.finalCharacterIndex, self.arIndex)
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memodict={}):
         copy_ar_input = copy.deepcopy(self.arInput)
         copy_ar_index = copy.deepcopy(self.arIndex)
         return ParsingResult(self.parsingClass, copy_ar_input['args'], copy_ar_input['kwargs'],
                              self.initialCharacterIndex, self.finalCharacterIndex, copy_ar_index)
+
+    @staticmethod
+    def are_from_the_same_parsing(parsing_result_a, parsing_result_b):
+        if isinstance(parsing_result_a, ParsingResult) and isinstance(parsing_result_b, ParsingResult):
+            return (parsing_result_a.parsingClass == parsing_result_b.parsingClass and
+                    parsing_result_a.arInput['args'] == parsing_result_b.arInput['args'] and
+                    parsing_result_a.arInput['kwargs'] == parsing_result_b.arInput['kwargs'] and
+                    parsing_result_a.initialCharacterIndex == parsing_result_b.initialCharacterIndex and
+                    parsing_result_a.finalCharacterIndex == parsing_result_b.finalCharacterIndex)
+        else:
+            TypeError("Operands have to be ParsingResult classes or subclasses")
 
     def check_indexes(self):
         previous_index_value = -1
