@@ -49,28 +49,48 @@ class StreamReader(StreamEntity):
 
 
 class StreamWriter(StreamEntity):
-    def __init__(self, *args, stream_class=None, **kwargs):
-        super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class)
+    def __init__(self, *args, stream_class=StringIO, **kwargs):
+        super(StreamWriter, self).__init__(args, kwargs, stream_class=stream_class)
 
-    def write(self, parsing_result, parsing_class=None, args=None, kwargs=None):
+    def write(self, parsing_result, stream_class=None, args=None, kwargs=None):
         input_parsing_result = copy.deepcopy(parsing_result)
-        if parsing_class is not None:
-            input_parsing_result.parsing_class = parsing_class
+        if stream_class is not None:
+            input_parsing_result.streamClass = stream_class
         if args is not None:
             input_parsing_result.arInput['args'] = args
         if kwargs is not None:
             input_parsing_result.arInput['kwargs'] = kwargs
 
-        input_stream = input_parsing_result.streamClass(*input_parsing_result.args, **input_parsing_result.kwargs)
+        input_stream = input_parsing_result.streamClass(*input_parsing_result.arInput['args'], **input_parsing_result.arInput['kwargs'])
+        ouput_stream = self.streamClass(*self.args, **self.kwargs)
 
         #TO DO
+        index = 0
+        input_parsing_result_index = 0
+        character = input_stream.read(1)
+        while character is not None:
+            '''
+            if index == input_parsing_result.arIndex[input_parsing_result_index][0]:
+                if input_parsing_result.arIndex[input_parsing_result_index][1] != '':
+                    ouput_stream.write(character)
+                input_parsing_result_index += 1'''
+
+            character = input_stream.read(1)
+            index += 1
+
+        print(index)
+
+        return ouput_stream.getvalue()
+
+        input_stream.close()
+        ouput_stream.close()
 
         return ParsingResult(self.streamClass, self.args, self.kwargs, 0, 0, {})
 
 
 class ParsingResult:
-    def __init__(self, parsing_class, args, kwargs, initial_character_index, final_character_index, ar_index):
-        self.parsingClass = parsing_class
+    def __init__(self, stream_class, args, kwargs, initial_character_index, final_character_index, ar_index):
+        self.streamClass = stream_class
         self.arInput = {'args': args, 'kwargs': kwargs}
         self.initialCharacterIndex = initial_character_index
         self.finalCharacterIndex = final_character_index
@@ -103,30 +123,30 @@ class ParsingResult:
             return False
 
     def __str__(self):
-        return str({'Stream class': str(self.parsingClass.__name__), 'Inputs': str(self.arInput),
+        return str({'Stream class': str(self.streamClass.__name__), 'Inputs': str(self.arInput),
                     'from': str(self.initialCharacterIndex), 'to': str(self.finalCharacterIndex),
                     'Index result': str(self.arIndex)})
 
     def __repr__(self):
-        return 'Parsing result :' + '\n' + '   Stream class : ' + str(self.parsingClass.__name__) + '\n' \
+        return 'Parsing result :' + '\n' + '   Stream class : ' + str(self.streamClass.__name__) + '\n' \
                + '   Inputs : ' + str(self.arInput) + '\n' + '   Parsed from character ' \
                + str(self.initialCharacterIndex) + ' to character ' + str(self.finalCharacterIndex) + '\n' \
                + '   Index result : ' + str(self.arIndex)
 
     def __copy__(self):
-        return ParsingResult(self.parsingClass, self.arInput['args'], self.arInput['kwargs'],
+        return ParsingResult(self.streamClass, self.arInput['args'], self.arInput['kwargs'],
                              self.initialCharacterIndex, self.finalCharacterIndex, self.arIndex)
 
     def __deepcopy__(self, memodict={}):
         copy_ar_input = copy.deepcopy(self.arInput)
         copy_ar_index = copy.deepcopy(self.arIndex)
-        return ParsingResult(self.parsingClass, copy_ar_input['args'], copy_ar_input['kwargs'],
+        return ParsingResult(self.streamClass, copy_ar_input['args'], copy_ar_input['kwargs'],
                              self.initialCharacterIndex, self.finalCharacterIndex, copy_ar_index)
 
     @staticmethod
     def are_from_the_same_parsing(parsing_result_a, parsing_result_b):
         if isinstance(parsing_result_a, ParsingResult) and isinstance(parsing_result_b, ParsingResult):
-            return (parsing_result_a.parsingClass == parsing_result_b.parsingClass and
+            return (parsing_result_a.streamClass == parsing_result_b.streamClass and
                     parsing_result_a.arInput['args'] == parsing_result_b.arInput['args'] and
                     parsing_result_a.arInput['kwargs'] == parsing_result_b.arInput['kwargs'] and
                     parsing_result_a.initialCharacterIndex == parsing_result_b.initialCharacterIndex and

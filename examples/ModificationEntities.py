@@ -6,6 +6,7 @@ from core.ModificationEntities import ModificationSide
 
 from core.ParsingEntities import ParsingCondition
 from core.IO import StreamReader
+from core.IO import StreamWriter
 
 text = 'Lorem-ipsum-dolor-sit-amet, consectetur-adipiscing-elit, sed-do-eiusmod-tempor-incididunt-ut-labore-et-' \
        'dolore-magna-aliqua. Ut-enim-ad-minim-veniam, quis-nostrud-exercitation-ullamco-laboris-nisi-ut-aliquip-' \
@@ -21,8 +22,11 @@ pipeline = blocA + blocB
 streamReader = StreamReader(text)
 parsing_result = streamReader.read(pipeline)
 
-modification_replace = ModificationAdd('@') + ModificationRemove()
+'''modification_replace = ModificationAdd('@') + ModificationRemove()
 modification_add = ModificationAdd('2', modification_side=ModificationSide.LEFT)
 modification = modification_replace + modification_add
 print('Parsing result before modifications : ' + str(parsing_result.arIndex))
-print('Parsing result after modifications : ' + str(modification.generate_parsing_result(parsing_result).arIndex))
+print('Parsing result after modifications : ' + str(modification.generate_parsing_result(parsing_result).arIndex))'''
+
+streamWriter = StreamWriter()
+print(streamWriter.write(ModificationRemove().generate_parsing_result(parsing_result)))
