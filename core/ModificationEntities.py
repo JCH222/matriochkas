@@ -1,7 +1,7 @@
 # coding: utf8
 
 from enum import Enum
-from core.IO import ParsingResult
+from core.ParsingEntities import ParsingResult
 
 import abc
 
@@ -51,7 +51,7 @@ class ModificationAdd(ModificationOperation):
     def generate_parsing_result(self, initial_parsing_result):
         ar_index = list()
         for element in initial_parsing_result.arIndex:
-            ar_index.append((element[0] + self.relPosition + self.modificationSide.value, self.character))
+            ar_index.append((element[0] + self.relPosition, self.character, self.modificationSide))
         parsing_result = ParsingResult(initial_parsing_result.streamClass, initial_parsing_result.arInput['args'],
                                        initial_parsing_result.arInput['kwargs'],
                                        initial_parsing_result.initialCharacterIndex,

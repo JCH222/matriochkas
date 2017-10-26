@@ -22,11 +22,11 @@ pipeline = blocA + blocB
 streamReader = StreamReader(text)
 parsing_result = streamReader.read(pipeline)
 
-'''modification_replace = ModificationAdd('@') + ModificationRemove()
-modification_add = ModificationAdd('2', modification_side=ModificationSide.LEFT)
+modification_replace = ModificationAdd('@') + ModificationAdd('@', rel_position=1, modification_side=ModificationSide.LEFT) + ModificationRemove()
+'''modification_add = ModificationAdd('2', modification_side=ModificationSide.LEFT)
 modification = modification_replace + modification_add
 print('Parsing result before modifications : ' + str(parsing_result.arIndex))
 print('Parsing result after modifications : ' + str(modification.generate_parsing_result(parsing_result).arIndex))'''
 
 streamWriter = StreamWriter()
-print(streamWriter.write(ModificationRemove().generate_parsing_result(parsing_result)))
+print(streamWriter.write(modification_replace.generate_parsing_result(parsing_result)))
