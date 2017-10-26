@@ -30,13 +30,16 @@ class ModificationOperator(ModificationEntity):
         self.operandB = operand_b
 
     def generate_parsing_result(self, initial_parsing_result):
-        pass
+        parsing_result_a = self.operandA.generate_parsing_result(initial_parsing_result)
+        parsing_result_b = self.operandB.generate_parsing_result(initial_parsing_result)
+        return parsing_result_a + parsing_result_b
 
 
 class ModificationOperation(ModificationEntity, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __init__(self, rel_position=0):
-        self.rel_position = rel_position
+        self.relPosition = rel_position
+        self.parsing_result = list()
 
 
 class ModificationAdd(ModificationOperation):
@@ -47,8 +50,8 @@ class ModificationAdd(ModificationOperation):
 
     def generate_parsing_result(self, initial_parsing_result):
         ar_index = list()
-        for element in initial_parsing_result:
-            ar_index.append((element[0] + self.rel_position + self.modificationSide.value, self.character))
+        for element in initial_parsing_result.arIndex:
+            ar_index.append((element[0] + self.relPosition + self.modificationSide.value, self.character))
         parsing_result = ParsingResult(initial_parsing_result.parsingClass, initial_parsing_result.arInput['args'],
                                        initial_parsing_result.arInput['kwargs'],
                                        initial_parsing_result.initialCharacterIndex,
@@ -58,12 +61,12 @@ class ModificationAdd(ModificationOperation):
 
 class ModificationRemove(ModificationOperation):
     def __init__(self, rel_position=0):
-        super(ModificationAdd, self).__init__(rel_position=rel_position)
+        super(ModificationRemove, self).__init__(rel_position=rel_position)
 
     def generate_parsing_result(self, initial_parsing_result):
         ar_index = list()
-        for element in initial_parsing_result:
-            ar_index.append((element[0]+self.rel_position, ''))
+        for element in initial_parsing_result.arIndex:
+            ar_index.append((element[0]+self.relPosition, ''))
         parsing_result = ParsingResult(initial_parsing_result.parsingClass, initial_parsing_result.arInput['args'],
                                        initial_parsing_result.arInput['kwargs'],
                                        initial_parsing_result.initialCharacterIndex,
