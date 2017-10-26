@@ -79,7 +79,7 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def __deepcopy__(self):
+    def __deepcopy__(self, memodict={}):
         pass
 
 
@@ -127,7 +127,7 @@ class ParsingOperator(ParsingEntity):
     def __copy__(self):
         return ParsingOperator(self.operatorType, self.operandA, self.operandB)
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memodict={}):
         return ParsingOperator(self.operatorType, copy.deepcopy(self.operandA), copy.deepcopy(self.operandB))
 
     def check(self, element, ref_position=0):
@@ -192,7 +192,7 @@ class ParsingCondition(ParsingEntity):
     def __copy__(self):
         return ParsingCondition(self.character, self.rel_position)
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memodict={}):
         self.__copy__()
 
     def check(self, element, ref_position=0):
