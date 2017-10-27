@@ -64,7 +64,7 @@ class StreamWriter(StreamEntity):
             input_parsing_result.arInput['kwargs'] = kwargs
 
         input_stream = input_parsing_result.streamClass(*input_parsing_result.arInput['args'], **input_parsing_result.arInput['kwargs'])
-        ouput_stream = self.streamClass(*self.args, **self.kwargs)
+        output_stream = self.streamClass(*self.args, **self.kwargs)
 
         index = 0
         input_parsing_result_index = 0
@@ -87,16 +87,19 @@ class StreamWriter(StreamEntity):
                     input_parsing_result_index += 1
                 else:
                     if left_side is not None:
-                        ouput_stream.write(left_side[1])
+                        output_stream.write(left_side[1])
                     if other is None:
-                        ouput_stream.write(character)
+                        output_stream.write(character)
                     if right_side is not None:
-                        ouput_stream.write(right_side[1])
+                        output_stream.write(right_side[1])
                     is_ended = True
             character = input_stream.read(1)
             index += 1
-        result = ouput_stream.getvalue()
+        if 'getvalue' in dir(output_stream):
+            result = output_stream.getvalue()
+        else:
+            result = None
 
         input_stream.close()
-        ouput_stream.close()
+        output_stream.close()
         return result
