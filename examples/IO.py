@@ -32,5 +32,6 @@ streamWriter = StreamWriter()
 streamWriter2 = StreamWriter("Lorem Ipsum 2.txt", 'w', stream_class=open)
 # StreamWriter manipulation
 print(streamWriter.write(modification_replace.generate_parsing_result(parsing_result)))
-print(streamWriter2.write(modification_replace.generate_parsing_result(parsing_result2)))
+print(str(streamWriter2.write(modification_replace.generate_parsing_result(parsing_result2))) +
+      ' -> Lorem Ipsum 2.txt file created')
 

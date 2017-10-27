@@ -316,8 +316,11 @@ class ParsingBlock(ParsingStructure):
 
 
 class ParsingResult:
-    def __init__(self, stream_class, args, kwargs, initial_character_index, final_character_index, ar_index):
+    def __init__(self, stream_class, read_method, write_method, return_method, args, kwargs, initial_character_index, final_character_index, ar_index):
         self.streamClass = stream_class
+        self.readMethod = read_method
+        self.writeMethod = write_method
+        self.returnMethod = return_method
         self.arInput = {'args': args, 'kwargs': kwargs}
         self.initialCharacterIndex = initial_character_index
         self.finalCharacterIndex = final_character_index
@@ -377,14 +380,16 @@ class ParsingResult:
                + '   Index result : ' + str(self.arIndex)
 
     def __copy__(self):
-        return ParsingResult(self.streamClass, self.arInput['args'], self.arInput['kwargs'],
-                             self.initialCharacterIndex, self.finalCharacterIndex, self.arIndex)
+        return ParsingResult(self.streamClass, self.readMethod, self.writeMethod, self.returnMethod,
+                             self.arInput['args'], self.arInput['kwargs'], self.initialCharacterIndex,
+                             self.finalCharacterIndex, self.arIndex)
 
     def __deepcopy__(self, memodict={}):
         copy_ar_input = copy.deepcopy(self.arInput)
         copy_ar_index = copy.deepcopy(self.arIndex)
-        return ParsingResult(self.streamClass, copy_ar_input['args'], copy_ar_input['kwargs'],
-                             self.initialCharacterIndex, self.finalCharacterIndex, copy_ar_index)
+        return ParsingResult(self.streamClass, self.readMethod, self.writeMethod, self.returnMethod,
+                             copy_ar_input['args'], copy_ar_input['kwargs'], self.initialCharacterIndex,
+                             self.finalCharacterIndex, copy_ar_index)
 
     @staticmethod
     def are_from_the_same_parsing(parsing_result_a, parsing_result_b):
@@ -393,7 +398,10 @@ class ParsingResult:
                     parsing_result_a.arInput['args'] == parsing_result_b.arInput['args'] and
                     parsing_result_a.arInput['kwargs'] == parsing_result_b.arInput['kwargs'] and
                     parsing_result_a.initialCharacterIndex == parsing_result_b.initialCharacterIndex and
-                    parsing_result_a.finalCharacterIndex == parsing_result_b.finalCharacterIndex)
+                    parsing_result_a.finalCharacterIndex == parsing_result_b.finalCharacterIndex and
+                    parsing_result_a.readMethod == parsing_result_b.readMethod and
+                    parsing_result_a.writeMethod == parsing_result_b.writeMethod and
+                    parsing_result_a.returnMethod == parsing_result_b.returnMethod)
         else:
             TypeError("Operands have to be ParsingResult classes or subclasses")
 
