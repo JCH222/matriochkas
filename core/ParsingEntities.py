@@ -27,6 +27,10 @@ class Entity(metaclass=abc.ABCMeta):
 
 
 class ParsingEntity(Entity, metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def __init__(self):
+        self.isNot = False
+
     def __and__(self, other):
         if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
             parsing_operator = ParsingOperator(OperatorType.AND, self, other)
@@ -55,12 +59,17 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
         else:
             raise TypeError("Operands have to be ParsingEntity's subclasses")
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __invert__(self):
+        result = copy.deepcopy(self)
+        result.isNot = not result.isNot
+        return result
+
     @abc.abstractmethod
     def __eq__(self, other):
         pass
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     @abc.abstractmethod
     def __contains__(self, item):
@@ -85,13 +94,16 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
 
 class ParsingOperator(ParsingEntity):
     def __init__(self, operator_type, operand_a, operand_b):
+        super(ParsingOperator, self).__init__()
         self.operatorType = operator_type
         self.operandA = operand_a
         self.operandB = operand_b
 
     def __eq__(self, other):
         if isinstance(other, ParsingOperator):
-            if self.operatorType == other.operatorType and ((self.operandA == other.operandA and self.operandB == other.operandB) or (self.operandA == other.operandB and self.operandB == other.operandA)):
+            if self.operatorType == other.operatorType and self.isNot == other.isNot and\
+                    ((self.operandA == other.operandA and self.operandB == other.operandB)
+                     or (self.operandA == other.operandB and self.operandB == other.operandA)):
                 return True
             else:
                 return False
@@ -122,30 +134,39 @@ class ParsingOperator(ParsingEntity):
         return 'ParsingOperator object'
 
     def __repr__(self):
-        self.__str__()
+        return self.__str__()
 
     def __copy__(self):
-        return ParsingOperator(self.operatorType, self.operandA, self.operandB)
+        result = ParsingOperator(self.operatorType, self.operandA, self.operandB)
+        result.isNot = self.isNot
+        return result
 
     def __deepcopy__(self, memodict={}):
-        return ParsingOperator(self.operatorType, copy.deepcopy(self.operandA), copy.deepcopy(self.operandB))
+        result = ParsingOperator(self.operatorType, copy.deepcopy(self.operandA), copy.deepcopy(self.operandB))
+        result.isNot = self.isNot
+        return result
 
     def check(self, element, ref_position=0):
         if self.operatorType is OperatorType.AND:
             if self.operandA.check(element, ref_position) is True and self.operandB.check(element, ref_position) is True:
-                return True
+                result = True
             else:
-                return False
+                result = False
         elif self.operatorType is OperatorType.OR:
             if self.operandA.check(element, ref_position) is True or self.operandB.check(element, ref_position) is True:
-                return True
+                result = True
             else:
-                return False
+                result = False
         else:
             if (self.operandA.check(element, ref_position) is True) ^ (self.operandB.check(element, ref_position) is True):
-                return True
+                result = True
             else:
-                return False
+                result = False
+
+        if self.isNot is False:
+            return result
+        else:
+            return not result
 
     def get_max_position(self):
         operand_a = self.operandA.get_max_position()
@@ -168,12 +189,14 @@ class ParsingOperator(ParsingEntity):
 
 class ParsingCondition(ParsingEntity):
     def __init__(self, character, rel_position=0):
+        super(ParsingCondition, self).__init__()
         self.rel_position = rel_position
         self.character = character
 
     def __eq__(self, other):
         if isinstance(other, ParsingCondition):
-            if self.rel_position == other.rel_position and self.character == other.character:
+            if self.rel_position == other.rel_position and self.character == other.character \
+                    and self.isNot == other.isNot:
                 return True
             else:
                 return False
@@ -181,19 +204,21 @@ class ParsingCondition(ParsingEntity):
             return False
 
     def __contains__(self, item):
-        self.__eq__(item)
+        return self.__eq__(item)
 
     def __str__(self):
         return 'ParsingCondition object'
 
     def __repr__(self):
-        self.__str__()
+        return self.__str__()
 
     def __copy__(self):
-        return ParsingCondition(self.character, self.rel_position)
+        result = ParsingCondition(self.character, self.rel_position)
+        result.isNot = self.isNot
+        return result
 
     def __deepcopy__(self, memodict={}):
-        self.__copy__()
+        return self.__copy__()
 
     def check(self, element, ref_position=0):
         element_size = len(element)
@@ -201,9 +226,14 @@ class ParsingCondition(ParsingEntity):
             position = ref_position + self.rel_position
             if 0 <= position < element_size:
                 if self.character in element[position]:
-                    return True
+                    result = True
                 else:
-                    return False
+                    result = False
+
+                if self.isNot is False:
+                    return result
+                else:
+                    return not result
             else:
                 raise IndexError('relative position out of range ( 0 <= ref_position + rel_position < len(element) )')
         else:
