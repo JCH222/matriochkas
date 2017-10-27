@@ -13,7 +13,7 @@ text = 'Lorem-ipsum-dolor-sit-amet, consectetur-adipiscing-elit, sed-do-eiusmod-
        '-HELLO World !-'
 
 blocA = (ParsingCondition(',') | (ParsingCondition('.')) & ParsingCondition(' ', rel_position=1)) >> \
-        (ParsingCondition('.') & ParsingCondition(' ', rel_position=1) & ParsingCondition('-', rel_position=2))
+        ParsingCondition('. -')
 blocB = (ParsingCondition('-') | ParsingCondition('%')) >> None
 pipeline = blocA + blocB
 
@@ -34,4 +34,3 @@ streamWriter2 = StreamWriter("Lorem Ipsum 2.txt", 'w', stream_class=open)
 print(streamWriter.write(modification_replace.generate_parsing_result(parsing_result)))
 print(str(streamWriter2.write(modification_replace.generate_parsing_result(parsing_result2))) +
       ' -> Lorem Ipsum 2.txt file created')
-

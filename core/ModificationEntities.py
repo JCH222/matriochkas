@@ -43,15 +43,15 @@ class ModificationOperation(ModificationEntity, metaclass=abc.ABCMeta):
 
 
 class ModificationAdd(ModificationOperation):
-    def __init__(self, character, rel_position=0, modification_side=ModificationSide.RIGHT):
+    def __init__(self, ar_character, rel_position=0, modification_side=ModificationSide.RIGHT):
         super(ModificationAdd, self).__init__(rel_position=rel_position)
-        self.character = character
+        self.ar_character = ar_character
         self.modificationSide = modification_side
 
     def generate_parsing_result(self, initial_parsing_result):
         ar_index = list()
         for element in initial_parsing_result.arIndex:
-            ar_index.append((element[0] + self.relPosition, self.character, self.modificationSide))
+            ar_index.append((element[0] + self.relPosition, self.ar_character, self.modificationSide))
         parsing_result = ParsingResult(initial_parsing_result.streamClass,
                                        initial_parsing_result.readMethod,
                                        initial_parsing_result.writeMethod,

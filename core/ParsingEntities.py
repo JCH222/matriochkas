@@ -188,10 +188,20 @@ class ParsingOperator(ParsingEntity):
 
 
 class ParsingCondition(ParsingEntity):
-    def __init__(self, character, rel_position=0):
+    def __new__(cls,  ar_character, rel_position=0):
+        if len(ar_character) > 1:
+            result = ParsingCondition(ar_character[0], rel_position)
+            for i, element in enumerate(ar_character):
+                if i > 0:
+                    result = result & ParsingCondition(ar_character[i], rel_position=rel_position+i)
+            return result
+        else:
+            return super(ParsingCondition, cls).__new__(cls)
+
+    def __init__(self, ar_character, rel_position=0):
         super(ParsingCondition, self).__init__()
         self.rel_position = rel_position
-        self.character = character
+        self.character = ar_character[0]
 
     def __eq__(self, other):
         if isinstance(other, ParsingCondition):

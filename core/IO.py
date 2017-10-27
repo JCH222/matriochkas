@@ -91,7 +91,6 @@ class StreamWriter(StreamEntity):
         else:
             input_read_method = StreamEntity.generate_method(input_stream, 'read_method')
         output_stream = self.streamClass(*self.args, **self.kwargs)
-        print(type(output_stream))
         if self.writeMethod is not None:
             output_write_method = getattr(output_stream, self.writeMethod)
         else:
