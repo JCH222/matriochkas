@@ -36,29 +36,29 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
             parsing_operator = ParsingOperator(OperatorType.AND, self, other)
             return parsing_operator
         else:
-            raise TypeError("Operands have to be ParsingEntity's subclasses")
+            raise TypeError("Operands have to be ParsingEntity subclasses")
 
     def __or__(self, other):
         if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
             parsing_operator = ParsingOperator(OperatorType.OR, self, other)
             return parsing_operator
         else:
-            raise TypeError("Operands have to be ParsingEntity's subclasses")
+            raise TypeError("Operands have to be ParsingEntity subclasses")
 
     def __xor__(self, other):
         if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
             parsing_operator = ParsingOperator(OperatorType.XOR, self, other)
             return parsing_operator
         else:
-            raise TypeError("Operands have to be ParsingEntity's subclasses")
+            raise TypeError("Operands have to be ParsingEntity subclasses")
 
     def __rshift__(self, other):
         if isinstance(self, ParsingEntity) and (isinstance(other, ParsingEntity) or other is None):
             parsing_block = ParsingBlock(self, other)
             return parsing_block
         else:
-            raise TypeError("Left operand have to be ParsingEntity's subclass and right operand have to be"
-                            " ParsingEntity's subclass or None")
+            raise TypeError("Left operand has to be ParsingEntity subclass and right operand has to be"
+                            " ParsingEntity subclass or None")
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -96,9 +96,17 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
 class ParsingOperator(ParsingEntity):
     def __init__(self, operator_type, operand_a, operand_b):
         super(ParsingOperator, self).__init__()
-        self.operatorType = operator_type
-        self.operandA = operand_a
-        self.operandB = operand_b
+
+        if isinstance(operator_type, OperatorType):
+            self.operatorType = operator_type
+        else:
+            raise TypeError('Operator type has to be an OperatorType value')
+
+        if isinstance(operand_a, ParsingEntity) and isinstance(operand_b, ParsingEntity):
+            self.operandA = operand_a
+            self.operandB = operand_b
+        else:
+            raise TypeError("Operands have to be ParsingEntity subclasses")
 
     def __eq__(self, other):
         if isinstance(other, ParsingOperator):
@@ -127,9 +135,9 @@ class ParsingOperator(ParsingEntity):
                     else:
                         return False
             else:
-                TypeError("Unknown ParsingEntity's subclass")
+                TypeError("Unknown ParsingEntity subclass")
         else:
-            raise TypeError("Item have to be ParsingEntity's subclasses")
+            raise TypeError("Item has to be ParsingEntity subclasses")
 
     def __str__(self):
         return 'ParsingOperator object'
@@ -323,7 +331,7 @@ class ParsingPipeline(ParsingStructure):
         elif isinstance(parsing_structure, ParsingBlock):
             self.arParsingStructure.append(parsing_structure)
         else:
-            raise TypeError("Object to add have to be ParsingStructure's subclasses")
+            raise TypeError("Objects to add have to be ParsingStructure subclasses")
 
     def reset(self):
         self.current_parsing_block_index = 0
@@ -454,6 +462,6 @@ class ParsingResult:
             else:
                 raise ValueError('Indexes have to be sorted in ascending order')
             if len(index[1]) != 1 or not isinstance(index[1], str):
-                raise TypeError("Indexes's characters have to be 'str' objects with a length of 1")
+                raise TypeError("Indexes characters have to be 'str' objects with a length of 1")
 
         return True

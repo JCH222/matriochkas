@@ -30,7 +30,7 @@ def test_entity():
         def get_min_position(self):
             return True
 
-########################################################################################################################
+    ###################################################################################################################
 
     entity = InstanceEntity()
 
@@ -39,41 +39,45 @@ def test_entity():
     assert entity.get_min_position() is True
 
 
-def test_parsing_entity():
-    class InstanceParsingEntity(ParsingEntities.ParsingEntity):
-        def __init__(self):
-            super(InstanceParsingEntity, self).__init__()
+########################################################################################################################
 
-        def __eq__(self, other):
-            return True
+class InstanceParsingEntity(ParsingEntities.ParsingEntity):
+    def __init__(self, name):
+        super(InstanceParsingEntity, self).__init__()
+        self.name = name
 
-        def __contains__(self, item):
-            return True
+    def __eq__(self, other):
+        return True
 
-        def __str__(self):
-            return ''
+    def __contains__(self, item):
+        return True
 
-        def __repr__(self):
-            return self.__str__()
+    def __str__(self):
+        return ''
 
-        def __copy__(self):
-            return InstanceParsingEntity()
+    def __repr__(self):
+        return self.__str__()
 
-        def __deepcopy__(self, memodict={}):
-            return InstanceParsingEntity()
+    def __copy__(self):
+        return InstanceParsingEntity('test')
 
-        def check(self, element, ref_position):
-            return True
+    def __deepcopy__(self, memodict={}):
+        return InstanceParsingEntity('test')
 
-        def get_max_position(self):
-            return True
+    def check(self, element, ref_position):
+        return True
 
-        def get_min_position(self):
-            return True
+    def get_max_position(self):
+        return True
+
+    def get_min_position(self):
+        return True
 
 ########################################################################################################################
 
-    parsing_entity = InstanceParsingEntity()
+
+def test_parsing_entity():
+    parsing_entity = InstanceParsingEntity('test')
 
     assert parsing_entity.isNot is False
     assert (parsing_entity == 0) is True
@@ -87,9 +91,9 @@ def test_parsing_entity():
     assert parsing_entity.get_max_position() is True
     assert parsing_entity.get_min_position() is True
 
-########################################################################################################################
+    ###################################################################################################################
 
-    and_parsing_entity = parsing_entity & InstanceParsingEntity()
+    and_parsing_entity = parsing_entity & InstanceParsingEntity('test')
 
     assert isinstance(and_parsing_entity, ParsingEntities.ParsingOperator) is True
     assert isinstance(and_parsing_entity.operandA, InstanceParsingEntity) is True
@@ -103,9 +107,9 @@ def test_parsing_entity():
     except TypeError:
         assert True
 
-########################################################################################################################
+    ###################################################################################################################
 
-    or_parsing_entity = parsing_entity | InstanceParsingEntity()
+    or_parsing_entity = parsing_entity | InstanceParsingEntity('test')
 
     assert isinstance(or_parsing_entity, ParsingEntities.ParsingOperator) is True
     assert isinstance(or_parsing_entity.operandA, InstanceParsingEntity) is True
@@ -119,9 +123,9 @@ def test_parsing_entity():
     except TypeError:
         assert True
 
-########################################################################################################################
+    ###################################################################################################################
 
-    xor_parsing_entity = parsing_entity ^ InstanceParsingEntity()
+    xor_parsing_entity = parsing_entity ^ InstanceParsingEntity('test')
 
     assert isinstance(xor_parsing_entity, ParsingEntities.ParsingOperator) is True
     assert isinstance(xor_parsing_entity.operandA, InstanceParsingEntity) is True
@@ -135,9 +139,9 @@ def test_parsing_entity():
     except TypeError:
         assert True
 
-########################################################################################################################
+    ###################################################################################################################
 
-    rshift_parsing_block = parsing_entity >> InstanceParsingEntity()
+    rshift_parsing_block = parsing_entity >> InstanceParsingEntity('test')
 
     assert isinstance(rshift_parsing_block, ParsingEntities.ParsingBlock) is True
     assert isinstance(rshift_parsing_block.parser, InstanceParsingEntity) is True
@@ -155,9 +159,71 @@ def test_parsing_entity():
     except TypeError:
         assert True
 
-########################################################################################################################
+    ###################################################################################################################
 
     invert_parsing_entity = ~parsing_entity
 
     assert isinstance(invert_parsing_entity, ParsingEntities.ParsingEntity) is True
     assert invert_parsing_entity.isNot is True
+
+
+def test_parsing_operator():
+    and_parsing_operator = ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.AND,
+                                                       InstanceParsingEntity('entity 1'),
+                                                       InstanceParsingEntity('entity 2'))
+
+    assert and_parsing_operator.operatorType is ParsingEntities.OperatorType.AND
+    assert isinstance(and_parsing_operator.operandA, InstanceParsingEntity)
+    assert and_parsing_operator.operandA.name == 'entity 1'
+    assert isinstance(and_parsing_operator.operandB, InstanceParsingEntity)
+    assert and_parsing_operator.operandB.name == 'entity 2'
+
+    ###################################################################################################################
+
+    or_parsing_operator = ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.OR,
+                                                           InstanceParsingEntity('entity 3'),
+                                                           InstanceParsingEntity('entity 4'))
+
+    assert or_parsing_operator.operatorType is ParsingEntities.OperatorType.OR
+    assert isinstance(or_parsing_operator.operandA, InstanceParsingEntity)
+    assert or_parsing_operator.operandA.name == 'entity 3'
+    assert isinstance(or_parsing_operator.operandB, InstanceParsingEntity)
+    assert or_parsing_operator.operandB.name == 'entity 4'
+
+    ###################################################################################################################
+
+    xor_parsing_operator = ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.XOR,
+                                                          InstanceParsingEntity('entity 5'),
+                                                          InstanceParsingEntity('entity 6'))
+
+    assert xor_parsing_operator.operatorType is ParsingEntities.OperatorType.XOR
+    assert isinstance(xor_parsing_operator.operandA, InstanceParsingEntity)
+    assert xor_parsing_operator.operandA.name == 'entity 5'
+    assert isinstance(xor_parsing_operator.operandB, InstanceParsingEntity)
+    assert xor_parsing_operator.operandB.name == 'entity 6'
+
+    ###################################################################################################################
+
+    try:
+        ParsingEntities.ParsingOperator(None, InstanceParsingEntity('entity 7'),
+                                        InstanceParsingEntity('entity 8'))
+        assert False
+    except TypeError:
+        assert True
+
+    ###################################################################################################################
+
+    try:
+        ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.XOR, None,
+                                        InstanceParsingEntity('entity 7'))
+        assert False
+    except TypeError:
+        assert True
+
+    ###################################################################################################################
+
+    try:
+        ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.XOR, InstanceParsingEntity('entity 8'), None)
+        assert False
+    except TypeError:
+        assert True
