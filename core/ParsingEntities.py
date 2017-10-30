@@ -57,7 +57,8 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
             parsing_block = ParsingBlock(self, other)
             return parsing_block
         else:
-            raise TypeError("Operands have to be ParsingEntity's subclasses")
+            raise TypeError("Left operand have to be ParsingEntity's subclass and right operand have to be"
+                            " ParsingEntity's subclass or None")
 
     def __ne__(self, other):
         return not self.__eq__(other)
