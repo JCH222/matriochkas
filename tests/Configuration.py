@@ -3,7 +3,7 @@
 from core import Configuration
 
 
-def test_StreamClassConfiguration():
+def test_stream_class_configuration():
 
     assert len(Configuration.StreamClassConfiguration) == 2
 
@@ -12,5 +12,6 @@ def test_StreamClassConfiguration():
                                                                      'return_method': 'getvalue'}
 
     assert Configuration.StreamClassConfiguration.TextIOWrapper.name == 'TextIOWrapper'
-    assert Configuration.StreamClassConfiguration.TextIOWrapper.value == {'read_method': 'read', 'write_method': 'write',
-                                                                     'return_method': 'None'}
+    assert Configuration.StreamClassConfiguration.TextIOWrapper.value == {'read_method': 'read',
+                                                                          'write_method': 'write',
+                                                                          'return_method': 'None'}
