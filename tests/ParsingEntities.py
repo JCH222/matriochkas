@@ -47,10 +47,16 @@ class InstanceParsingEntity(ParsingEntities.ParsingEntity):
         self.name = name
 
     def __eq__(self, other):
-        return True
+        try:
+            if other.name == self.name:
+                return True
+            else:
+                return False
+        except AttributeError:
+            return False
 
     def __contains__(self, item):
-        return True
+        return self.__eq__(item)
 
     def __str__(self):
         return ''
@@ -59,10 +65,10 @@ class InstanceParsingEntity(ParsingEntities.ParsingEntity):
         return self.__str__()
 
     def __copy__(self):
-        return InstanceParsingEntity('test')
+        return InstanceParsingEntity(self.name)
 
     def __deepcopy__(self, memodict={}):
-        return InstanceParsingEntity('test')
+        return InstanceParsingEntity(self.name)
 
     def check(self, element, ref_position):
         return True
@@ -80,9 +86,12 @@ def test_parsing_entity():
     parsing_entity = InstanceParsingEntity('test')
 
     assert parsing_entity.isNot is False
-    assert (parsing_entity == 0) is True
-    assert (parsing_entity != 0) is False
-    assert (0 in parsing_entity) is True
+    assert (parsing_entity == InstanceParsingEntity('non test')) is False
+    assert (parsing_entity == InstanceParsingEntity('test')) is True
+    assert (parsing_entity != InstanceParsingEntity('non test')) is True
+    assert (parsing_entity != InstanceParsingEntity('test')) is False
+    assert (InstanceParsingEntity('test') in parsing_entity) is True
+    assert (InstanceParsingEntity('test false') in parsing_entity) is False
     assert str(parsing_entity) is ''
     assert repr(parsing_entity) is ''
     assert isinstance(copy.copy(parsing_entity), InstanceParsingEntity) is True
@@ -169,8 +178,8 @@ def test_parsing_entity():
 
 def test_parsing_operator():
     and_parsing_operator = ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.AND,
-                                                       InstanceParsingEntity('entity 1'),
-                                                       InstanceParsingEntity('entity 2'))
+                                                           InstanceParsingEntity('entity 1'),
+                                                           InstanceParsingEntity('entity 2'))
 
     assert and_parsing_operator.operatorType is ParsingEntities.OperatorType.AND
     assert isinstance(and_parsing_operator.operandA, InstanceParsingEntity)
@@ -181,8 +190,8 @@ def test_parsing_operator():
     ###################################################################################################################
 
     or_parsing_operator = ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.OR,
-                                                           InstanceParsingEntity('entity 3'),
-                                                           InstanceParsingEntity('entity 4'))
+                                                          InstanceParsingEntity('entity 3'),
+                                                          InstanceParsingEntity('entity 4'))
 
     assert or_parsing_operator.operatorType is ParsingEntities.OperatorType.OR
     assert isinstance(or_parsing_operator.operandA, InstanceParsingEntity)
@@ -193,8 +202,8 @@ def test_parsing_operator():
     ###################################################################################################################
 
     xor_parsing_operator = ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.XOR,
-                                                          InstanceParsingEntity('entity 5'),
-                                                          InstanceParsingEntity('entity 6'))
+                                                           InstanceParsingEntity('entity 5'),
+                                                           InstanceParsingEntity('entity 6'))
 
     assert xor_parsing_operator.operatorType is ParsingEntities.OperatorType.XOR
     assert isinstance(xor_parsing_operator.operandA, InstanceParsingEntity)
@@ -227,3 +236,65 @@ def test_parsing_operator():
         assert False
     except TypeError:
         assert True
+
+    ###################################################################################################################
+
+    parsing_operator = ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.AND,
+                                                       InstanceParsingEntity('entity a'),
+                                                       InstanceParsingEntity('entity b'))
+
+    assert (parsing_operator == ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.AND,
+                                                                InstanceParsingEntity('entity a'),
+                                                                InstanceParsingEntity('entity b'))) is True
+    assert (parsing_operator == ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.OR,
+                                                                InstanceParsingEntity('entity a'),
+                                                                InstanceParsingEntity('entity b'))) is False
+    assert (parsing_operator == ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.AND,
+                                                                InstanceParsingEntity('entity c'),
+                                                                InstanceParsingEntity('entity b'))) is False
+    assert (parsing_operator == ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.OR,
+                                                                InstanceParsingEntity('entity a'),
+                                                                InstanceParsingEntity('entity c'))) is False
+
+    assert (parsing_operator == 0) is False
+
+    ###################################################################################################################
+
+    super_parsing_operator = parsing_operator & InstanceParsingEntity('entity c')
+
+    assert (InstanceParsingEntity('entity a') in super_parsing_operator) is True
+    assert (InstanceParsingEntity('entity b') in super_parsing_operator) is True
+    assert (InstanceParsingEntity('entity c') in super_parsing_operator) is True
+    assert (InstanceParsingEntity('entity d') in super_parsing_operator) is False
+    assert (ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.OR, InstanceParsingEntity('entity a'),
+                                            InstanceParsingEntity('entity b')) in super_parsing_operator) is False
+    assert (ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.AND, InstanceParsingEntity('entity a'),
+                                            InstanceParsingEntity('entity b')) in super_parsing_operator) is True
+
+    ###################################################################################################################
+
+    assert (str(parsing_operator) == 'ParsingOperator object') is True
+
+    ###################################################################################################################
+
+    assert (repr(parsing_operator) == 'ParsingOperator object') is True
+
+    ###################################################################################################################
+
+    super_parsing_operator.operandB.name = 'entity c'
+    copy_super_parsing_operator = copy.copy(super_parsing_operator)
+    assert (copy_super_parsing_operator.operandB.name == 'entity c') is True
+    super_parsing_operator.operandB.name = 'entity d'
+    assert (copy_super_parsing_operator.operandB.name == 'entity c') is False
+    assert (copy_super_parsing_operator.operandB.name == 'entity d') is True
+
+    ###################################################################################################################
+
+    super_parsing_operator.operandB.name = 'entity c'
+    deep_copy_super_parsing_operator = copy.deepcopy(super_parsing_operator)
+    assert (deep_copy_super_parsing_operator.operandB.name == 'entity c') is True
+    super_parsing_operator.operandB.name = 'entity d'
+    assert (deep_copy_super_parsing_operator.operandB.name == 'entity d') is False
+    assert (deep_copy_super_parsing_operator.operandB.name == 'entity c') is True
+
+    ###################################################################################################################

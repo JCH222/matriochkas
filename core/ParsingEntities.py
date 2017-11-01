@@ -121,21 +121,13 @@ class ParsingOperator(ParsingEntity):
 
     def __contains__(self, item):
         if isinstance(item, ParsingEntity):
-            if isinstance(item, ParsingCondition):
+            if self.__eq__(item):
+                return True
+            else:
                 if item in self.operandA or item in self.operandB:
                     return True
                 else:
                     return False
-            elif isinstance(item, ParsingOperator):
-                if self.__eq__(item):
-                    return True
-                else:
-                    if item in self.operandA or item in self.operandB:
-                        return True
-                    else:
-                        return False
-            else:
-                TypeError("Unknown ParsingEntity subclass")
         else:
             raise TypeError("Item has to be ParsingEntity subclasses")
 
@@ -279,7 +271,7 @@ class ParsingStructure(Entity):
                 parsing_pipeline.add_structure(other)
             return parsing_pipeline
         else:
-            raise TypeError("Operands have to be ParsingStructure's subclasses")
+            raise TypeError("Operands have to be ParsingStructure subclasses")
 
     @abc.abstractmethod
     def check(self, element, ref_position):
