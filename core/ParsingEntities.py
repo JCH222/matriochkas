@@ -149,7 +149,8 @@ class ParsingOperator(ParsingEntity):
 
     def check(self, element, ref_position=0):
         if self.operatorType is OperatorType.AND:
-            if self.operandA.check(element, ref_position) is True and self.operandB.check(element, ref_position) is True:
+            if self.operandA.check(element, ref_position) is True and self.operandB.check(element, ref_position) is \
+                    True:
                 result = True
             else:
                 result = False
@@ -159,7 +160,8 @@ class ParsingOperator(ParsingEntity):
             else:
                 result = False
         else:
-            if (self.operandA.check(element, ref_position) is True) ^ (self.operandB.check(element, ref_position) is True):
+            if (self.operandA.check(element, ref_position) is True) ^ (self.operandB.check(element, ref_position) is
+                                                                           True):
                 result = True
             else:
                 result = False
@@ -357,7 +359,8 @@ class ParsingBlock(ParsingStructure):
 
 
 class ParsingResult:
-    def __init__(self, stream_class, read_method, write_method, return_method, args, kwargs, initial_character_index, final_character_index, ar_index):
+    def __init__(self, stream_class, read_method, write_method, return_method, args, kwargs, initial_character_index,
+                 final_character_index, ar_index):
         self.streamClass = stream_class
         self.readMethod = read_method
         self.writeMethod = write_method
@@ -372,7 +375,8 @@ class ParsingResult:
             if ParsingResult.are_from_the_same_parsing(self, other):
                 new_parsing_result = copy.deepcopy(self)
                 for element in other.arIndex:
-                    if element[0] not in new_parsing_result.arIndex or (len(element) == 3 and (element[0], None, element[2]) not in new_parsing_result.arIndex):
+                    if element[0] not in new_parsing_result.arIndex or \
+                            (len(element) == 3 and (element[0], None, element[2]) not in new_parsing_result.arIndex):
                         new_parsing_result.arIndex.append(element)
                 new_parsing_result.arIndex.sort()
                 return new_parsing_result
@@ -396,7 +400,8 @@ class ParsingResult:
             elif len(item) == 3:
                 if item[1] is not None:
                     for element in self.arIndex:
-                        if len(element) == 3 and element[0] == item[0] and element[1] == item[1] and element[2] == item[2]:
+                        if len(element) == 3 and element[0] == item[0] and element[1] == item[1] \
+                                and element[2] == item[2]:
                             return True
                     return False
                 else:

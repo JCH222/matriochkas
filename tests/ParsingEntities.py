@@ -42,13 +42,15 @@ def test_entity():
 ########################################################################################################################
 
 class InstanceParsingEntity(ParsingEntities.ParsingEntity):
-    def __init__(self, name):
+    def __init__(self, name, check_return=True, rel_position=0):
         super(InstanceParsingEntity, self).__init__()
         self.name = name
+        self.checkReturn = check_return
+        self.relPosition = rel_position
 
     def __eq__(self, other):
         try:
-            if other.name == self.name:
+            if other.name == self.name and other.checkReturn == self.checkReturn:
                 return True
             else:
                 return False
@@ -65,19 +67,19 @@ class InstanceParsingEntity(ParsingEntities.ParsingEntity):
         return self.__str__()
 
     def __copy__(self):
-        return InstanceParsingEntity(self.name)
+        return InstanceParsingEntity(self.name, self.checkReturn)
 
     def __deepcopy__(self, memodict={}):
-        return InstanceParsingEntity(self.name)
+        return InstanceParsingEntity(self.name, self.checkReturn)
 
     def check(self, element, ref_position):
-        return True
+        return self.checkReturn
 
     def get_max_position(self):
-        return True
+        return self.relPosition
 
     def get_min_position(self):
-        return True
+        return self.relPosition
 
 ########################################################################################################################
 
@@ -96,9 +98,8 @@ def test_parsing_entity():
     assert repr(parsing_entity) is ''
     assert isinstance(copy.copy(parsing_entity), InstanceParsingEntity) is True
     assert isinstance(copy.deepcopy(parsing_entity), InstanceParsingEntity) is True
-    assert parsing_entity.check(None, None) is True
-    assert parsing_entity.get_max_position() is True
-    assert parsing_entity.get_min_position() is True
+    assert parsing_entity.get_max_position() == 0
+    assert parsing_entity.get_min_position() == 0
 
     ###################################################################################################################
 
@@ -240,36 +241,37 @@ def test_parsing_operator():
     ###################################################################################################################
 
     parsing_operator = ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.AND,
-                                                       InstanceParsingEntity('entity a'),
-                                                       InstanceParsingEntity('entity b'))
+                                                       InstanceParsingEntity('entity a', True, 1),
+                                                       InstanceParsingEntity('entity b', False, 2))
 
     assert (parsing_operator == ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.AND,
                                                                 InstanceParsingEntity('entity a'),
-                                                                InstanceParsingEntity('entity b'))) is True
+                                                                InstanceParsingEntity('entity b', False))) is True
     assert (parsing_operator == ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.OR,
                                                                 InstanceParsingEntity('entity a'),
-                                                                InstanceParsingEntity('entity b'))) is False
+                                                                InstanceParsingEntity('entity b', False))) is False
     assert (parsing_operator == ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.AND,
                                                                 InstanceParsingEntity('entity c'),
-                                                                InstanceParsingEntity('entity b'))) is False
+                                                                InstanceParsingEntity('entity b', False))) is False
     assert (parsing_operator == ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.OR,
                                                                 InstanceParsingEntity('entity a'),
-                                                                InstanceParsingEntity('entity c'))) is False
+                                                                InstanceParsingEntity('entity c', False))) is False
 
     assert (parsing_operator == 0) is False
 
     ###################################################################################################################
 
-    super_parsing_operator = parsing_operator & InstanceParsingEntity('entity c')
+    super_parsing_operator = parsing_operator & InstanceParsingEntity('entity c', True, -1)
 
+    assert isinstance(super_parsing_operator, ParsingEntities.ParsingOperator) is True
     assert (InstanceParsingEntity('entity a') in super_parsing_operator) is True
-    assert (InstanceParsingEntity('entity b') in super_parsing_operator) is True
+    assert (InstanceParsingEntity('entity b', False) in super_parsing_operator) is True
     assert (InstanceParsingEntity('entity c') in super_parsing_operator) is True
     assert (InstanceParsingEntity('entity d') in super_parsing_operator) is False
     assert (ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.OR, InstanceParsingEntity('entity a'),
                                             InstanceParsingEntity('entity b')) in super_parsing_operator) is False
     assert (ParsingEntities.ParsingOperator(ParsingEntities.OperatorType.AND, InstanceParsingEntity('entity a'),
-                                            InstanceParsingEntity('entity b')) in super_parsing_operator) is True
+                                            InstanceParsingEntity('entity b', False)) in super_parsing_operator) is True
 
     ###################################################################################################################
 
@@ -283,6 +285,7 @@ def test_parsing_operator():
 
     super_parsing_operator.operandB.name = 'entity c'
     copy_super_parsing_operator = copy.copy(super_parsing_operator)
+    assert isinstance(copy_super_parsing_operator, ParsingEntities.ParsingOperator)
     assert (copy_super_parsing_operator.operandB.name == 'entity c') is True
     super_parsing_operator.operandB.name = 'entity d'
     assert (copy_super_parsing_operator.operandB.name == 'entity c') is False
@@ -292,9 +295,32 @@ def test_parsing_operator():
 
     super_parsing_operator.operandB.name = 'entity c'
     deep_copy_super_parsing_operator = copy.deepcopy(super_parsing_operator)
+    assert isinstance(deep_copy_super_parsing_operator, ParsingEntities.ParsingOperator)
     assert (deep_copy_super_parsing_operator.operandB.name == 'entity c') is True
     super_parsing_operator.operandB.name = 'entity d'
     assert (deep_copy_super_parsing_operator.operandB.name == 'entity d') is False
     assert (deep_copy_super_parsing_operator.operandB.name == 'entity c') is True
 
     ###################################################################################################################
+
+    super_parsing_operator.operandB.name = 'entity c'
+    assert super_parsing_operator.check(None, None) is False
+    super_parsing_operator.operandA.operandB.checkReturn = True
+    assert super_parsing_operator.check(None, None) is True
+    super_parsing_operator.operandA.operandB.checkReturn = False
+
+    ###################################################################################################################
+
+    assert (super_parsing_operator.get_min_position() == -1) is True
+    super_parsing_operator.operandB.relPosition = 3
+    assert (super_parsing_operator.get_min_position() == 0) is True
+    super_parsing_operator.operandB.relPosition = -1
+
+    ###################################################################################################################
+
+    assert (super_parsing_operator.get_max_position() == 2) is True
+    super_parsing_operator.operandA.operandA.relPosition = -2
+    super_parsing_operator.operandA.operandB.relPosition = -3
+    assert (super_parsing_operator.get_max_position() == 0) is True
+    super_parsing_operator.operandA.operandA.relPosition = 1
+    super_parsing_operator.operandA.operandB.relPosition = 2
