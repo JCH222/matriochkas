@@ -5,40 +5,6 @@ from core import ParsingEntities
 import copy
 
 
-def test_operator_type():
-
-    assert len(ParsingEntities.OperatorType) == 3
-
-    assert ParsingEntities.OperatorType.AND.name == 'AND'
-    assert ParsingEntities.OperatorType.AND.value == 'and'
-
-    assert ParsingEntities.OperatorType.OR.name == 'OR'
-    assert ParsingEntities.OperatorType.OR.value == 'or'
-
-    assert ParsingEntities.OperatorType.XOR.name == 'XOR'
-    assert ParsingEntities.OperatorType.XOR.value == 'xor'
-
-
-def test_entity():
-    class InstanceEntity(ParsingEntities.Entity):
-        def check(self, element, ref_position):
-            return True
-
-        def get_max_position(self):
-            return True
-
-        def get_min_position(self):
-            return True
-
-    ###################################################################################################################
-
-    entity = InstanceEntity()
-
-    assert entity.check(None, None) is True
-    assert entity.get_max_position() is True
-    assert entity.get_min_position() is True
-
-
 ########################################################################################################################
 
 class InstanceParsingEntity(ParsingEntities.ParsingEntity):
@@ -82,6 +48,40 @@ class InstanceParsingEntity(ParsingEntities.ParsingEntity):
         return self.relPosition
 
 ########################################################################################################################
+
+
+def test_operator_type():
+
+    assert len(ParsingEntities.OperatorType) == 3
+
+    assert ParsingEntities.OperatorType.AND.name == 'AND'
+    assert ParsingEntities.OperatorType.AND.value == 'and'
+
+    assert ParsingEntities.OperatorType.OR.name == 'OR'
+    assert ParsingEntities.OperatorType.OR.value == 'or'
+
+    assert ParsingEntities.OperatorType.XOR.name == 'XOR'
+    assert ParsingEntities.OperatorType.XOR.value == 'xor'
+
+
+def test_entity():
+    class InstanceEntity(ParsingEntities.Entity):
+        def check(self, element, ref_position):
+            return True
+
+        def get_max_position(self):
+            return True
+
+        def get_min_position(self):
+            return True
+
+    ###################################################################################################################
+
+    entity = InstanceEntity()
+
+    assert entity.check(None, None) is True
+    assert entity.get_max_position() is True
+    assert entity.get_min_position() is True
 
 
 def test_parsing_entity():
@@ -324,3 +324,88 @@ def test_parsing_operator():
     assert (super_parsing_operator.get_max_position() == 0) is True
     super_parsing_operator.operandA.operandA.relPosition = 1
     super_parsing_operator.operandA.operandB.relPosition = 2
+
+
+def test_parsing_condition():
+    parsing_condition_1 = ParsingEntities.ParsingCondition('0')
+    assert isinstance(parsing_condition_1, ParsingEntities.ParsingCondition) is True
+    assert (parsing_condition_1.character == '0') is True
+
+    parsing_condition_2 = ParsingEntities.ParsingCondition('012')
+    assert isinstance(parsing_condition_2, ParsingEntities.ParsingOperator) is True
+    assert (parsing_condition_2.operatorType is ParsingEntities.OperatorType.AND) is True
+    assert isinstance(parsing_condition_2.operandA, ParsingEntities.ParsingOperator) is True
+    assert (parsing_condition_2.operandA.operatorType is ParsingEntities.OperatorType.AND) is True
+    assert (parsing_condition_2.operandA.operandA.character == '0') is True
+    assert (parsing_condition_2.operandA.operandB.character == '1') is True
+    assert isinstance(parsing_condition_2.operandB, ParsingEntities.ParsingCondition) is True
+    assert (parsing_condition_2.operandB.character == '2') is True
+
+    ###################################################################################################################
+
+    assert (parsing_condition_1 == 0) is False
+    assert (parsing_condition_1 == ParsingEntities.ParsingCondition('0')) is True
+    assert (parsing_condition_1 == ParsingEntities.ParsingCondition('0', rel_position=1)) is False
+    parsing_condition_3 = ParsingEntities.ParsingCondition('0')
+    parsing_condition_3.isNot = True
+    assert (parsing_condition_1 == parsing_condition_3) is False
+
+    ###################################################################################################################
+
+    assert (0 in parsing_condition_1) is False
+    assert (ParsingEntities.ParsingCondition('0') in parsing_condition_1) is True
+    assert (ParsingEntities.ParsingCondition('0', rel_position=1) in parsing_condition_1) is False
+    assert (parsing_condition_3 in parsing_condition_1) is False
+
+    ###################################################################################################################
+
+    assert (str(parsing_condition_1) == 'ParsingCondition object') is True
+
+    ###################################################################################################################
+
+    assert (repr(parsing_condition_1) == 'ParsingCondition object') is True
+
+    ###################################################################################################################
+
+    copy_parsing_condition_1 = copy.copy(parsing_condition_1)
+    assert (copy_parsing_condition_1.character == '0') is True
+    assert (copy_parsing_condition_1.relPosition == 0) is True
+    assert copy_parsing_condition_1.isNot is False
+
+    ###################################################################################################################
+
+    deep_copy_parsing_condition_1 = copy.deepcopy(parsing_condition_1)
+    assert (deep_copy_parsing_condition_1.character == '0') is True
+    assert (deep_copy_parsing_condition_1.relPosition == 0) is True
+    assert deep_copy_parsing_condition_1.isNot is False
+
+    ###################################################################################################################
+
+    parsing_condition_4 = ParsingEntities.ParsingCondition('W', rel_position=2)
+    assert parsing_condition_1.check('Hello0World !', ref_position=5) is True
+    assert parsing_condition_1.check('Hello0World !', ref_position=6) is False
+    assert parsing_condition_4.check('Hello0World !', ref_position=4) is True
+    assert parsing_condition_4.check('Hello0World !', ref_position=5) is False
+
+    try:
+        parsing_condition_4.check('Hello0World !', ref_position=15)
+        assert False
+    except IndexError:
+        assert True
+
+    try:
+        parsing_condition_4.check('Hello0World !', ref_position=11)
+        assert False
+    except IndexError:
+        assert True
+
+    ###################################################################################################################
+
+    parsing_condition_5 = ParsingEntities.ParsingCondition('W', rel_position=-2)
+    assert (parsing_condition_2.get_min_position() == 0) is True
+    assert (parsing_condition_5.get_min_position() == -2) is True
+
+    ###################################################################################################################
+
+    assert (parsing_condition_2.get_max_position() == 2) is True
+    assert (parsing_condition_5.get_max_position() == 0) is True

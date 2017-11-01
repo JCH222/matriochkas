@@ -203,12 +203,12 @@ class ParsingCondition(ParsingEntity):
 
     def __init__(self, ar_character, rel_position=0):
         super(ParsingCondition, self).__init__()
-        self.rel_position = rel_position
+        self.relPosition = rel_position
         self.character = ar_character[0]
 
     def __eq__(self, other):
         if isinstance(other, ParsingCondition):
-            if self.rel_position == other.rel_position and self.character == other.character \
+            if self.relPosition == other.relPosition and self.character == other.character \
                     and self.isNot == other.isNot:
                 return True
             else:
@@ -226,7 +226,7 @@ class ParsingCondition(ParsingEntity):
         return self.__str__()
 
     def __copy__(self):
-        result = ParsingCondition(self.character, self.rel_position)
+        result = ParsingCondition(self.character, self.relPosition)
         result.isNot = self.isNot
         return result
 
@@ -236,7 +236,7 @@ class ParsingCondition(ParsingEntity):
     def check(self, element, ref_position=0):
         element_size = len(element)
         if 0 <= ref_position < element_size:
-            position = ref_position + self.rel_position
+            position = ref_position + self.relPosition
             if 0 <= position < element_size:
                 if self.character in element[position]:
                     result = True
@@ -253,16 +253,16 @@ class ParsingCondition(ParsingEntity):
             raise IndexError('reference position out of range ( 0 <= ref_position < len(element) )')
 
     def get_min_position(self):
-        if self.rel_position > 0:
+        if self.relPosition > 0:
             return 0
         else:
-            return self.rel_position
+            return self.relPosition
 
     def get_max_position(self):
-        if self.rel_position < 0:
+        if self.relPosition < 0:
             return 0
         else:
-            return self.rel_position
+            return self.relPosition
 
 
 class ParsingStructure(Entity):
