@@ -505,3 +505,28 @@ def test_parsing_pipeline():
     parsing_pipeline_1.reset()
     assert parsing_pipeline_1.isEnded is False
     assert (parsing_pipeline_1.current_parsing_block_index == 0) is True
+
+
+def test_parsing_block():
+    parsing_block_1 = ParsingEntities.ParsingBlock(InstanceParsingStructure('structure 1', -1),
+                                                   InstanceParsingStructure('structure 2', 1))
+    assert isinstance(parsing_block_1.parser, ParsingEntities.ParsingStructure) is True
+    assert (parsing_block_1.parser.name == 'structure 1') is True
+    assert isinstance(parsing_block_1.borderCondition, ParsingEntities.ParsingStructure) is True
+    assert (parsing_block_1.borderCondition.name == 'structure 2') is True
+
+    ###################################################################################################################
+
+    parsing_block_2 = ParsingEntities.ParsingBlock(InstanceParsingStructure('structure 1', -2), None)
+    assert (parsing_block_1.check(None, None) == ((True, True), (True, True))) is True
+    assert (parsing_block_2.check(None, None) == ((True, True), False)) is True
+
+    ###################################################################################################################
+
+    assert (parsing_block_1.get_min_position() == -1) is True
+    assert (parsing_block_2.get_min_position() == -2) is True
+
+    ###################################################################################################################
+
+    assert (parsing_block_1.get_max_position() == 1) is True
+    assert (parsing_block_2.get_max_position() == -2) is True
