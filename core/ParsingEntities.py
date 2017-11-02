@@ -322,10 +322,10 @@ class ParsingPipeline(ParsingStructure):
     def add_structure(self, parsing_structure):
         if isinstance(parsing_structure, ParsingPipeline):
             self.arParsingStructure = self.arParsingStructure + parsing_structure.arParsingStructure
-        elif isinstance(parsing_structure, ParsingBlock):
+        elif isinstance(parsing_structure, ParsingStructure):
             self.arParsingStructure.append(parsing_structure)
         else:
-            raise TypeError("Objects to add have to be ParsingStructure subclasses")
+            raise TypeError("Object to add have to be ParsingStructure object")
 
     def reset(self):
         self.current_parsing_block_index = 0

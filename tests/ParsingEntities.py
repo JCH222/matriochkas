@@ -50,6 +50,23 @@ class InstanceParsingEntity(ParsingEntities.ParsingEntity):
 ########################################################################################################################
 
 
+class InstanceParsingStructure(ParsingEntities.ParsingStructure):
+    def __init__(self, name):
+        super(InstanceParsingStructure, self).__init__()
+        self.name = name
+
+    def check(self, element, ref_position):
+        return True
+
+    def get_max_position(self):
+        return True
+
+    def get_min_position(self):
+        return True
+
+########################################################################################################################
+
+
 def test_operator_type():
 
     assert len(ParsingEntities.OperatorType) == 3
@@ -409,3 +426,30 @@ def test_parsing_condition():
 
     assert (parsing_condition_2.get_max_position() == 2) is True
     assert (parsing_condition_5.get_max_position() == 0) is True
+
+
+def test_parsing_structure():
+    parsing_structure_1 = InstanceParsingStructure('structure 1')
+    parsing_structure_2 = InstanceParsingStructure('structure 2')
+    result_1 = parsing_structure_1 + parsing_structure_2
+    assert isinstance(result_1, ParsingEntities.ParsingPipeline) is True
+    assert (len(result_1.arParsingStructure) == 2) is True
+    assert (result_1.arParsingStructure[0].name == 'structure 1') is True
+    assert (result_1.arParsingStructure[1].name == 'structure 2') is True
+
+    result_2 = parsing_structure_1 + None
+    assert isinstance(result_2, ParsingEntities.ParsingPipeline) is True
+    assert (len(result_2.arParsingStructure) == 1) is True
+    assert (result_2.arParsingStructure[0].name == 'structure 1') is True
+
+    ###################################################################################################################
+
+    assert InstanceParsingStructure('test').check(None, None) is True
+
+    ###################################################################################################################
+
+    assert InstanceParsingStructure('test').get_min_position() is True
+
+    ###################################################################################################################
+
+    assert InstanceParsingStructure('test').get_max_position() is True
