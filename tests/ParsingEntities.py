@@ -51,18 +51,19 @@ class InstanceParsingEntity(ParsingEntities.ParsingEntity):
 
 
 class InstanceParsingStructure(ParsingEntities.ParsingStructure):
-    def __init__(self, name):
+    def __init__(self, name, rel_position=0):
         super(InstanceParsingStructure, self).__init__()
         self.name = name
+        self.relPosition = rel_position
 
     def check(self, element, ref_position):
-        return True
+        return True, True
 
     def get_max_position(self):
-        return True
+        return self.relPosition
 
     def get_min_position(self):
-        return True
+        return self.relPosition
 
 ########################################################################################################################
 
@@ -444,12 +445,63 @@ def test_parsing_structure():
 
     ###################################################################################################################
 
-    assert InstanceParsingStructure('test').check(None, None) is True
+    assert (InstanceParsingStructure('test').check(None, None) == (True, True)) is True
 
     ###################################################################################################################
 
-    assert InstanceParsingStructure('test').get_min_position() is True
+    assert (InstanceParsingStructure('test').get_min_position() == 0) is True
 
     ###################################################################################################################
 
-    assert InstanceParsingStructure('test').get_max_position() is True
+    assert (InstanceParsingStructure('test').get_max_position() == 0) is True
+
+
+def test_parsing_pipeline():
+    parsing_pipeline_1 = ParsingEntities.ParsingPipeline(InstanceParsingStructure('structure 1'))
+    assert (len(parsing_pipeline_1.arParsingStructure) == 1) is True
+    assert (parsing_pipeline_1.current_parsing_block_index == 0) is True
+    assert parsing_pipeline_1.isEnded is False
+
+    try:
+        ParsingEntities.ParsingPipeline(None)
+        assert False
+    except TypeError:
+        assert True
+
+    ###################################################################################################################
+
+    parsing_pipeline_1.add_structure(ParsingEntities.ParsingPipeline(InstanceParsingStructure('structure 2')))
+    assert (parsing_pipeline_1.current_parsing_block_index == 0) is True
+    assert parsing_pipeline_1.isEnded is False
+    assert parsing_pipeline_1.check(None, None) == (True, True)
+    assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
+    assert parsing_pipeline_1.isEnded is False
+    assert parsing_pipeline_1.check(None, None) == (True, True)
+    assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
+    assert parsing_pipeline_1.isEnded is True
+    assert parsing_pipeline_1.check(None, None) is None
+
+    ###################################################################################################################
+
+    parsing_pipeline_2 = ParsingEntities.ParsingPipeline(InstanceParsingStructure('structure 1', -2))
+    parsing_pipeline_2.add_structure(InstanceParsingStructure('structure 2', 3))
+    parsing_pipeline_2.add_structure(InstanceParsingStructure('structure 3', 1))
+    assert (parsing_pipeline_2.get_max_position() == 3) is True
+
+    ###################################################################################################################
+
+    assert (parsing_pipeline_2.get_min_position() == -2) is True
+
+    ###################################################################################################################
+
+    assert (len(parsing_pipeline_2.arParsingStructure) == 3) is True
+    parsing_pipeline_2.add_structure(InstanceParsingStructure('structure 4'))
+    assert (len(parsing_pipeline_2.arParsingStructure) == 4) is True
+
+    ###################################################################################################################
+
+    assert parsing_pipeline_1.isEnded is True
+    assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
+    parsing_pipeline_1.reset()
+    assert parsing_pipeline_1.isEnded is False
+    assert (parsing_pipeline_1.current_parsing_block_index == 0) is True

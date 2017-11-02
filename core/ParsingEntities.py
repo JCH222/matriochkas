@@ -160,8 +160,8 @@ class ParsingOperator(ParsingEntity):
             else:
                 result = False
         else:
-            if (self.operandA.check(element, ref_position) is True) ^ (self.operandB.check(element, ref_position) is
-                                                                           True):
+            if (self.operandA.check(element, ref_position) is True) ^ \
+                    (self.operandB.check(element, ref_position) is True):
                 result = True
             else:
                 result = False
@@ -290,10 +290,13 @@ class ParsingStructure(Entity):
 
 class ParsingPipeline(ParsingStructure):
     def __init__(self, first_parsing_structure):
-        self.arParsingStructure = list()
-        self.arParsingStructure.append(first_parsing_structure)
-        self.current_parsing_block_index = 0
-        self.isEnded = False
+        if isinstance(first_parsing_structure, ParsingStructure):
+            self.arParsingStructure = list()
+            self.arParsingStructure.append(first_parsing_structure)
+            self.current_parsing_block_index = 0
+            self.isEnded = False
+        else:
+            raise TypeError("Object has to be ParsingStructure object")
 
     def check(self, element, ref_position=0):
         if not self.isEnded:
@@ -325,7 +328,7 @@ class ParsingPipeline(ParsingStructure):
         elif isinstance(parsing_structure, ParsingStructure):
             self.arParsingStructure.append(parsing_structure)
         else:
-            raise TypeError("Object to add have to be ParsingStructure object")
+            raise TypeError("Object to add has to be ParsingStructure object")
 
     def reset(self):
         self.current_parsing_block_index = 0
