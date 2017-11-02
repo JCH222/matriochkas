@@ -36,28 +36,29 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
             parsing_operator = ParsingOperator(OperatorType.AND, self, other)
             return parsing_operator
         else:
-            raise TypeError("Operands have to be ParsingEntity's subclasses")
+            raise TypeError("Operands have to be ParsingEntity subclasses")
 
     def __or__(self, other):
         if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
             parsing_operator = ParsingOperator(OperatorType.OR, self, other)
             return parsing_operator
         else:
-            raise TypeError("Operands have to be ParsingEntity's subclasses")
+            raise TypeError("Operands have to be ParsingEntity subclasses")
 
     def __xor__(self, other):
         if isinstance(self, ParsingEntity) and isinstance(other, ParsingEntity):
             parsing_operator = ParsingOperator(OperatorType.XOR, self, other)
             return parsing_operator
         else:
-            raise TypeError("Operands have to be ParsingEntity's subclasses")
+            raise TypeError("Operands have to be ParsingEntity subclasses")
 
     def __rshift__(self, other):
         if isinstance(self, ParsingEntity) and (isinstance(other, ParsingEntity) or other is None):
             parsing_block = ParsingBlock(self, other)
             return parsing_block
         else:
-            raise TypeError("Operands have to be ParsingEntity's subclasses")
+            raise TypeError("Left operand has to be ParsingEntity subclass and right operand has to be"
+                            " ParsingEntity subclass or None")
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -95,9 +96,17 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
 class ParsingOperator(ParsingEntity):
     def __init__(self, operator_type, operand_a, operand_b):
         super(ParsingOperator, self).__init__()
-        self.operatorType = operator_type
-        self.operandA = operand_a
-        self.operandB = operand_b
+
+        if isinstance(operator_type, OperatorType):
+            self.operatorType = operator_type
+        else:
+            raise TypeError('Operator type has to be an OperatorType value')
+
+        if isinstance(operand_a, ParsingEntity) and isinstance(operand_b, ParsingEntity):
+            self.operandA = operand_a
+            self.operandB = operand_b
+        else:
+            raise TypeError("Operands have to be ParsingEntity subclasses")
 
     def __eq__(self, other):
         if isinstance(other, ParsingOperator):
@@ -112,23 +121,15 @@ class ParsingOperator(ParsingEntity):
 
     def __contains__(self, item):
         if isinstance(item, ParsingEntity):
-            if isinstance(item, ParsingCondition):
+            if self.__eq__(item):
+                return True
+            else:
                 if item in self.operandA or item in self.operandB:
                     return True
                 else:
                     return False
-            elif isinstance(item, ParsingOperator):
-                if self.__eq__(item):
-                    return True
-                else:
-                    if item in self.operandA or item in self.operandB:
-                        return True
-                    else:
-                        return False
-            else:
-                TypeError("Unknown ParsingEntity's subclass")
         else:
-            raise TypeError("Item have to be ParsingEntity's subclasses")
+            raise TypeError("Item has to be ParsingEntity subclasses")
 
     def __str__(self):
         return 'ParsingOperator object'
@@ -148,7 +149,8 @@ class ParsingOperator(ParsingEntity):
 
     def check(self, element, ref_position=0):
         if self.operatorType is OperatorType.AND:
-            if self.operandA.check(element, ref_position) is True and self.operandB.check(element, ref_position) is True:
+            if self.operandA.check(element, ref_position) is True and self.operandB.check(element, ref_position) is \
+                    True:
                 result = True
             else:
                 result = False
@@ -158,7 +160,8 @@ class ParsingOperator(ParsingEntity):
             else:
                 result = False
         else:
-            if (self.operandA.check(element, ref_position) is True) ^ (self.operandB.check(element, ref_position) is True):
+            if (self.operandA.check(element, ref_position) is True) ^ \
+                    (self.operandB.check(element, ref_position) is True):
                 result = True
             else:
                 result = False
@@ -200,12 +203,12 @@ class ParsingCondition(ParsingEntity):
 
     def __init__(self, ar_character, rel_position=0):
         super(ParsingCondition, self).__init__()
-        self.rel_position = rel_position
+        self.relPosition = rel_position
         self.character = ar_character[0]
 
     def __eq__(self, other):
         if isinstance(other, ParsingCondition):
-            if self.rel_position == other.rel_position and self.character == other.character \
+            if self.relPosition == other.relPosition and self.character == other.character \
                     and self.isNot == other.isNot:
                 return True
             else:
@@ -223,7 +226,7 @@ class ParsingCondition(ParsingEntity):
         return self.__str__()
 
     def __copy__(self):
-        result = ParsingCondition(self.character, self.rel_position)
+        result = ParsingCondition(self.character, self.relPosition)
         result.isNot = self.isNot
         return result
 
@@ -233,7 +236,7 @@ class ParsingCondition(ParsingEntity):
     def check(self, element, ref_position=0):
         element_size = len(element)
         if 0 <= ref_position < element_size:
-            position = ref_position + self.rel_position
+            position = ref_position + self.relPosition
             if 0 <= position < element_size:
                 if self.character in element[position]:
                     result = True
@@ -250,16 +253,16 @@ class ParsingCondition(ParsingEntity):
             raise IndexError('reference position out of range ( 0 <= ref_position < len(element) )')
 
     def get_min_position(self):
-        if self.rel_position > 0:
+        if self.relPosition > 0:
             return 0
         else:
-            return self.rel_position
+            return self.relPosition
 
     def get_max_position(self):
-        if self.rel_position < 0:
+        if self.relPosition < 0:
             return 0
         else:
-            return self.rel_position
+            return self.relPosition
 
 
 class ParsingStructure(Entity):
@@ -270,7 +273,7 @@ class ParsingStructure(Entity):
                 parsing_pipeline.add_structure(other)
             return parsing_pipeline
         else:
-            raise TypeError("Operands have to be ParsingStructure's subclasses")
+            raise TypeError("Operands have to be ParsingStructure subclasses")
 
     @abc.abstractmethod
     def check(self, element, ref_position):
@@ -287,10 +290,13 @@ class ParsingStructure(Entity):
 
 class ParsingPipeline(ParsingStructure):
     def __init__(self, first_parsing_structure):
-        self.arParsingStructure = list()
-        self.arParsingStructure.append(first_parsing_structure)
-        self.current_parsing_block_index = 0
-        self.isEnded = False
+        if isinstance(first_parsing_structure, ParsingStructure):
+            self.arParsingStructure = list()
+            self.arParsingStructure.append(first_parsing_structure)
+            self.current_parsing_block_index = 0
+            self.isEnded = False
+        else:
+            raise TypeError("Object has to be ParsingStructure object")
 
     def check(self, element, ref_position=0):
         if not self.isEnded:
@@ -319,10 +325,10 @@ class ParsingPipeline(ParsingStructure):
     def add_structure(self, parsing_structure):
         if isinstance(parsing_structure, ParsingPipeline):
             self.arParsingStructure = self.arParsingStructure + parsing_structure.arParsingStructure
-        elif isinstance(parsing_structure, ParsingBlock):
+        elif isinstance(parsing_structure, ParsingStructure):
             self.arParsingStructure.append(parsing_structure)
         else:
-            raise TypeError("Object to add have to be ParsingStructure's subclasses")
+            raise TypeError("Object to add has to be ParsingStructure object")
 
     def reset(self):
         self.current_parsing_block_index = 0
@@ -356,7 +362,8 @@ class ParsingBlock(ParsingStructure):
 
 
 class ParsingResult:
-    def __init__(self, stream_class, read_method, write_method, return_method, args, kwargs, initial_character_index, final_character_index, ar_index):
+    def __init__(self, stream_class, read_method, write_method, return_method, args, kwargs, initial_character_index,
+                 final_character_index, ar_index):
         self.streamClass = stream_class
         self.readMethod = read_method
         self.writeMethod = write_method
@@ -371,7 +378,8 @@ class ParsingResult:
             if ParsingResult.are_from_the_same_parsing(self, other):
                 new_parsing_result = copy.deepcopy(self)
                 for element in other.arIndex:
-                    if element[0] not in new_parsing_result.arIndex or (len(element) == 3 and (element[0], None, element[2]) not in new_parsing_result.arIndex):
+                    if element[0] not in new_parsing_result.arIndex or \
+                            (len(element) == 3 and (element[0], None, element[2]) not in new_parsing_result.arIndex):
                         new_parsing_result.arIndex.append(element)
                 new_parsing_result.arIndex.sort()
                 return new_parsing_result
@@ -395,7 +403,8 @@ class ParsingResult:
             elif len(item) == 3:
                 if item[1] is not None:
                     for element in self.arIndex:
-                        if len(element) == 3 and element[0] == item[0] and element[1] == item[1] and element[2] == item[2]:
+                        if len(element) == 3 and element[0] == item[0] and element[1] == item[1] \
+                                and element[2] == item[2]:
                             return True
                     return False
                 else:
@@ -453,6 +462,6 @@ class ParsingResult:
             else:
                 raise ValueError('Indexes have to be sorted in ascending order')
             if len(index[1]) != 1 or not isinstance(index[1], str):
-                raise TypeError("Indexes's characters have to be 'str' objects with a length of 1")
+                raise TypeError("Indexes characters have to be 'str' objects with a length of 1")
 
         return True
