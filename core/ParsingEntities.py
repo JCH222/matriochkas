@@ -337,8 +337,15 @@ class ParsingPipeline(ParsingStructure):
 
 class ParsingBlock(ParsingStructure):
     def __init__(self, parser, border_condition):
-        self.parser = parser
-        self.borderCondition = border_condition
+        if isinstance(parser, ParsingEntity):
+            self.parser = parser
+        else:
+            raise TypeError('parser has to be ParsingStructure subclass')
+
+        if isinstance(border_condition, ParsingEntity) or border_condition is None:
+            self.borderCondition = border_condition
+        else:
+            raise TypeError('border_condition has to be ParsingStructure subclass or None')
 
     def check(self, element, ref_position=0):
         parser_result = self.parser.check(element, ref_position)

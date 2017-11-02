@@ -508,18 +508,31 @@ def test_parsing_pipeline():
 
 
 def test_parsing_block():
-    parsing_block_1 = ParsingEntities.ParsingBlock(InstanceParsingStructure('structure 1', -1),
-                                                   InstanceParsingStructure('structure 2', 1))
-    assert isinstance(parsing_block_1.parser, ParsingEntities.ParsingStructure) is True
+    parsing_block_1 = ParsingEntities.ParsingBlock(InstanceParsingEntity('structure 1', True, -1),
+                                                   InstanceParsingEntity('structure 2', True, 1))
+    assert isinstance(parsing_block_1.parser, ParsingEntities.ParsingEntity) is True
     assert (parsing_block_1.parser.name == 'structure 1') is True
-    assert isinstance(parsing_block_1.borderCondition, ParsingEntities.ParsingStructure) is True
+    assert isinstance(parsing_block_1.borderCondition, ParsingEntities.ParsingEntity) is True
     assert (parsing_block_1.borderCondition.name == 'structure 2') is True
+
+    try:
+        ParsingEntities.ParsingBlock(0, None)
+        assert False
+    except TypeError:
+        assert True
+
+    try:
+        ParsingEntities.ParsingBlock(InstanceParsingEntity('structure 1', True, -1), 0)
+        assert False
+    except TypeError:
+        assert True
 
     ###################################################################################################################
 
-    parsing_block_2 = ParsingEntities.ParsingBlock(InstanceParsingStructure('structure 1', -2), None)
-    assert (parsing_block_1.check(None, None) == ((True, True), (True, True))) is True
-    assert (parsing_block_2.check(None, None) == ((True, True), False)) is True
+    parsing_block_2 = ParsingEntities.ParsingBlock(InstanceParsingEntity('structure 1', True, -2), None)
+    print(parsing_block_1.check(None, None))
+    assert (parsing_block_1.check(None, None) == (True, True)) is True
+    assert (parsing_block_2.check(None, None) == (True, False)) is True
 
     ###################################################################################################################
 
