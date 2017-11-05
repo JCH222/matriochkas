@@ -405,8 +405,8 @@ class ParsingResult:
             if ParsingResult.are_from_the_same_parsing(self, other):
                 new_parsing_result = copy.deepcopy(self)
                 for element in other.arIndex:
-                    if element[0] not in new_parsing_result.arIndex or \
-                            (len(element) == 3 and (element[0], None, element[2]) not in new_parsing_result.arIndex):
+                    if element[0] not in new_parsing_result or \
+                            (len(element) == 3 and (element[0], None, element[2]) not in new_parsing_result):
                         new_parsing_result.arIndex.append(element)
                 new_parsing_result.arIndex.sort()
                 return new_parsing_result
