@@ -65,7 +65,7 @@ class StreamReader(StreamEntity):
 
             stream.close()
             return ParsingResult(self.streamClass, self.readMethod, self.writeMethod, self.returnMethod, self.args,
-                                 self.kwargs, -min_position, current_position, ar_index)
+                                 self.kwargs, ar_index)
         else:
             stream.close()
             raise ValueError("Not enough characters to parse : " + str(len(element)))

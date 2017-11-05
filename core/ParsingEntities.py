@@ -369,16 +369,36 @@ class ParsingBlock(ParsingStructure):
 
 
 class ParsingResult:
-    def __init__(self, stream_class, read_method, write_method, return_method, args, kwargs, initial_character_index,
-                 final_character_index, ar_index):
-        self.streamClass = stream_class
-        self.readMethod = read_method
-        self.writeMethod = write_method
-        self.returnMethod = return_method
-        self.arInput = {'args': args, 'kwargs': kwargs}
-        self.initialCharacterIndex = initial_character_index
-        self.finalCharacterIndex = final_character_index
-        self.arIndex = ar_index
+    def __init__(self, stream_class, read_method, write_method, return_method, args, kwargs, ar_index):
+        if hasattr(stream_class, '__name__'):
+            self.streamClass = stream_class
+        else:
+            raise TypeError('Stream class has to have __name__ attribute')
+
+        if isinstance(read_method, str) or read_method is None:
+            self.readMethod = read_method
+        else:
+            raise TypeError('Read method has to be str object or None')
+
+        if isinstance(write_method, str) or write_method is None:
+            self.writeMethod = write_method
+        else:
+            raise TypeError('Write method has to be str object or None')
+
+        if isinstance(return_method, str) or return_method is None:
+            self.returnMethod = return_method
+        else:
+            raise TypeError('Return method has to be str object or None')
+
+        if isinstance(args, list) and isinstance(kwargs, dict):
+            self.arInput = {'args': args, 'kwargs': kwargs}
+        else:
+            raise TypeError('args has to be list object and kwargs has to be dict object')
+
+        if isinstance(ar_index, list):
+            self.arIndex = ar_index
+        else:
+            raise TypeError('ar_index has to be list object')
 
     def __add__(self, other):
         if isinstance(other, ParsingResult) and isinstance(self, ParsingResult):
@@ -426,26 +446,21 @@ class ParsingResult:
 
     def __str__(self):
         return str({'Stream class': str(self.streamClass.__name__), 'Inputs': str(self.arInput),
-                    'from': str(self.initialCharacterIndex), 'to': str(self.finalCharacterIndex),
                     'Index result': str(self.arIndex)})
 
     def __repr__(self):
-        return 'Parsing result :' + '\n' + '   Stream class : ' + str(self.streamClass.__name__) + '\n' \
-               + '   Inputs : ' + str(self.arInput) + '\n' + '   Parsed from character ' \
-               + str(self.initialCharacterIndex) + ' to character ' + str(self.finalCharacterIndex) + '\n' \
-               + '   Index result : ' + str(self.arIndex)
+        return 'Parsing result :' + '\n' + '   Stream class : ' + str(self.streamClass.__name__) + '\n' + \
+               '   Inputs : ' + str(self.arInput) + '\n' + '   Index result : ' + str(self.arIndex)
 
     def __copy__(self):
         return ParsingResult(self.streamClass, self.readMethod, self.writeMethod, self.returnMethod,
-                             self.arInput['args'], self.arInput['kwargs'], self.initialCharacterIndex,
-                             self.finalCharacterIndex, self.arIndex)
+                             self.arInput['args'], self.arInput['kwargs'], self.arIndex)
 
     def __deepcopy__(self, memodict={}):
         copy_ar_input = copy.deepcopy(self.arInput)
         copy_ar_index = copy.deepcopy(self.arIndex)
         return ParsingResult(self.streamClass, self.readMethod, self.writeMethod, self.returnMethod,
-                             copy_ar_input['args'], copy_ar_input['kwargs'], self.initialCharacterIndex,
-                             self.finalCharacterIndex, copy_ar_index)
+                             copy_ar_input['args'], copy_ar_input['kwargs'], copy_ar_index)
 
     @staticmethod
     def are_from_the_same_parsing(parsing_result_a, parsing_result_b):
@@ -453,8 +468,6 @@ class ParsingResult:
             return (parsing_result_a.streamClass == parsing_result_b.streamClass and
                     parsing_result_a.arInput['args'] == parsing_result_b.arInput['args'] and
                     parsing_result_a.arInput['kwargs'] == parsing_result_b.arInput['kwargs'] and
-                    parsing_result_a.initialCharacterIndex == parsing_result_b.initialCharacterIndex and
-                    parsing_result_a.finalCharacterIndex == parsing_result_b.finalCharacterIndex and
                     parsing_result_a.readMethod == parsing_result_b.readMethod and
                     parsing_result_a.writeMethod == parsing_result_b.writeMethod and
                     parsing_result_a.returnMethod == parsing_result_b.returnMethod)
