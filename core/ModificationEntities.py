@@ -48,17 +48,20 @@ class ModificationAdd(ModificationOperation):
         self.modificationSide = modification_side
 
     def generate_parsing_result(self, initial_parsing_result):
-        ar_index = list()
-        for element in initial_parsing_result.arIndex:
-            ar_index.append((element[0] + self.relPosition, self.ar_character, self.modificationSide))
-        parsing_result = ParsingResult(initial_parsing_result.streamClass,
-                                       initial_parsing_result.readMethod,
-                                       initial_parsing_result.writeMethod,
-                                       initial_parsing_result.returnMethod,
-                                       initial_parsing_result.arInput['args'],
-                                       initial_parsing_result.arInput['kwargs'],
-                                       ar_index)
-        return parsing_result
+        if isinstance(initial_parsing_result, ParsingResult):
+            ar_index = list()
+            for element in initial_parsing_result.arIndex:
+                ar_index.append((element[0] + self.relPosition, self.ar_character, self.modificationSide))
+            parsing_result = ParsingResult(initial_parsing_result.streamClass,
+                                           initial_parsing_result.readMethod,
+                                           initial_parsing_result.writeMethod,
+                                           initial_parsing_result.returnMethod,
+                                           initial_parsing_result.arInput['args'],
+                                           initial_parsing_result.arInput['kwargs'],
+                                           ar_index)
+            return parsing_result
+        else:
+            raise TypeError('Parameter has to be ParsingResult class or subclass')
 
 
 class ModificationRemove(ModificationOperation):
