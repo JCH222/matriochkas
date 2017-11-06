@@ -36,7 +36,6 @@ class ModificationOperator(ModificationEntity):
 
 
 class ModificationOperation(ModificationEntity, metaclass=abc.ABCMeta):
-    @abc.abstractmethod
     def __init__(self, rel_position=0):
         self.relPosition = rel_position
         self.parsing_result = list()
