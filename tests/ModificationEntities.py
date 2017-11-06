@@ -3,6 +3,16 @@
 from core import ModificationEntities
 
 
+########################################################################################################################
+
+
+class InstanceModificationEntity(ModificationEntities.ModificationEntity):
+    def generate_parsing_result(self, initial_parsing_result):
+        return True
+
+########################################################################################################################
+
+
 def test_modification_side():
 
     assert len(ModificationEntities.ModificationSide) == 2
