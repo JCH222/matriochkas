@@ -714,6 +714,12 @@ def test_parsing_result():
     assert ParsingEntities.ParsingResult.are_from_the_same_parsing(parsing_result_1, parsing_result_7) is True
     assert ParsingEntities.ParsingResult.are_from_the_same_parsing(parsing_result_1, copy_parsing_result_1) is False
 
+    try:
+        ParsingEntities.ParsingResult.are_from_the_same_parsing(None, None)
+        assert False
+    except TypeError:
+        assert True
+
     ###################################################################################################################
 
     assert parsing_result_7.check_indexes() is True

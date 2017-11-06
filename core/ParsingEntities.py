@@ -470,7 +470,7 @@ class ParsingResult:
                     parsing_result_a.writeMethod == parsing_result_b.writeMethod and
                     parsing_result_a.returnMethod == parsing_result_b.returnMethod)
         else:
-            TypeError("Operands have to be ParsingResult classes or subclasses")
+            raise TypeError("Operands have to be ParsingResult classes or subclasses")
 
     def check_indexes(self):
         previous_index_value = -1
