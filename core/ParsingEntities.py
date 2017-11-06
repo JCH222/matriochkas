@@ -457,10 +457,7 @@ class ParsingResult:
                              self.arInput['args'], self.arInput['kwargs'], self.arIndex)
 
     def __deepcopy__(self, memodict={}):
-        copy_ar_input = copy.deepcopy(self.arInput)
-        copy_ar_index = copy.deepcopy(self.arIndex)
-        return ParsingResult(self.streamClass, self.readMethod, self.writeMethod, self.returnMethod,
-                             copy_ar_input['args'], copy_ar_input['kwargs'], copy_ar_index)
+        return self.__copy__()
 
     @staticmethod
     def are_from_the_same_parsing(parsing_result_a, parsing_result_b):
