@@ -390,7 +390,7 @@ class ParsingResult:
         else:
             raise TypeError('Return method has to be str object or None')
 
-        if isinstance(args, list) and isinstance(kwargs, dict):
+        if isinstance(args, (tuple, list)) and isinstance(kwargs, dict):
             self.arInput = {'args': args, 'kwargs': kwargs}
         else:
             raise TypeError('args has to be list object and kwargs has to be dict object')
@@ -405,8 +405,9 @@ class ParsingResult:
             if ParsingResult.are_from_the_same_parsing(self, other):
                 new_parsing_result = copy.deepcopy(self)
                 for element in other.arIndex:
-                    if element[0] not in new_parsing_result or \
-                            (len(element) == 3 and (element[0], None, element[2]) not in new_parsing_result):
+                    if (element[0] not in new_parsing_result or \
+                            (len(element) == 3 and (element[0], None, element[2]) not in new_parsing_result)) or \
+                            (element[1] == '' and (element[0], element[1]) not in new_parsing_result):
                         new_parsing_result.arIndex.append(element)
                 new_parsing_result.arIndex.sort()
                 return new_parsing_result
