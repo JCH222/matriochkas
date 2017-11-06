@@ -90,3 +90,24 @@ def test_modification_add():
         assert False
     except TypeError:
         assert True
+
+
+def test_modification_remove():
+    modification_remove_1 = ModificationEntities.ModificationRemove(1)
+    parsing_result_1 = core.ParsingEntities.ParsingResult(tests.ParsingEntities.MockStreamClass, 'read method 1',
+                                                          'write method 1', 'return method 1', ['arg a', 'arg b'],
+                                                          {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+    result = modification_remove_1.generate_parsing_result(parsing_result_1)
+    assert isinstance(result, core.ParsingEntities.ParsingResult) is True
+    assert (result.streamClass == tests.ParsingEntities.MockStreamClass) is True
+    assert (result.readMethod == 'read method 1') is True
+    assert (result.writeMethod == 'write method 1') is True
+    assert (result.returnMethod == 'return method 1') is True
+    assert (result.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
+    assert (result.arIndex == [(1, ''), (3, '')]) is True
+
+    try:
+        modification_remove_1.generate_parsing_result(None)
+        assert False
+    except TypeError:
+        assert True
