@@ -412,9 +412,9 @@ class ParsingResult:
                 new_parsing_result.arIndex.sort()
                 return new_parsing_result
             else:
-                ValueError("Operands have to come from the same parsing")
+                raise ValueError("Operands have to come from the same parsing")
         else:
-            TypeError("Operands have to be ParsingResult classes or subclasses")
+            raise TypeError("Operands have to be ParsingResult classes or subclasses")
 
     def __contains__(self, item):
         if isinstance(item, int):
