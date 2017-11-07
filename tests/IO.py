@@ -7,15 +7,15 @@ from io import StringIO
 
 
 class InstanceStreamEntity(IO.StreamEntity):
-    def __init__(self, name):
-        super(InstanceStreamEntity, self).__init__([], {})
+    def __init__(self, name, args, kwargs, stream_class=None, read_method=None, write_method=None, return_method=None):
+        super(InstanceStreamEntity, self).__init__(args, kwargs, stream_class, read_method, write_method, return_method)
         self.name = name
 
 ########################################################################################################################
 
 
 def test_stream_entity():
-    stream_entity = InstanceStreamEntity('entity 1')
+    stream_entity = InstanceStreamEntity('entity 1', [], {})
     assert isinstance(stream_entity, IO.StreamEntity) is True
     assert (stream_entity.name == 'entity 1') is True
     assert stream_entity.streamClass is None
@@ -57,3 +57,4 @@ def test_stream_entity():
     assert method_6 is None
 
     stream_object.close()
+    
