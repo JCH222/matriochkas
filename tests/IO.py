@@ -1,6 +1,7 @@
 # coding: utf8
 
 from core import IO
+from core import ParsingEntities
 from io import StringIO
 
 ########################################################################################################################
@@ -69,3 +70,40 @@ def test_stream_entity():
     assert method_6 is None
 
     stream_object.close()
+
+
+def test_stream_reader():
+    text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et ' \
+       'dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ' \
+       'ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu ' \
+       'fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt ' \
+       'mollit anim id est laborum. '
+    pipeline = ((ParsingEntities.ParsingCondition(', ') | ParsingEntities.ParsingCondition('. ')) >> None) + None
+    stream_entity = IO.StreamReader(text)
+    result = stream_entity.read(pipeline)
+    assert isinstance(result, ParsingEntities.ParsingResult) is True
+    assert (result.streamClass == StringIO) is True
+    assert isinstance(result.arInput['args'], tuple) is True
+    assert (len(result.arInput['args']) == 1) is True
+    assert (result.arInput['args'][0] == text) is True
+    assert (result.arInput['kwargs'] == {}) is True
+    assert (result.arIndex == [(26, ','), (55, ','), (122, '.'), (147, ','), (230, '.'), (333, '.'), (381, ','),
+                               (444, '.')]) is True
+
+    stream_entity_2 = IO.StreamReader(text,read_method='read')
+    result_2 = stream_entity_2.read(pipeline)
+    assert isinstance(result_2, ParsingEntities.ParsingResult) is True
+    assert (result_2.streamClass == StringIO) is True
+    assert isinstance(result_2.arInput['args'], tuple) is True
+    assert (len(result_2.arInput['args']) == 1) is True
+    assert (result_2.arInput['args'][0] == text) is True
+    assert (result_2.arInput['kwargs'] == {}) is True
+    assert (result_2.arIndex == [(26, ','), (55, ','), (122, '.'), (147, ','), (230, '.'), (333, '.'), (381, ','),
+                                 (444, '.')]) is True
+
+    stream_entity_3 = IO.StreamReader('')
+    try:
+        stream_entity_3.read(pipeline)
+        assert False
+    except ValueError:
+        assert True
