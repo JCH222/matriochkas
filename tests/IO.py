@@ -25,6 +25,18 @@ def test_stream_entity():
     assert (stream_entity.args == []) is True
     assert (stream_entity.kwargs == {}) is True
 
+    try:
+        InstanceStreamEntity('entity', None, {})
+        assert False
+    except TypeError:
+        assert True
+
+    try:
+        InstanceStreamEntity('entity', [], None)
+        assert False
+    except TypeError:
+        assert True
+
     ###################################################################################################################
 
     stream_object = StringIO('abcdefghijklmnopqrstuvwxyz')
@@ -57,4 +69,3 @@ def test_stream_entity():
     assert method_6 is None
 
     stream_object.close()
-    

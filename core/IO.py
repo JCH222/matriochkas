@@ -17,8 +17,16 @@ class StreamEntity(metaclass=abc.ABCMeta):
         self.readMethod = read_method
         self.writeMethod = write_method
         self.returnMethod = return_method
-        self.args = args
-        self.kwargs = kwargs
+
+        if isinstance(args, (list, tuple)):
+            self.args = args
+        else:
+            raise TypeError('args has to be list or tuple object')
+
+        if isinstance(kwargs, dict):
+            self.kwargs = kwargs
+        else:
+            raise TypeError('args has to be dict object')
 
     @staticmethod
     def generate_method(stream_object, method_key):
