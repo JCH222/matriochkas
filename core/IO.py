@@ -17,8 +17,16 @@ class StreamEntity(metaclass=abc.ABCMeta):
         self.readMethod = read_method
         self.writeMethod = write_method
         self.returnMethod = return_method
-        self.args = args
-        self.kwargs = kwargs
+
+        if isinstance(args, (list, tuple)):
+            self.args = args
+        else:
+            raise TypeError('args has to be list or tuple object')
+
+        if isinstance(kwargs, dict):
+            self.kwargs = kwargs
+        else:
+            raise TypeError('args has to be dict object')
 
     @staticmethod
     def generate_method(stream_object, method_key):
@@ -33,9 +41,9 @@ class StreamEntity(metaclass=abc.ABCMeta):
 
 
 class StreamReader(StreamEntity):
-    def __init__(self, *args, stream_class=StringIO, read_method=None, write_method=None, return_method=None, **kwargs):
+    def __init__(self, *args, stream_class=StringIO, read_method=None, return_method=None, **kwargs):
         super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class, read_method=read_method,
-                                           write_method=write_method, return_method=return_method)
+                                           return_method=return_method)
 
     def read(self, parsing_pipeline):
         parsing_pipeline.reset()
@@ -72,13 +80,16 @@ class StreamReader(StreamEntity):
 
 
 class StreamWriter(StreamEntity):
-    def __init__(self, *args, stream_class=StringIO, **kwargs):
-        super(StreamWriter, self).__init__(args, kwargs, stream_class=stream_class)
+    def __init__(self, *args, stream_class=StringIO, write_method=None, return_method=None, **kwargs):
+        super(StreamWriter, self).__init__(args, kwargs, stream_class=stream_class, write_method=write_method,
+                                           return_method=return_method)
 
-    def write(self, parsing_result, stream_class=None, args=None, kwargs=None):
+    def write(self, parsing_result, stream_class=None, read_method=None, args=None, kwargs=None):
         input_parsing_result = copy.deepcopy(parsing_result)
         if stream_class is not None:
             input_parsing_result.streamClass = stream_class
+        if read_method is not None:
+            input_parsing_result.readMethod = read_method
         if args is not None:
             input_parsing_result.arInput['args'] = args
         if kwargs is not None:
