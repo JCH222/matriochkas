@@ -1,7 +1,7 @@
 # coding: utf8
 
 from enum import Enum
-from core.ParsingEntities import ParsingResult
+from matriochkas.core.ParsingEntities import ParsingResult
 
 import abc
 

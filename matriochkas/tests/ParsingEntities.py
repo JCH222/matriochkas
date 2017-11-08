@@ -1,6 +1,6 @@
 # coding: utf8
 
-from core import ParsingEntities
+from matriochkas.core import ParsingEntities
 
 import copy
 

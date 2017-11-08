@@ -1,8 +1,8 @@
 # coding: utf8
 
-from core import IO
-from core import ParsingEntities
-from core import ModificationEntities
+from matriochkas.core import IO
+from matriochkas.core import ParsingEntities
+from matriochkas.core import ModificationEntities
 from io import StringIO
 
 

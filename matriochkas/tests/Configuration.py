@@ -1,6 +1,6 @@
 # coding: utf8
 
-from core import Configuration
+from matriochkas.core import Configuration
 
 
 def test_stream_class_configuration():

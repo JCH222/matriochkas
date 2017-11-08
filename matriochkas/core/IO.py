@@ -2,9 +2,9 @@
 
 from io import StringIO
 from collections import deque
-from core.ModificationEntities import ModificationSide
-from core.ParsingEntities import ParsingResult
-from core.Configuration import StreamClassConfiguration
+from matriochkas.core.ModificationEntities import ModificationSide
+from matriochkas.core.ParsingEntities import ParsingResult
+from matriochkas.core.Configuration import StreamClassConfiguration
 
 import abc
 import copy

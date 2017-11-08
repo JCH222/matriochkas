@@ -1,8 +1,8 @@
 # coding: utf8
 
-from core import ModificationEntities
-import core.ParsingEntities
-import tests.ParsingEntities
+from matriochkas.core import ModificationEntities
+import matriochkas.core.ParsingEntities
+import matriochkas.tests.ParsingEntities
 
 
 ########################################################################################################################
