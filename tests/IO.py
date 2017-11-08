@@ -137,3 +137,6 @@ def test_stream_writer():
                                                     (444, '-', ModificationEntities.ModificationSide.RIGHT), (445, '')])
     stream_entity = IO.StreamWriter()
     assert (stream_entity.write(parsing_result) == text_result) is True
+
+    stream_entity_2 = IO.StreamWriter(write_method='write', return_method='getvalue')
+    assert (stream_entity_2.write(parsing_result) == text_result) is True
