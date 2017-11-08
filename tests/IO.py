@@ -2,7 +2,9 @@
 
 from core import IO
 from core import ParsingEntities
+from core import ModificationEntities
 from io import StringIO
+
 
 ########################################################################################################################
 
@@ -53,9 +55,9 @@ def test_stream_entity():
 
     method_3 = IO.StreamEntity.generate_method(stream_object, 'write_method')
     assert (str(type(method_3)) == "<class 'builtin_function_or_method'>") is True
-    result = method_3("1")
+    method_3("1")
     assert (stream_object.getvalue() == 'abcd1fghijklmnopqrstuvwxyz') is True
-    result = method_3("234")
+    method_3("234")
     assert (stream_object.getvalue() == 'abcd1234ijklmnopqrstuvwxyz') is True
 
     method_4 = IO.StreamEntity.generate_method('Unknown object', 'write_method')
@@ -90,7 +92,7 @@ def test_stream_reader():
     assert (result.arIndex == [(26, ','), (55, ','), (122, '.'), (147, ','), (230, '.'), (333, '.'), (381, ','),
                                (444, '.')]) is True
 
-    stream_entity_2 = IO.StreamReader(text,read_method='read')
+    stream_entity_2 = IO.StreamReader(text, read_method='read')
     result_2 = stream_entity_2.read(pipeline)
     assert isinstance(result_2, ParsingEntities.ParsingResult) is True
     assert (result_2.streamClass == StringIO) is True
@@ -107,3 +109,31 @@ def test_stream_reader():
         assert False
     except ValueError:
         assert True
+
+
+def test_stream_writer():
+    text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et ' \
+           'dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ' \
+           'ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu ' \
+           'fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia ' \
+           'deserunt mollit anim id est laborum. '
+    text_result = 'Lorem ipsum dolor sit amet-consectetur adipiscing elit-sed do eiusmod tempor incididunt ut labore' \
+                  ' et dolore magna aliqua-Ut enim ad minim veniam-quis nostrud exercitation ullamco laboris nisi ' \
+                  'ut aliquip ex ea commodo consequat-Duis aute irure dolor in reprehenderit in voluptate velit esse' \
+                  ' cillum dolore eu fugiat nulla pariatur-Excepteur sint occaecat cupidatat non proident-sunt in' \
+                  ' culpa qui officia deserunt mollit anim id est laborum-'
+    parsing_result = ParsingEntities.ParsingResult(StringIO, 'read', 'write', 'return', [text], {},
+                                                   [(26, ''), (26, '-', ModificationEntities.ModificationSide.RIGHT),
+                                                    (27, ''), (55, ''),
+                                                    (55, '-', ModificationEntities.ModificationSide.RIGHT), (56, ''),
+                                                    (122, ''), (122, '-', ModificationEntities.ModificationSide.RIGHT),
+                                                    (123, ''), (147, ''),
+                                                    (147, '-', ModificationEntities.ModificationSide.RIGHT), (148, ''),
+                                                    (230, ''), (230, '-', ModificationEntities.ModificationSide.RIGHT),
+                                                    (231, ''), (333, ''),
+                                                    (333, '-', ModificationEntities.ModificationSide.RIGHT), (334, ''),
+                                                    (381, ''), (381, '-', ModificationEntities.ModificationSide.RIGHT),
+                                                    (382, ''), (444, ''),
+                                                    (444, '-', ModificationEntities.ModificationSide.RIGHT), (445, '')])
+    stream_entity = IO.StreamWriter()
+    assert (stream_entity.write(parsing_result) == text_result) is True
