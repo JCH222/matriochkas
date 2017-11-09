@@ -37,11 +37,11 @@ Création du schéma de parsage:
     parsing_pattern = ParsingCondition(' ') | ParsingCondition(', ') | ParsingCondition('. ')
     
     # Création d'un bloc de parsage qui définit la limite de parsage avec cette condition
-    # Dans ce cas on souhaite parser le texte entier avec cette condition d'où *None*
+    # Dans ce cas on souhaite parser le texte entier avec cette condition d'où None
     parsing_block = parsing_pattern >> None
     
     # Création du pipeline de parsage qui définit l'ordre d'utilisation des blocs
-    # Dans ce cas il n'y a qu'un seul bloc d'où *None*
+    # Dans ce cas il n'y a qu'un seul bloc d'où None
     parsing_pipeline = parsing_block + None
     
 Parsage du texte:
