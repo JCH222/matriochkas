@@ -1,4 +1,4 @@
-Matriochkas
+﻿Matriochkas
 ===========
 
 Qu'est ce que c'est ?
@@ -36,7 +36,7 @@ Création du schéma de parsage:
     # D'autres opérateurs sont disponibles ('&' -> 'AND' / '^' -> 'XOR' / '~' -> 'NOT')
     parsing_pattern = ParsingCondition(' ') | ParsingCondition(', ') | ParsingCondition('. ')
     
-    # Création d'un bloc de parsage qui défini la limite de parsage avec cette condition
+    # Création d'un bloc de parsage qui définit la limite de parsage avec cette condition
     # Dans ce cas on souhaite parser le texte entier avec cette condition d'où None
     parsing_block = parsing_pattern >> None
     
