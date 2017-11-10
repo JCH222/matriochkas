@@ -1,6 +1,7 @@
 # coding: utf8
 
 from matriochkas.core import ParsingEntities
+from collections import Counter
 
 import copy
 
@@ -8,10 +9,11 @@ import copy
 ########################################################################################################################
 
 class InstanceParsingEntity(ParsingEntities.ParsingEntity):
-    def __init__(self, name, check_return=True, rel_position=0):
+    def __init__(self, name, check_return=True, rel_position=0, key_word=None):
         super(InstanceParsingEntity, self).__init__()
         self.name = name
         self.checkReturn = check_return
+        self.keyWord = key_word
         self.relPosition = rel_position
 
     def __eq__(self, other):
@@ -410,9 +412,9 @@ def test_parsing_condition():
     ###################################################################################################################
 
     parsing_condition_4 = ParsingEntities.ParsingCondition('W', rel_position=2)
-    assert parsing_condition_1.check('Hello0World !', ref_position=5) is True
+    assert (parsing_condition_1.check('Hello0World !', ref_position=5) == (True, Counter({None: 1}))) is True
     assert parsing_condition_1.check('Hello0World !', ref_position=6) is False
-    assert parsing_condition_4.check('Hello0World !', ref_position=4) is True
+    assert (parsing_condition_4.check('Hello0World !', ref_position=4) == (True, Counter({None: 1}))) is True
     assert parsing_condition_4.check('Hello0World !', ref_position=5) is False
 
     parsing_condition_6 = ParsingEntities.ParsingCondition('')
