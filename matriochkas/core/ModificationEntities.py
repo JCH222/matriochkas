@@ -56,6 +56,7 @@ class ModificationAdd(ModificationOperation):
                                            initial_parsing_result.readMethod,
                                            initial_parsing_result.writeMethod,
                                            initial_parsing_result.returnMethod,
+                                           initial_parsing_result.closeMethod,
                                            initial_parsing_result.arInput['args'],
                                            initial_parsing_result.arInput['kwargs'],
                                            ar_index)
@@ -77,6 +78,7 @@ class ModificationRemove(ModificationOperation):
                                            initial_parsing_result.readMethod,
                                            initial_parsing_result.writeMethod,
                                            initial_parsing_result.returnMethod,
+                                           initial_parsing_result.closeMethod,
                                            initial_parsing_result.arInput['args'],
                                            initial_parsing_result.arInput['kwargs'],
                                            ar_index)

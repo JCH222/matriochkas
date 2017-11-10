@@ -75,8 +75,8 @@ def test_modification_add():
     modification_add_1 = ModificationEntities.ModificationAdd('0', 1, ModificationEntities.ModificationSide.RIGHT)
     parsing_result_1 = matriochkas.core.ParsingEntities.ParsingResult(matriochkas.tests.ParsingEntities.MockStreamClass,
                                                                       'read method 1', 'write method 1',
-                                                                      'return method 1', ['arg a', 'arg b'],
-                                                                      {'arg c': 'c', 'arg d': 'd'},
+                                                                      'return method 1', 'close method 1',
+                                                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
                                                                       [(0, 'A'), (2, 'B')])
     result = modification_add_1.generate_parsing_result(parsing_result_1)
     assert isinstance(result, matriochkas.core.ParsingEntities.ParsingResult) is True
@@ -99,8 +99,8 @@ def test_modification_remove():
     modification_remove_1 = ModificationEntities.ModificationRemove(1)
     parsing_result_1 = matriochkas.core.ParsingEntities.ParsingResult(matriochkas.tests.ParsingEntities.MockStreamClass,
                                                                       'read method 1', 'write method 1',
-                                                                      'return method 1', ['arg a', 'arg b'],
-                                                                      {'arg c': 'c', 'arg d': 'd'},
+                                                                      'return method 1', 'close method',
+                                                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
                                                                       [(0, 'A'), (2, 'B')])
     result = modification_remove_1.generate_parsing_result(parsing_result_1)
     assert isinstance(result, matriochkas.core.ParsingEntities.ParsingResult) is True

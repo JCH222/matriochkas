@@ -12,11 +12,13 @@ import copy
 
 class StreamEntity(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def __init__(self, args, kwargs, stream_class=None, read_method=None, write_method=None, return_method=None):
+    def __init__(self, args, kwargs, stream_class=None, read_method=None, write_method=None, return_method=None,
+                 close_method=None):
         self.streamClass = stream_class
         self.readMethod = read_method
         self.writeMethod = write_method
         self.returnMethod = return_method
+        self.closeMethod = close_method
 
         if isinstance(args, (list, tuple)):
             self.args = args
@@ -41,9 +43,9 @@ class StreamEntity(metaclass=abc.ABCMeta):
 
 
 class StreamReader(StreamEntity):
-    def __init__(self, *args, stream_class=StringIO, read_method=None, return_method=None, **kwargs):
+    def __init__(self, *args, stream_class=StringIO, read_method=None, return_method=None, close_method=None, **kwargs):
         super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class, read_method=read_method,
-                                           return_method=return_method)
+                                           return_method=return_method, close_method=close_method)
 
     def read(self, parsing_pipeline):
         parsing_pipeline.reset()
@@ -55,6 +57,10 @@ class StreamReader(StreamEntity):
             read_method = getattr(stream, self.readMethod)
         else:
             read_method = StreamEntity.generate_method(stream, 'read_method')
+        if self.closeMethod is not None:
+            close_method = getattr(stream, self.closeMethod)
+        else:
+            close_method = StreamEntity.generate_method(stream, 'close_method')
         current_position = -min_position
         ar_index = list()
         element = deque(read_method(length))
@@ -71,25 +77,31 @@ class StreamReader(StreamEntity):
                     break
                 current_position += 1
 
-            stream.close()
-            return ParsingResult(self.streamClass, self.readMethod, self.writeMethod, self.returnMethod, self.args,
-                                 self.kwargs, ar_index)
+            close_method()
+            return ParsingResult(self.streamClass, self.readMethod, self.writeMethod, self.returnMethod,
+                                 self.closeMethod, self.args, self.kwargs, ar_index)
         else:
-            stream.close()
+            close_method()
             raise ValueError("Not enough characters to parse : " + str(len(element)))
 
 
 class StreamWriter(StreamEntity):
-    def __init__(self, *args, stream_class=StringIO, write_method=None, return_method=None, **kwargs):
+    def __init__(self, *args, stream_class=StringIO, write_method=None, return_method=None, close_method=None,
+                 **kwargs):
         super(StreamWriter, self).__init__(args, kwargs, stream_class=stream_class, write_method=write_method,
-                                           return_method=return_method)
+                                           return_method=return_method, close_method=close_method)
 
-    def write(self, parsing_result, stream_class=None, read_method=None, args=None, kwargs=None):
+    def write(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
+              args=None, kwargs=None):
         input_parsing_result = copy.deepcopy(parsing_result)
         if stream_class is not None:
             input_parsing_result.streamClass = stream_class
         if read_method is not None:
             input_parsing_result.readMethod = read_method
+        if return_method is not None:
+            input_parsing_result.returnMethod = return_method
+        if close_method is not None:
+            input_parsing_result.closeMethod = close_method
         if args is not None:
             input_parsing_result.arInput['args'] = args
         if kwargs is not None:
@@ -101,6 +113,10 @@ class StreamWriter(StreamEntity):
             input_read_method = getattr(input_stream, input_parsing_result.readMethod)
         else:
             input_read_method = StreamEntity.generate_method(input_stream, 'read_method')
+        if input_parsing_result.closeMethod is not None:
+            input_close_method = getattr(input_stream, input_parsing_result.closeMethod)
+        else:
+            input_close_method = StreamEntity.generate_method(input_stream, 'close_method')
         output_stream = self.streamClass(*self.args, **self.kwargs)
         if self.writeMethod is not None:
             output_write_method = getattr(output_stream, self.writeMethod)
@@ -110,6 +126,10 @@ class StreamWriter(StreamEntity):
             output_return_method = getattr(output_stream, self.returnMethod)
         else:
             output_return_method = StreamEntity.generate_method(output_stream, 'return_method')
+        if self.closeMethod is not None:
+            output_close_method = getattr(output_stream, self.closeMethod)
+        else:
+            output_close_method = StreamEntity.generate_method(output_stream, 'close_method')
 
         index = 0
         input_parsing_result_index = 0
@@ -145,6 +165,6 @@ class StreamWriter(StreamEntity):
         else:
             result = output_return_method()
 
-        input_stream.close()
-        output_stream.close()
+        input_close_method()
+        output_close_method()
         return result

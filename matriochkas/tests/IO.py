@@ -92,7 +92,7 @@ def test_stream_reader():
     assert (result.arIndex == [(26, ','), (55, ','), (122, '.'), (147, ','), (230, '.'), (333, '.'), (381, ','),
                                (444, '.')]) is True
 
-    stream_entity_2 = IO.StreamReader(text, read_method='read')
+    stream_entity_2 = IO.StreamReader(text, read_method='read', return_method='return', close_method='close')
     result_2 = stream_entity_2.read(pipeline)
     assert isinstance(result_2, ParsingEntities.ParsingResult) is True
     assert (result_2.streamClass == StringIO) is True
@@ -122,7 +122,7 @@ def test_stream_writer():
                   'ut aliquip ex ea commodo consequat-Duis aute irure dolor in reprehenderit in voluptate velit esse' \
                   ' cillum dolore eu fugiat nulla pariatur-Excepteur sint occaecat cupidatat non proident-sunt in' \
                   ' culpa qui officia deserunt mollit anim id est laborum-'
-    parsing_result = ParsingEntities.ParsingResult(StringIO, 'read', 'write', 'return', [text], {},
+    parsing_result = ParsingEntities.ParsingResult(StringIO, 'read', 'write', 'return', 'close', [text], {},
                                                    [(26, ''), (26, '-', ModificationEntities.ModificationSide.RIGHT),
                                                     (27, ''), (55, ''),
                                                     (55, '-', ModificationEntities.ModificationSide.RIGHT), (56, ''),
@@ -138,5 +138,5 @@ def test_stream_writer():
     stream_entity = IO.StreamWriter()
     assert (stream_entity.write(parsing_result) == text_result) is True
 
-    stream_entity_2 = IO.StreamWriter(write_method='write', return_method='getvalue')
+    stream_entity_2 = IO.StreamWriter(write_method='write', return_method='getvalue', close_method='close')
     assert (stream_entity_2.write(parsing_result) == text_result) is True

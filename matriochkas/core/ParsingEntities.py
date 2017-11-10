@@ -410,7 +410,7 @@ class ParsingBlock(ParsingStructure):
 
 
 class ParsingResult:
-    def __init__(self, stream_class, read_method, write_method, return_method, args, kwargs, ar_index):
+    def __init__(self, stream_class, read_method, write_method, return_method, close_method, args, kwargs, ar_index):
         if hasattr(stream_class, '__name__'):
             self.streamClass = stream_class
         else:
@@ -431,6 +431,11 @@ class ParsingResult:
         else:
             raise TypeError('Return method has to be str object or None')
 
+        if isinstance(close_method, str) or close_method is None:
+            self.closeMethod = close_method
+        else:
+            raise TypeError('Close method has to be str object or None')
+
         if isinstance(args, (tuple, list)) and isinstance(kwargs, dict):
             self.arInput = {'args': args, 'kwargs': kwargs}
         else:
@@ -446,7 +451,7 @@ class ParsingResult:
             if ParsingResult.are_from_the_same_parsing(self, other):
                 new_parsing_result = copy.deepcopy(self)
                 for element in other.arIndex:
-                    if (element[0] not in new_parsing_result or \
+                    if (element[0] not in new_parsing_result or
                             (len(element) == 3 and (element[0], None, element[2]) not in new_parsing_result)) or \
                             (element[1] == '' and (element[0], element[1]) not in new_parsing_result):
                         new_parsing_result.arIndex.append(element)
@@ -496,7 +501,7 @@ class ParsingResult:
 
     def __copy__(self):
         return ParsingResult(self.streamClass, self.readMethod, self.writeMethod, self.returnMethod,
-                             self.arInput['args'], self.arInput['kwargs'], self.arIndex)
+                             self.closeMethod, self.arInput['args'], self.arInput['kwargs'], self.arIndex)
 
     def __deepcopy__(self, memodict={}):
         return self.__copy__()
@@ -509,7 +514,8 @@ class ParsingResult:
                     parsing_result_a.arInput['kwargs'] == parsing_result_b.arInput['kwargs'] and
                     parsing_result_a.readMethod == parsing_result_b.readMethod and
                     parsing_result_a.writeMethod == parsing_result_b.writeMethod and
-                    parsing_result_a.returnMethod == parsing_result_b.returnMethod)
+                    parsing_result_a.returnMethod == parsing_result_b.returnMethod and
+                    parsing_result_a.closeMethod == parsing_result_b.closeMethod)
         else:
             raise TypeError("Operands have to be ParsingResult classes or subclasses")
 
