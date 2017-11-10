@@ -201,7 +201,7 @@ class ParsingCondition(ParsingEntity):
         elif len(ar_character) == 1:
             return super(ParsingCondition, cls).__new__(cls)
         else:
-            raise ValueError('String length has to be higher than 1')
+            return EmptyParsingCondition()
 
     def __init__(self, ar_character, rel_position=0):
         super(ParsingCondition, self).__init__()
@@ -265,6 +265,46 @@ class ParsingCondition(ParsingEntity):
             return 0
         else:
             return self.relPosition
+
+
+class EmptyParsingCondition(ParsingEntity):
+    def __init__(self):
+        super(EmptyParsingCondition, self).__init__()
+
+    def __eq__(self, other):
+        if isinstance(other, EmptyParsingCondition):
+            if self.isNot == other.isNot:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def __contains__(self, item):
+        return self.__eq__(item)
+
+    def __str__(self):
+        return 'EmptyParsingCondition object'
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __copy__(self):
+        result = EmptyParsingCondition()
+        result.isNot = self.isNot
+        return result
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
+
+    def check(self, element, ref_position=0):
+        return False
+
+    def get_min_position(self):
+        return 0
+
+    def get_max_position(self):
+        return 0
 
 
 class ParsingStructure(Entity):

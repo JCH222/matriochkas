@@ -411,11 +411,8 @@ def test_parsing_condition():
     assert parsing_condition_4.check('Hello0World !', ref_position=4) is True
     assert parsing_condition_4.check('Hello0World !', ref_position=5) is False
 
-    try:
-        ParsingEntities.ParsingCondition('')
-        assert False
-    except ValueError:
-        assert True
+    parsing_condition_6 = ParsingEntities.ParsingCondition('')
+    assert isinstance(parsing_condition_6, ParsingEntities.EmptyParsingCondition) is True
 
     try:
         parsing_condition_4.check('Hello0World !', ref_position=15)
@@ -439,6 +436,69 @@ def test_parsing_condition():
 
     assert (parsing_condition_2.get_max_position() == 2) is True
     assert (parsing_condition_5.get_max_position() == 0) is True
+
+    copy_parsing_condition_1 = copy.copy(parsing_condition_1)
+    assert (copy_parsing_condition_1.character == '0') is True
+    assert (copy_parsing_condition_1.relPosition == 0) is True
+    assert copy_parsing_condition_1.isNot is False
+
+    ###################################################################################################################
+
+    deep_copy_parsing_condition_1 = copy.deepcopy(parsing_condition_1)
+    assert (deep_copy_parsing_condition_1.character == '0') is True
+    assert (deep_copy_parsing_condition_1.relPosition == 0) is True
+    assert deep_copy_parsing_condition_1.isNot is False
+
+
+def test_empty_parsing_condition():
+    empty_parsing_condition_1 = ParsingEntities.EmptyParsingCondition()
+    assert isinstance(empty_parsing_condition_1, ParsingEntities.EmptyParsingCondition) is True
+
+    ###################################################################################################################
+
+    assert (empty_parsing_condition_1 == ParsingEntities.EmptyParsingCondition()) is True
+    assert (empty_parsing_condition_1 == ParsingEntities.ParsingCondition('')) is True
+    assert (empty_parsing_condition_1 == ParsingEntities.ParsingCondition('0')) is False
+    assert (empty_parsing_condition_1 == ~ParsingEntities.EmptyParsingCondition()) is False
+
+    ###################################################################################################################
+
+    assert (empty_parsing_condition_1 in ParsingEntities.EmptyParsingCondition()) is True
+    assert (empty_parsing_condition_1 in ParsingEntities.ParsingCondition('')) is True
+    assert (empty_parsing_condition_1 in ParsingEntities.ParsingCondition('0')) is False
+    assert (empty_parsing_condition_1 in ~ParsingEntities.EmptyParsingCondition()) is False
+
+    ###################################################################################################################
+
+    assert (str(empty_parsing_condition_1) == 'EmptyParsingCondition object') is True
+
+    ###################################################################################################################
+
+    assert (repr(empty_parsing_condition_1) == 'EmptyParsingCondition object') is True
+
+    ###################################################################################################################
+
+    copy_empty_parsing_condition_1 = copy.copy(empty_parsing_condition_1)
+    isinstance(copy_empty_parsing_condition_1, ParsingEntities.EmptyParsingCondition)
+    assert copy_empty_parsing_condition_1.isNot is False
+
+    ###################################################################################################################
+
+    deep_copy_empty_parsing_condition_1 = copy.deepcopy(empty_parsing_condition_1)
+    isinstance(deep_copy_empty_parsing_condition_1, ParsingEntities.EmptyParsingCondition)
+    assert deep_copy_empty_parsing_condition_1.isNot is False
+
+    ###################################################################################################################
+
+    assert empty_parsing_condition_1.check(None, None) is False
+
+    ###################################################################################################################
+
+    assert (empty_parsing_condition_1.get_min_position() == 0) is True
+
+    ###################################################################################################################
+
+    assert (empty_parsing_condition_1.get_max_position() == 0) is True
 
 
 def test_parsing_structure():
