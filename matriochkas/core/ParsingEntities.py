@@ -191,27 +191,28 @@ class ParsingOperator(ParsingEntity):
 
 
 class ParsingCondition(ParsingEntity):
-    def __new__(cls,  ar_character, rel_position=0):
+    def __new__(cls,  ar_character, rel_position=0, key_word=None):
         if len(ar_character) > 1:
-            result = ParsingCondition(ar_character[0], rel_position)
+            result = ParsingCondition(ar_character[0], rel_position=rel_position, key_word=key_word)
             for i, element in enumerate(ar_character):
                 if i > 0:
-                    result = result & ParsingCondition(ar_character[i], rel_position=rel_position+i)
+                    result = result & ParsingCondition(ar_character[i], rel_position=rel_position+i, key_word=key_word)
             return result
         elif len(ar_character) == 1:
             return super(ParsingCondition, cls).__new__(cls)
         else:
             return EmptyParsingCondition()
 
-    def __init__(self, ar_character, rel_position=0):
+    def __init__(self, ar_character, rel_position=0, key_word=None):
         super(ParsingCondition, self).__init__()
         self.relPosition = rel_position
         self.character = ar_character
+        self.keyWord = key_word
 
     def __eq__(self, other):
         if isinstance(other, ParsingCondition):
             if self.relPosition == other.relPosition and self.character == other.character \
-                    and self.isNot == other.isNot:
+                    and self.isNot == other.isNot and self.keyWord == other.keyWord:
                 return True
             else:
                 return False
@@ -228,7 +229,7 @@ class ParsingCondition(ParsingEntity):
         return self.__str__()
 
     def __copy__(self):
-        result = ParsingCondition(self.character, self.relPosition)
+        result = ParsingCondition(self.character, self.relPosition, self.keyWord)
         result.isNot = self.isNot
         return result
 

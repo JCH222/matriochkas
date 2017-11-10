@@ -370,6 +370,7 @@ def test_parsing_condition():
     assert (parsing_condition_1 == 0) is False
     assert (parsing_condition_1 == ParsingEntities.ParsingCondition('0')) is True
     assert (parsing_condition_1 == ParsingEntities.ParsingCondition('0', rel_position=1)) is False
+    assert (parsing_condition_1 == ParsingEntities.ParsingCondition('0', key_word='0')) is False
     parsing_condition_3 = ParsingEntities.ParsingCondition('0')
     parsing_condition_3.isNot = True
     assert (parsing_condition_1 == parsing_condition_3) is False
@@ -379,6 +380,7 @@ def test_parsing_condition():
     assert (0 in parsing_condition_1) is False
     assert (ParsingEntities.ParsingCondition('0') in parsing_condition_1) is True
     assert (ParsingEntities.ParsingCondition('0', rel_position=1) in parsing_condition_1) is False
+    assert (ParsingEntities.ParsingCondition('0', key_word='0') in parsing_condition_1) is False
     assert (parsing_condition_3 in parsing_condition_1) is False
 
     ###################################################################################################################
@@ -394,6 +396,7 @@ def test_parsing_condition():
     copy_parsing_condition_1 = copy.copy(parsing_condition_1)
     assert (copy_parsing_condition_1.character == '0') is True
     assert (copy_parsing_condition_1.relPosition == 0) is True
+    assert copy_parsing_condition_1.keyWord is None
     assert copy_parsing_condition_1.isNot is False
 
     ###################################################################################################################
@@ -401,6 +404,7 @@ def test_parsing_condition():
     deep_copy_parsing_condition_1 = copy.deepcopy(parsing_condition_1)
     assert (deep_copy_parsing_condition_1.character == '0') is True
     assert (deep_copy_parsing_condition_1.relPosition == 0) is True
+    assert copy_parsing_condition_1.keyWord is None
     assert deep_copy_parsing_condition_1.isNot is False
 
     ###################################################################################################################
