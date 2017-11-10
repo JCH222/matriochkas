@@ -204,7 +204,7 @@ class ParsingCondition(ParsingEntity):
     def __init__(self, ar_character, rel_position=0):
         super(ParsingCondition, self).__init__()
         self.relPosition = rel_position
-        self.character = ar_character[0]
+        self.character = ar_character
 
     def __eq__(self, other):
         if isinstance(other, ParsingCondition):
