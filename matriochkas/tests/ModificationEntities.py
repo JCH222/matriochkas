@@ -31,7 +31,8 @@ class InstanceModificationOperation(ModificationEntities.ModificationOperation):
 
 
 class MockParsingResult(matriochkas.core.ParsingEntities.ParsingResult):
-    pass
+    def __init__(self):
+        pass
 
 ########################################################################################################################
 
