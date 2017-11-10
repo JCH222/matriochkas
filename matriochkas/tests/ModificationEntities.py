@@ -30,7 +30,7 @@ class InstanceModificationOperation(ModificationEntities.ModificationOperation):
 ########################################################################################################################
 
 
-class MockParsingResult(core.ParsingEntities.ParsingResult):
+class MockParsingResult(matriochkas.core.ParsingEntities.ParsingResult):
     pass
 
 ########################################################################################################################
@@ -72,12 +72,14 @@ def test_modification_operation():
 
 def test_modification_add():
     modification_add_1 = ModificationEntities.ModificationAdd('0', 1, ModificationEntities.ModificationSide.RIGHT)
-    parsing_result_1 = core.ParsingEntities.ParsingResult(tests.ParsingEntities.MockStreamClass, 'read method 1',
-                                                          'write method 1', 'return method 1', ['arg a', 'arg b'],
-                                                          {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+    parsing_result_1 = matriochkas.core.ParsingEntities.ParsingResult(matriochkas.tests.ParsingEntities.MockStreamClass,
+                                                                      'read method 1', 'write method 1',
+                                                                      'return method 1', ['arg a', 'arg b'],
+                                                                      {'arg c': 'c', 'arg d': 'd'},
+                                                                      [(0, 'A'), (2, 'B')])
     result = modification_add_1.generate_parsing_result(parsing_result_1)
-    assert isinstance(result, core.ParsingEntities.ParsingResult) is True
-    assert (result.streamClass == tests.ParsingEntities.MockStreamClass) is True
+    assert isinstance(result, matriochkas.core.ParsingEntities.ParsingResult) is True
+    assert (result.streamClass == matriochkas.tests.ParsingEntities.MockStreamClass) is True
     assert (result.readMethod == 'read method 1') is True
     assert (result.writeMethod == 'write method 1') is True
     assert (result.returnMethod == 'return method 1') is True
@@ -94,12 +96,14 @@ def test_modification_add():
 
 def test_modification_remove():
     modification_remove_1 = ModificationEntities.ModificationRemove(1)
-    parsing_result_1 = core.ParsingEntities.ParsingResult(tests.ParsingEntities.MockStreamClass, 'read method 1',
-                                                          'write method 1', 'return method 1', ['arg a', 'arg b'],
-                                                          {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+    parsing_result_1 = matriochkas.core.ParsingEntities.ParsingResult(matriochkas.tests.ParsingEntities.MockStreamClass,
+                                                                      'read method 1', 'write method 1',
+                                                                      'return method 1', ['arg a', 'arg b'],
+                                                                      {'arg c': 'c', 'arg d': 'd'},
+                                                                      [(0, 'A'), (2, 'B')])
     result = modification_remove_1.generate_parsing_result(parsing_result_1)
-    assert isinstance(result, core.ParsingEntities.ParsingResult) is True
-    assert (result.streamClass == tests.ParsingEntities.MockStreamClass) is True
+    assert isinstance(result, matriochkas.core.ParsingEntities.ParsingResult) is True
+    assert (result.streamClass == matriochkas.tests.ParsingEntities.MockStreamClass) is True
     assert (result.readMethod == 'read method 1') is True
     assert (result.writeMethod == 'write method 1') is True
     assert (result.returnMethod == 'return method 1') is True
