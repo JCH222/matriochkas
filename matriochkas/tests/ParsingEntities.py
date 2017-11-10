@@ -185,7 +185,7 @@ def test_parsing_entity():
 
     assert isinstance(rshift_parsing_block_2, ParsingEntities.ParsingBlock) is True
     assert isinstance(rshift_parsing_block_2.parser, InstanceParsingEntity) is True
-    assert rshift_parsing_block_2.borderCondition is None
+    assert isinstance(rshift_parsing_block_2.borderCondition, ParsingEntities.EmptyParsingCondition) is True
 
     try:
         None >> None
@@ -613,7 +613,7 @@ def test_parsing_block():
     ###################################################################################################################
 
     assert (parsing_block_1.get_max_position() == 1) is True
-    assert (parsing_block_2.get_max_position() == -2) is True
+    assert (parsing_block_2.get_max_position() == 0) is True
 
 
 def test_parsing_result():

@@ -384,17 +384,16 @@ class ParsingBlock(ParsingStructure):
         else:
             raise TypeError('parser has to be ParsingStructure subclass')
 
-        if isinstance(border_condition, ParsingEntity) or border_condition is None:
+        if isinstance(border_condition, ParsingEntity):
             self.borderCondition = border_condition
+        elif border_condition is None:
+            self.borderCondition = EmptyParsingCondition()
         else:
             raise TypeError('border_condition has to be ParsingStructure subclass or None')
 
     def check(self, element, ref_position=0):
         parser_result = self.parser.check(element, ref_position)
-        if self.borderCondition is not None:
-            border_condition_result = self.borderCondition.check(element, ref_position)
-        else:
-            border_condition_result = False
+        border_condition_result = self.borderCondition.check(element, ref_position)
         return parser_result, border_condition_result
 
     def get_min_position(self):
