@@ -198,8 +198,10 @@ class ParsingCondition(ParsingEntity):
                 if i > 0:
                     result = result & ParsingCondition(ar_character[i], rel_position=rel_position+i)
             return result
-        else:
+        elif len(ar_character) == 1:
             return super(ParsingCondition, cls).__new__(cls)
+        else:
+            raise ValueError('String length has to be higher than 1')
 
     def __init__(self, ar_character, rel_position=0):
         super(ParsingCondition, self).__init__()

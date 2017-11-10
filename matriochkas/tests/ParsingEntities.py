@@ -412,6 +412,12 @@ def test_parsing_condition():
     assert parsing_condition_4.check('Hello0World !', ref_position=5) is False
 
     try:
+        ParsingEntities.ParsingCondition('')
+        assert False
+    except ValueError:
+        assert True
+
+    try:
         parsing_condition_4.check('Hello0World !', ref_position=15)
         assert False
     except IndexError:
