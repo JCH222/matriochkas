@@ -64,7 +64,7 @@ Création du résulat de parsage modifié:
     #Création du schéma de modification
     modification_pattern = ModificationRemove() + ModificationAdd(';')
 
-    #Application de la modification au résultat de parcage précédent
+    #Application de la modification au résultat de parsage précédent
     final_parsing_result = modification_pattern.generate_parsing_result(parsing_result)
 
 On obtient un nouveau résultat de parsage (la variable *final_parsing_result*) qui contient entre autres les positions et les nouvelles valeurs des caractères à modifier:
