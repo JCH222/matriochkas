@@ -1,6 +1,7 @@
 # coding: utf8
 
 from matriochkas.core import ParsingEntities
+from collections import Counter
 
 import copy
 
@@ -8,10 +9,11 @@ import copy
 ########################################################################################################################
 
 class InstanceParsingEntity(ParsingEntities.ParsingEntity):
-    def __init__(self, name, check_return=True, rel_position=0):
+    def __init__(self, name, check_return=True, rel_position=0, key_word=None):
         super(InstanceParsingEntity, self).__init__()
         self.name = name
         self.checkReturn = check_return
+        self.keyWord = key_word
         self.relPosition = rel_position
 
     def __eq__(self, other):
@@ -39,7 +41,7 @@ class InstanceParsingEntity(ParsingEntities.ParsingEntity):
         return InstanceParsingEntity(self.name, self.checkReturn)
 
     def check(self, element, ref_position):
-        return self.checkReturn
+            return self.checkReturn, Counter({self.keyWord: 1})
 
     def get_max_position(self):
         return self.relPosition
@@ -57,7 +59,7 @@ class InstanceParsingStructure(ParsingEntities.ParsingStructure):
         self.relPosition = rel_position
 
     def check(self, element, ref_position):
-        return True, True
+        return (True, Counter({None: 1})), (True, Counter({None: 1}))
 
     def get_max_position(self):
         return self.relPosition
@@ -328,9 +330,9 @@ def test_parsing_operator():
     ###################################################################################################################
 
     super_parsing_operator.operandB.name = 'entity c'
-    assert super_parsing_operator.check(None, None) is False
+    assert (super_parsing_operator.check(None, None) == (False, Counter({None: 3}))) is True
     super_parsing_operator.operandA.operandB.checkReturn = True
-    assert super_parsing_operator.check(None, None) is True
+    assert (super_parsing_operator.check(None, None) == (True, Counter({None: 3}))) is True
     super_parsing_operator.operandA.operandB.checkReturn = False
 
     ###################################################################################################################
@@ -410,10 +412,10 @@ def test_parsing_condition():
     ###################################################################################################################
 
     parsing_condition_4 = ParsingEntities.ParsingCondition('W', rel_position=2)
-    assert parsing_condition_1.check('Hello0World !', ref_position=5) is True
-    assert parsing_condition_1.check('Hello0World !', ref_position=6) is False
-    assert parsing_condition_4.check('Hello0World !', ref_position=4) is True
-    assert parsing_condition_4.check('Hello0World !', ref_position=5) is False
+    assert (parsing_condition_1.check('Hello0World !', ref_position=5) == (True, Counter({None: 1}))) is True
+    assert (parsing_condition_1.check('Hello0World !', ref_position=6) == (False, Counter())) is True
+    assert (parsing_condition_4.check('Hello0World !', ref_position=4) == (True, Counter({None: 1}))) is True
+    assert (parsing_condition_4.check('Hello0World !', ref_position=5) == (False, Counter())) is True
 
     parsing_condition_6 = ParsingEntities.ParsingCondition('')
     assert isinstance(parsing_condition_6, ParsingEntities.EmptyParsingCondition) is True
@@ -494,7 +496,7 @@ def test_empty_parsing_condition():
 
     ###################################################################################################################
 
-    assert empty_parsing_condition_1.check(None, None) is False
+    assert (empty_parsing_condition_1.check(None, None) == (False, Counter({None: 1}))) is True
 
     ###################################################################################################################
 
@@ -521,7 +523,8 @@ def test_parsing_structure():
 
     ###################################################################################################################
 
-    assert (InstanceParsingStructure('test').check(None, None) == (True, True)) is True
+    assert (InstanceParsingStructure('test').check(None, None) == ((True, Counter({None: 1})),
+                                                                   (True, Counter({None: 1})))) is True
 
     ###################################################################################################################
 
@@ -549,10 +552,10 @@ def test_parsing_pipeline():
     parsing_pipeline_1.add_structure(ParsingEntities.ParsingPipeline(InstanceParsingStructure('structure 2')))
     assert (parsing_pipeline_1.current_parsing_block_index == 0) is True
     assert parsing_pipeline_1.isEnded is False
-    assert parsing_pipeline_1.check(None, None) == (True, True)
+    assert (parsing_pipeline_1.check(None, None) == ((True, Counter({None: 1})), (True, Counter({None: 1})))) is True
     assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
     assert parsing_pipeline_1.isEnded is False
-    assert parsing_pipeline_1.check(None, None) == (True, True)
+    assert (parsing_pipeline_1.check(None, None) == ((True, Counter({None: 1})), (True, Counter({None: 1})))) is True
     assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
     assert parsing_pipeline_1.isEnded is True
     assert parsing_pipeline_1.check(None, None) is None
@@ -606,8 +609,8 @@ def test_parsing_block():
     ###################################################################################################################
 
     parsing_block_2 = ParsingEntities.ParsingBlock(InstanceParsingEntity('structure 1', True, -2), None)
-    assert (parsing_block_1.check(None, None) == (True, True)) is True
-    assert (parsing_block_2.check(None, None) == (True, False)) is True
+    assert (parsing_block_1.check(None, None) == ((True, Counter({None: 1})), (True, Counter({None: 1})))) is True
+    assert (parsing_block_2.check(None, None) == ((True, Counter({None: 1})), (False, Counter({None: 1})))) is True
 
     ###################################################################################################################
 

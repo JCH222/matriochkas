@@ -1,6 +1,7 @@
 # coding: utf8
 
 from enum import Enum
+from collections import Counter
 
 import abc
 import copy
@@ -148,28 +149,33 @@ class ParsingOperator(ParsingEntity):
         return result
 
     def check(self, element, ref_position=0):
+        result_a = self.operandA.check(element, ref_position)
+        result_b = self.operandB.check(element, ref_position)
+        key_words = result_a[1] + result_b[1]
+
         if self.operatorType is OperatorType.AND:
-            if self.operandA.check(element, ref_position) is True and self.operandB.check(element, ref_position) is \
-                    True:
-                result = True
+            if result_a[0] is True and result_b[0] is True:
+                result = True, key_words
             else:
-                result = False
+                result = False, key_words
         elif self.operatorType is OperatorType.OR:
-            if self.operandA.check(element, ref_position) is True or self.operandB.check(element, ref_position) is True:
-                result = True
+            if result_a[0] is True or result_b[0] is True:
+                result = True, key_words
             else:
-                result = False
+                result = False, key_words
         else:
-            if (self.operandA.check(element, ref_position) is True) ^ \
-                    (self.operandB.check(element, ref_position) is True):
-                result = True
+            if (result_a[0] is True) ^ (result_b[0] is True):
+                result = True, key_words
             else:
-                result = False
+                result = False, key_words
 
         if self.isNot is False:
             return result
         else:
-            return not result
+            if result[0]:
+                return False, key_words
+            else:
+                return True, key_words
 
     def get_max_position(self):
         operand_a = self.operandA.get_max_position()
@@ -242,14 +248,17 @@ class ParsingCondition(ParsingEntity):
             position = ref_position + self.relPosition
             if 0 <= position < element_size:
                 if self.character in element[position]:
-                    result = True
+                    result = (True, Counter({self.keyWord: 1}))
                 else:
-                    result = False
+                    result = (False, Counter({}))
 
                 if self.isNot is False:
                     return result
                 else:
-                    return not result
+                    if result[0]:
+                        return False, Counter({})
+                    else:
+                        return True, Counter({self.keyWord: 1})
             else:
                 raise IndexError('relative position out of range ( 0 <= ref_position + rel_position < len(element) )')
         else:
@@ -299,7 +308,7 @@ class EmptyParsingCondition(ParsingEntity):
         return self.__copy__()
 
     def check(self, element, ref_position=0):
-        return False
+        return False, Counter({None: 1})
 
     def get_min_position(self):
         return 0
@@ -344,7 +353,7 @@ class ParsingPipeline(ParsingStructure):
     def check(self, element, ref_position=0):
         if not self.isEnded:
             result = self.arParsingStructure[self.current_parsing_block_index].check(element, ref_position)
-            if result[1]:
+            if result[1][0]:
                 if self.current_parsing_block_index < len(self.arParsingStructure)-1:
                     self.current_parsing_block_index += 1
                 else:

@@ -4,6 +4,7 @@ from matriochkas.core import IO
 from matriochkas.core import ParsingEntities
 from matriochkas.core import ModificationEntities
 from io import StringIO
+from collections import Counter
 
 
 ########################################################################################################################
@@ -89,8 +90,11 @@ def test_stream_reader():
     assert (len(result.arInput['args']) == 1) is True
     assert (result.arInput['args'][0] == text) is True
     assert (result.arInput['kwargs'] == {}) is True
-    assert (result.arIndex == [(26, ','), (55, ','), (122, '.'), (147, ','), (230, '.'), (333, '.'), (381, ','),
-                               (444, '.')]) is True
+    print(repr(result))
+    assert (result.arIndex == [(26, ',', Counter({None: 3})), (55, ',', Counter({None: 3})),
+                               (122, '.', Counter({None: 3})), (147, ',', Counter({None: 3})),
+                               (230, '.', Counter({None: 3})), (333, '.', Counter({None: 3})),
+                               (381, ',', Counter({None: 3})), (444, '.', Counter({None: 3}))]) is True
 
     stream_entity_2 = IO.StreamReader(text, read_method='read', return_method='return', close_method='close')
     result_2 = stream_entity_2.read(pipeline)
@@ -100,8 +104,10 @@ def test_stream_reader():
     assert (len(result_2.arInput['args']) == 1) is True
     assert (result_2.arInput['args'][0] == text) is True
     assert (result_2.arInput['kwargs'] == {}) is True
-    assert (result_2.arIndex == [(26, ','), (55, ','), (122, '.'), (147, ','), (230, '.'), (333, '.'), (381, ','),
-                                 (444, '.')]) is True
+    assert (result_2.arIndex == [(26, ',', Counter({None: 3})), (55, ',', Counter({None: 3})),
+                               (122, '.', Counter({None: 3})), (147, ',', Counter({None: 3})),
+                               (230, '.', Counter({None: 3})), (333, '.', Counter({None: 3})),
+                               (381, ',', Counter({None: 3})), (444, '.', Counter({None: 3}))]) is True
 
     stream_entity_3 = IO.StreamReader('')
     try:

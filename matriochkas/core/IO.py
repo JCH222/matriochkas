@@ -67,8 +67,8 @@ class StreamReader(StreamEntity):
         if len(element) == length:
             while True:
                 result = parsing_pipeline.check(element, ref_position=-min_position)
-                if result is not None and result[0]:
-                    ar_index.append((current_position, element[-min_position]))
+                if result is not None and result[0][0]:
+                    ar_index.append((current_position, element[-min_position], result[0][1]))
                 next_character = read_method(1)
                 if next_character and result is not None:
                     element.popleft()
