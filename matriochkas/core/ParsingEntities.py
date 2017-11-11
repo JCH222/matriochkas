@@ -151,41 +151,29 @@ class ParsingOperator(ParsingEntity):
     def check(self, element, ref_position=0):
         result_a = self.operandA.check(element, ref_position)
         result_b = self.operandB.check(element, ref_position)
+        key_words = result_a[1] + result_b[1]
 
         if self.operatorType is OperatorType.AND:
-            key_words = result_a[1] + result_b[1]
-
             if result_a[0] is True and result_b[0] is True:
                 result = True, key_words
             else:
-                result = False
+                result = False, key_words
         elif self.operatorType is OperatorType.OR:
-            key_words = Counter()
-            if result_a[0] is True:
-                key_words += result_a[1]
-            if result_b[0] is True:
-                key_words += result_b[1]
-
             if result_a[0] is True or result_b[0] is True:
                 result = True, key_words
             else:
-                result = False
+                result = False, key_words
         else:
-            if result_a[0] is True:
-                key_words = result_a[1]
-            else:
-                key_words = result_b[1]
-
             if (result_a[0] is True) ^ (result_b[0] is True):
                 result = True, key_words
             else:
-                result = False
+                result = False, key_words
 
         if self.isNot is False:
             return result
         else:
-            if isinstance(result, tuple):
-                return False
+            if result[0]:
+                return False, key_words
             else:
                 return True, key_words
 
@@ -262,13 +250,13 @@ class ParsingCondition(ParsingEntity):
                 if self.character in element[position]:
                     result = (True, Counter({self.keyWord: 1}))
                 else:
-                    result = False
+                    result = (False, Counter({}))
 
                 if self.isNot is False:
                     return result
                 else:
-                    if isinstance(result, tuple):
-                        return False
+                    if result[0]:
+                        return False, Counter({})
                     else:
                         return True, Counter({self.keyWord: 1})
             else:
@@ -320,7 +308,7 @@ class EmptyParsingCondition(ParsingEntity):
         return self.__copy__()
 
     def check(self, element, ref_position=0):
-        return False
+        return False, Counter({None: 1})
 
     def get_min_position(self):
         return 0
@@ -365,7 +353,7 @@ class ParsingPipeline(ParsingStructure):
     def check(self, element, ref_position=0):
         if not self.isEnded:
             result = self.arParsingStructure[self.current_parsing_block_index].check(element, ref_position)
-            if result[1]:
+            if result[1][0]:
                 if self.current_parsing_block_index < len(self.arParsingStructure)-1:
                     self.current_parsing_block_index += 1
                 else:
