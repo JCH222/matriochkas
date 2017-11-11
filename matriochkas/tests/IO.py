@@ -90,7 +90,6 @@ def test_stream_reader():
     assert (len(result.arInput['args']) == 1) is True
     assert (result.arInput['args'][0] == text) is True
     assert (result.arInput['kwargs'] == {}) is True
-    print(repr(result))
     assert (result.arIndex == [(26, ',', Counter({None: 3})), (55, ',', Counter({None: 3})),
                                (122, '.', Counter({None: 3})), (147, ',', Counter({None: 3})),
                                (230, '.', Counter({None: 3})), (333, '.', Counter({None: 3})),

@@ -3,6 +3,7 @@
 from matriochkas.core import ModificationEntities
 import matriochkas.core.ParsingEntities
 import matriochkas.tests.ParsingEntities
+from collections import Counter
 
 
 ########################################################################################################################
@@ -68,7 +69,6 @@ def test_modification_operation():
     assert isinstance(modification_operation, ModificationEntities.ModificationOperation) is True
     assert (modification_operation.name == 'operation 1') is True
     assert (modification_operation.relPosition == 0) is True
-    assert (modification_operation.parsing_result == []) is True
 
 
 def test_modification_add():
@@ -77,7 +77,8 @@ def test_modification_add():
                                                                       'read method 1', 'write method 1',
                                                                       'return method 1', 'close method 1',
                                                                       ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
-                                                                      [(0, 'A'), (2, 'B')])
+                                                                      [(0, 'A', Counter({None: 1})),
+                                                                       (2, 'B', Counter({None: 1}))])
     result = modification_add_1.generate_parsing_result(parsing_result_1)
     assert isinstance(result, matriochkas.core.ParsingEntities.ParsingResult) is True
     assert (result.streamClass == matriochkas.tests.ParsingEntities.MockStreamClass) is True
@@ -101,7 +102,8 @@ def test_modification_remove():
                                                                       'read method 1', 'write method 1',
                                                                       'return method 1', 'close method',
                                                                       ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
-                                                                      [(0, 'A'), (2, 'B')])
+                                                                      [(0, 'A', Counter({None: 1})),
+                                                                       (2, 'B', Counter({None: 1}))])
     result = modification_remove_1.generate_parsing_result(parsing_result_1)
     assert isinstance(result, matriochkas.core.ParsingEntities.ParsingResult) is True
     assert (result.streamClass == matriochkas.tests.ParsingEntities.MockStreamClass) is True

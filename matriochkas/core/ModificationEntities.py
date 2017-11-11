@@ -36,14 +36,14 @@ class ModificationOperator(ModificationEntity):
 
 
 class ModificationOperation(ModificationEntity, metaclass=abc.ABCMeta):
-    def __init__(self, rel_position=0):
+    def __init__(self, rel_position=0, key_word=None):
         self.relPosition = rel_position
-        self.parsing_result = list()
+        self.keyWord = key_word
 
 
 class ModificationAdd(ModificationOperation):
-    def __init__(self, ar_character, rel_position=0, modification_side=ModificationSide.RIGHT):
-        super(ModificationAdd, self).__init__(rel_position=rel_position)
+    def __init__(self, ar_character, rel_position=0, modification_side=ModificationSide.RIGHT, key_word=None):
+        super(ModificationAdd, self).__init__(rel_position=rel_position, key_word=key_word)
         self.ar_character = ar_character
         self.modificationSide = modification_side
 
@@ -51,7 +51,8 @@ class ModificationAdd(ModificationOperation):
         if isinstance(initial_parsing_result, ParsingResult):
             ar_index = list()
             for element in initial_parsing_result.arIndex:
-                ar_index.append((element[0] + self.relPosition, self.ar_character, self.modificationSide))
+                if self.keyWord in element[2].keys():
+                    ar_index.append((element[0] + self.relPosition, self.ar_character, self.modificationSide))
             parsing_result = ParsingResult(initial_parsing_result.streamClass,
                                            initial_parsing_result.readMethod,
                                            initial_parsing_result.writeMethod,
@@ -66,14 +67,15 @@ class ModificationAdd(ModificationOperation):
 
 
 class ModificationRemove(ModificationOperation):
-    def __init__(self, rel_position=0):
-        super(ModificationRemove, self).__init__(rel_position=rel_position)
+    def __init__(self, rel_position=0, key_word=None):
+        super(ModificationRemove, self).__init__(rel_position=rel_position, key_word=key_word)
 
     def generate_parsing_result(self, initial_parsing_result):
         if isinstance(initial_parsing_result, ParsingResult):
             ar_index = list()
             for element in initial_parsing_result.arIndex:
-                ar_index.append((element[0]+self.relPosition, ''))
+                if self.keyWord in element[2].keys():
+                    ar_index.append((element[0]+self.relPosition, ''))
             parsing_result = ParsingResult(initial_parsing_result.streamClass,
                                            initial_parsing_result.readMethod,
                                            initial_parsing_result.writeMethod,
