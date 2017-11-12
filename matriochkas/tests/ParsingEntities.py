@@ -1,6 +1,7 @@
 # coding: utf8
 
 from matriochkas.core import ParsingEntities
+from collections import Counter
 
 import copy
 
@@ -8,10 +9,11 @@ import copy
 ########################################################################################################################
 
 class InstanceParsingEntity(ParsingEntities.ParsingEntity):
-    def __init__(self, name, check_return=True, rel_position=0):
+    def __init__(self, name, check_return=True, rel_position=0, key_word=None):
         super(InstanceParsingEntity, self).__init__()
         self.name = name
         self.checkReturn = check_return
+        self.keyWord = key_word
         self.relPosition = rel_position
 
     def __eq__(self, other):
@@ -39,7 +41,7 @@ class InstanceParsingEntity(ParsingEntities.ParsingEntity):
         return InstanceParsingEntity(self.name, self.checkReturn)
 
     def check(self, element, ref_position):
-        return self.checkReturn
+            return self.checkReturn, Counter({self.keyWord: 1})
 
     def get_max_position(self):
         return self.relPosition
@@ -57,7 +59,7 @@ class InstanceParsingStructure(ParsingEntities.ParsingStructure):
         self.relPosition = rel_position
 
     def check(self, element, ref_position):
-        return True, True
+        return (True, Counter({None: 1})), (True, Counter({None: 1}))
 
     def get_max_position(self):
         return self.relPosition
@@ -185,7 +187,7 @@ def test_parsing_entity():
 
     assert isinstance(rshift_parsing_block_2, ParsingEntities.ParsingBlock) is True
     assert isinstance(rshift_parsing_block_2.parser, InstanceParsingEntity) is True
-    assert rshift_parsing_block_2.borderCondition is None
+    assert isinstance(rshift_parsing_block_2.borderCondition, ParsingEntities.EmptyParsingCondition) is True
 
     try:
         None >> None
@@ -328,9 +330,9 @@ def test_parsing_operator():
     ###################################################################################################################
 
     super_parsing_operator.operandB.name = 'entity c'
-    assert super_parsing_operator.check(None, None) is False
+    assert (super_parsing_operator.check(None, None) == (False, Counter({}))) is True
     super_parsing_operator.operandA.operandB.checkReturn = True
-    assert super_parsing_operator.check(None, None) is True
+    assert (super_parsing_operator.check(None, None) == (True, Counter({None: 3}))) is True
     super_parsing_operator.operandA.operandB.checkReturn = False
 
     ###################################################################################################################
@@ -370,6 +372,7 @@ def test_parsing_condition():
     assert (parsing_condition_1 == 0) is False
     assert (parsing_condition_1 == ParsingEntities.ParsingCondition('0')) is True
     assert (parsing_condition_1 == ParsingEntities.ParsingCondition('0', rel_position=1)) is False
+    assert (parsing_condition_1 == ParsingEntities.ParsingCondition('0', key_word='0')) is False
     parsing_condition_3 = ParsingEntities.ParsingCondition('0')
     parsing_condition_3.isNot = True
     assert (parsing_condition_1 == parsing_condition_3) is False
@@ -379,6 +382,7 @@ def test_parsing_condition():
     assert (0 in parsing_condition_1) is False
     assert (ParsingEntities.ParsingCondition('0') in parsing_condition_1) is True
     assert (ParsingEntities.ParsingCondition('0', rel_position=1) in parsing_condition_1) is False
+    assert (ParsingEntities.ParsingCondition('0', key_word='0') in parsing_condition_1) is False
     assert (parsing_condition_3 in parsing_condition_1) is False
 
     ###################################################################################################################
@@ -394,6 +398,7 @@ def test_parsing_condition():
     copy_parsing_condition_1 = copy.copy(parsing_condition_1)
     assert (copy_parsing_condition_1.character == '0') is True
     assert (copy_parsing_condition_1.relPosition == 0) is True
+    assert copy_parsing_condition_1.keyWord is None
     assert copy_parsing_condition_1.isNot is False
 
     ###################################################################################################################
@@ -401,15 +406,19 @@ def test_parsing_condition():
     deep_copy_parsing_condition_1 = copy.deepcopy(parsing_condition_1)
     assert (deep_copy_parsing_condition_1.character == '0') is True
     assert (deep_copy_parsing_condition_1.relPosition == 0) is True
+    assert copy_parsing_condition_1.keyWord is None
     assert deep_copy_parsing_condition_1.isNot is False
 
     ###################################################################################################################
 
     parsing_condition_4 = ParsingEntities.ParsingCondition('W', rel_position=2)
-    assert parsing_condition_1.check('Hello0World !', ref_position=5) is True
-    assert parsing_condition_1.check('Hello0World !', ref_position=6) is False
-    assert parsing_condition_4.check('Hello0World !', ref_position=4) is True
-    assert parsing_condition_4.check('Hello0World !', ref_position=5) is False
+    assert (parsing_condition_1.check('Hello0World !', ref_position=5) == (True, Counter({None: 1}))) is True
+    assert (parsing_condition_1.check('Hello0World !', ref_position=6) == (False, Counter())) is True
+    assert (parsing_condition_4.check('Hello0World !', ref_position=4) == (True, Counter({None: 1}))) is True
+    assert (parsing_condition_4.check('Hello0World !', ref_position=5) == (False, Counter())) is True
+
+    parsing_condition_6 = ParsingEntities.ParsingCondition('')
+    assert isinstance(parsing_condition_6, ParsingEntities.EmptyParsingCondition) is True
 
     try:
         parsing_condition_4.check('Hello0World !', ref_position=15)
@@ -434,6 +443,69 @@ def test_parsing_condition():
     assert (parsing_condition_2.get_max_position() == 2) is True
     assert (parsing_condition_5.get_max_position() == 0) is True
 
+    copy_parsing_condition_1 = copy.copy(parsing_condition_1)
+    assert (copy_parsing_condition_1.character == '0') is True
+    assert (copy_parsing_condition_1.relPosition == 0) is True
+    assert copy_parsing_condition_1.isNot is False
+
+    ###################################################################################################################
+
+    deep_copy_parsing_condition_1 = copy.deepcopy(parsing_condition_1)
+    assert (deep_copy_parsing_condition_1.character == '0') is True
+    assert (deep_copy_parsing_condition_1.relPosition == 0) is True
+    assert deep_copy_parsing_condition_1.isNot is False
+
+
+def test_empty_parsing_condition():
+    empty_parsing_condition_1 = ParsingEntities.EmptyParsingCondition()
+    assert isinstance(empty_parsing_condition_1, ParsingEntities.EmptyParsingCondition) is True
+
+    ###################################################################################################################
+
+    assert (empty_parsing_condition_1 == ParsingEntities.EmptyParsingCondition()) is True
+    assert (empty_parsing_condition_1 == ParsingEntities.ParsingCondition('')) is True
+    assert (empty_parsing_condition_1 == ParsingEntities.ParsingCondition('0')) is False
+    assert (empty_parsing_condition_1 == ~ParsingEntities.EmptyParsingCondition()) is False
+
+    ###################################################################################################################
+
+    assert (empty_parsing_condition_1 in ParsingEntities.EmptyParsingCondition()) is True
+    assert (empty_parsing_condition_1 in ParsingEntities.ParsingCondition('')) is True
+    assert (empty_parsing_condition_1 in ParsingEntities.ParsingCondition('0')) is False
+    assert (empty_parsing_condition_1 in ~ParsingEntities.EmptyParsingCondition()) is False
+
+    ###################################################################################################################
+
+    assert (str(empty_parsing_condition_1) == 'EmptyParsingCondition object') is True
+
+    ###################################################################################################################
+
+    assert (repr(empty_parsing_condition_1) == 'EmptyParsingCondition object') is True
+
+    ###################################################################################################################
+
+    copy_empty_parsing_condition_1 = copy.copy(empty_parsing_condition_1)
+    isinstance(copy_empty_parsing_condition_1, ParsingEntities.EmptyParsingCondition)
+    assert copy_empty_parsing_condition_1.isNot is False
+
+    ###################################################################################################################
+
+    deep_copy_empty_parsing_condition_1 = copy.deepcopy(empty_parsing_condition_1)
+    isinstance(deep_copy_empty_parsing_condition_1, ParsingEntities.EmptyParsingCondition)
+    assert deep_copy_empty_parsing_condition_1.isNot is False
+
+    ###################################################################################################################
+
+    assert (empty_parsing_condition_1.check(None, None) == (False, Counter({None: 1}))) is True
+
+    ###################################################################################################################
+
+    assert (empty_parsing_condition_1.get_min_position() == 0) is True
+
+    ###################################################################################################################
+
+    assert (empty_parsing_condition_1.get_max_position() == 0) is True
+
 
 def test_parsing_structure():
     parsing_structure_1 = InstanceParsingStructure('structure 1')
@@ -451,7 +523,8 @@ def test_parsing_structure():
 
     ###################################################################################################################
 
-    assert (InstanceParsingStructure('test').check(None, None) == (True, True)) is True
+    assert (InstanceParsingStructure('test').check(None, None) == ((True, Counter({None: 1})),
+                                                                   (True, Counter({None: 1})))) is True
 
     ###################################################################################################################
 
@@ -479,10 +552,10 @@ def test_parsing_pipeline():
     parsing_pipeline_1.add_structure(ParsingEntities.ParsingPipeline(InstanceParsingStructure('structure 2')))
     assert (parsing_pipeline_1.current_parsing_block_index == 0) is True
     assert parsing_pipeline_1.isEnded is False
-    assert parsing_pipeline_1.check(None, None) == (True, True)
+    assert (parsing_pipeline_1.check(None, None) == ((True, Counter({None: 1})), (True, Counter({None: 1})))) is True
     assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
     assert parsing_pipeline_1.isEnded is False
-    assert parsing_pipeline_1.check(None, None) == (True, True)
+    assert (parsing_pipeline_1.check(None, None) == ((True, Counter({None: 1})), (True, Counter({None: 1})))) is True
     assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
     assert parsing_pipeline_1.isEnded is True
     assert parsing_pipeline_1.check(None, None) is None
@@ -536,8 +609,8 @@ def test_parsing_block():
     ###################################################################################################################
 
     parsing_block_2 = ParsingEntities.ParsingBlock(InstanceParsingEntity('structure 1', True, -2), None)
-    assert (parsing_block_1.check(None, None) == (True, True)) is True
-    assert (parsing_block_2.check(None, None) == (True, False)) is True
+    assert (parsing_block_1.check(None, None) == ((True, Counter({None: 1})), (True, Counter({None: 1})))) is True
+    assert (parsing_block_2.check(None, None) == ((True, Counter({None: 1})), (False, Counter({None: 1})))) is True
 
     ###################################################################################################################
 
@@ -547,12 +620,12 @@ def test_parsing_block():
     ###################################################################################################################
 
     assert (parsing_block_1.get_max_position() == 1) is True
-    assert (parsing_block_2.get_max_position() == -2) is True
+    assert (parsing_block_2.get_max_position() == 0) is True
 
 
 def test_parsing_result():
     parsing_result_1 = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
-                                                     'return method 1', ['arg a', 'arg b'],
+                                                     'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
     assert (parsing_result_1.streamClass == MockStreamClass) is True
     assert (parsing_result_1.readMethod == 'read method 1') is True
@@ -562,28 +635,28 @@ def test_parsing_result():
     assert (parsing_result_1.arIndex == [(0, 'A'), (2, 'B')])
 
     try:
-        ParsingEntities.ParsingResult(None, 'read method', 'write method', 'return method', ['arg a', 'arg b'],
-                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+        ParsingEntities.ParsingResult(None, 'read method', 'write method', 'return method', 'close method',
+                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
     try:
-        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 'return method', None,
-                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 'return method', 'close method',
+                                      None, {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
     try:
-        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 'return method',
+        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 'return method', 'close method',
                                       ['arg a', 'arg b'], None, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
     try:
-        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 'return method',
+        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 'return method', 'close method',
                                       ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, None)
         assert False
     except TypeError:
@@ -591,73 +664,95 @@ def test_parsing_result():
 
     try:
         ParsingEntities.ParsingResult(MockStreamClass, 0, 'write method', 'return method', ['arg a', 'arg b'],
-                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                      'close method', {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
     try:
-        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 0, 'return method', ['arg a', 'arg b'],
-                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 0, 'return method', 'close method',
+                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
     try:
-        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 0, ['arg a', 'arg b'],
-                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 0, 'close method',
+                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+        assert False
+    except TypeError:
+        assert True
+
+    try:
+        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 'return method', 0,
+                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
     parsing_result_2 = ParsingEntities.ParsingResult(MockStreamClass, None, 'write method 2', 'return method 2',
-                                                     ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
+                                                     'close method 2', ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
                                                      [(0, 'A'), (2, 'B')])
     assert (parsing_result_2.streamClass == MockStreamClass) is True
     assert parsing_result_2.readMethod is None
     assert (parsing_result_2.writeMethod == 'write method 2') is True
     assert (parsing_result_2.returnMethod == 'return method 2') is True
+    assert (parsing_result_2.closeMethod == 'close method 2') is True
     assert (parsing_result_2.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
     assert (parsing_result_2.arIndex == [(0, 'A'), (2, 'B')])
 
     parsing_result_3 = ParsingEntities.ParsingResult(MockStreamClass, 'read method 3', None, 'return method 3',
-                                                     ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
+                                                     'close method 3', ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
                                                      [(0, 'A'), (2, 'B')])
     assert (parsing_result_3.streamClass == MockStreamClass) is True
     assert (parsing_result_3.readMethod == 'read method 3') is True
     assert parsing_result_3.writeMethod is None
     assert (parsing_result_3.returnMethod == 'return method 3') is True
+    assert (parsing_result_3.closeMethod == 'close method 3') is True
     assert (parsing_result_3.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
     assert (parsing_result_3.arIndex == [(0, 'A'), (2, 'B')])
 
     parsing_result_4 = ParsingEntities.ParsingResult(MockStreamClass, 'read method 4', 'write method 4', None,
-                                                     ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
+                                                     'close method 4', ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
                                                      [(0, 'A'), (2, 'B')])
     assert (parsing_result_4.streamClass == MockStreamClass) is True
     assert (parsing_result_4.readMethod == 'read method 4') is True
     assert (parsing_result_4.writeMethod == 'write method 4') is True
     assert parsing_result_4.returnMethod is None
+    assert (parsing_result_4.closeMethod == 'close method 4') is True
     assert (parsing_result_4.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
     assert (parsing_result_4.arIndex == [(0, 'A'), (2, 'B')])
+
+    parsing_result_8 = ParsingEntities.ParsingResult(MockStreamClass, 'read method 8', 'write method 8',
+                                                     'return method 8', None, ['arg a', 'arg b'],
+                                                     {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+    assert (parsing_result_8.streamClass == MockStreamClass) is True
+    assert (parsing_result_8.readMethod == 'read method 8') is True
+    assert (parsing_result_8.writeMethod == 'write method 8') is True
+    assert (parsing_result_8.returnMethod == 'return method 8') is True
+    assert parsing_result_8.closeMethod is None
+    assert (parsing_result_8.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
+    assert (parsing_result_8.arIndex == [(0, 'A'), (2, 'B')])
 
     ###################################################################################################################
 
     parsing_result_5a = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
-                                                      'return method 1', ['arg a', 'arg b'],
+                                                      'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
     parsing_result_5b = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
-                                                      'return method 1', ['arg a', 'arg b'],
+                                                      'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
     parsing_result_5 = parsing_result_5a + parsing_result_5b
     assert (parsing_result_5.streamClass == MockStreamClass) is True
     assert (parsing_result_5.readMethod == 'read method 1') is True
     assert (parsing_result_5.writeMethod == 'write method 1') is True
     assert (parsing_result_5.returnMethod == 'return method 1') is True
+    assert (parsing_result_5.closeMethod == 'close method 1') is True
     assert (parsing_result_5.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
     assert (parsing_result_5.arIndex == [(0, 'A'), (2, 'B'), (4, 'D')])
 
     parsing_result_5c = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
-                                                      'return method 1', ['arg e', 'arg f'],
+                                                      'return method 1', 'close method 1', ['arg e', 'arg f'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
     try:
         parsing_result_5a + parsing_result_5c
@@ -666,7 +761,7 @@ def test_parsing_result():
         assert True
 
     parsing_result_5d = ParsingEntities.ParsingResult(MockStreamClass, 'read method 2', 'write method 1',
-                                                      'return method 1', ['arg a', 'arg b'],
+                                                      'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
     try:
         parsing_result_5a + parsing_result_5d
@@ -675,7 +770,7 @@ def test_parsing_result():
         assert True
 
     parsing_result_5e = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 2',
-                                                      'return method 1', ['arg a', 'arg b'],
+                                                      'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
     try:
         parsing_result_5a + parsing_result_5e
@@ -684,7 +779,7 @@ def test_parsing_result():
         assert True
 
     parsing_result_5f = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
-                                                      'return method 2', ['arg a', 'arg b'],
+                                                      'return method 2', 'close method 1', ['arg a', 'arg b'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
     try:
         parsing_result_5a + parsing_result_5f
@@ -692,8 +787,17 @@ def test_parsing_result():
     except ValueError:
         assert True
 
+    parsing_result_5h = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
+                                                      'return method 1', 'close method 2', ['arg a', 'arg b'],
+                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
+    try:
+        parsing_result_5a + parsing_result_5h
+        assert False
+    except ValueError:
+        assert True
+
     parsing_result_5g = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
-                                                      'return method 1', ['arg a', 'arg b'],
+                                                      'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                       {'arg d': 'd', 'arg e': 'e'}, [(0, 'C'), (4, 'D')])
     try:
         parsing_result_5a + parsing_result_5g
@@ -711,7 +815,7 @@ def test_parsing_result():
     ###################################################################################################################
 
     parsing_result_6 = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
-                                                     'return method 1', ['arg a', 'arg b'],
+                                                     'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                      {'arg c': 'c', 'arg d': 'd'},
                                                      [(0, 'A'), (2, 'B', 'Left')])
     assert (0 in parsing_result_6) is True
@@ -739,6 +843,7 @@ def test_parsing_result():
     assert (copy_parsing_result_1.readMethod == 'read method 1') is True
     assert (copy_parsing_result_1.writeMethod == 'write method 1') is True
     assert (copy_parsing_result_1.returnMethod == 'return method 1') is True
+    assert (copy_parsing_result_1.closeMethod == 'close method 1') is True
     assert (copy_parsing_result_1.arInput ==
             {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
     assert (copy_parsing_result_1.arIndex == [(0, 'A'), (2, 'B')])
@@ -747,6 +852,7 @@ def test_parsing_result():
     assert (copy_parsing_result_1.readMethod == 'read method 1') is True
     assert (copy_parsing_result_1.writeMethod == 'write method 1') is True
     assert (copy_parsing_result_1.returnMethod == 'return method 1') is True
+    assert (copy_parsing_result_1.closeMethod == 'close method 1') is True
     assert (copy_parsing_result_1.arInput ==
             {'args': ['arg c', 'arg d'], 'kwargs': {'arg e': 'e', 'arg f': 'f'}}) is True
     assert (copy_parsing_result_1.arIndex == [(0, 'A'), (2, 'B')])
@@ -754,6 +860,7 @@ def test_parsing_result():
     assert (parsing_result_1.readMethod == 'read method 1') is True
     assert (parsing_result_1.writeMethod == 'write method 1') is True
     assert (parsing_result_1.returnMethod == 'return method 1') is True
+    assert (parsing_result_1.closeMethod == 'close method 1') is True
     assert (parsing_result_1.arInput ==
             {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
     assert (parsing_result_1.arIndex == [(0, 'A'), (2, 'B')])
@@ -761,7 +868,7 @@ def test_parsing_result():
     ###################################################################################################################
 
     parsing_result_7 = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
-                                                     'return method 1', ['arg a', 'arg b'],
+                                                     'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
     assert ParsingEntities.ParsingResult.are_from_the_same_parsing(parsing_result_1, parsing_result_7) is True
     assert ParsingEntities.ParsingResult.are_from_the_same_parsing(parsing_result_1, copy_parsing_result_1) is False

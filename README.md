@@ -34,16 +34,18 @@ Création du schéma de parsage:
     
     # Création de la condition de récupération d'un caractère ('|' correspond à l'opérateur 'OR')
     # D'autres opérateurs sont disponibles ('&' -> 'AND' / '^' -> 'XOR' / '~' -> 'NOT')
-    parsing_pattern = ParsingCondition(' ') | ParsingCondition(', ') | ParsingCondition('. ')
+
+    # Condition pour la détection des espaces seuls
+    space_parsing_pattern = ParsingCondition(' ') & (~ParsingCondition('.', rel_position=-1)) & (~ParsingCondition(',', rel_position=-1))
+
+    # Condition pour la détection des ponctuations
+    punctuation_parsing_pattern = ParsingCondition(', ', key_word='key 1') | ParsingCondition('. ', key_word='key 1')
+
+    # Schéma de parsage final
+    parsing_pattern = space_parsing_pattern | punctuation_parsing_pattern
     
-    # Création d'un bloc de parsage qui définit la limite de parsage avec cette condition
-    # Dans ce cas on souhaite parser le texte entier avec cette condition d'où None
-    parsing_block = parsing_pattern >> None
-    
-    # Création du pipeline de parsage qui définit l'ordre d'utilisation des blocs
-    # Dans ce cas il n'y a qu'un seul bloc d'où None
-    parsing_pipeline = parsing_block + None
-    
+Le paramètre *key_word* permet de définir un mot clé afin de savoir si les caractères dans le résultat de parsage ont été sélectionnés par l'une des conditions qui contient ce mot clé.
+
 Parsage du texte:
 
     # Création du reader pour analyser le texte
@@ -52,20 +54,24 @@ Parsage du texte:
     # Parsage du texte avec le pipeline de parsage précédemment créé
     parsing_result = reader.read(parsing_pipeline)
     
-On obtient en resultat (la variable *parsing_result*) un objet qui contient entre autres une liste de tuples contenant la position du curseur au moment du parsage et la valeur du caratère.
+On obtient en resultat (la variable *parsing_result*) un objet qui contient entre autres une liste de tuples contenant la position du curseur au moment du parsage, la valeur du caratère et l'ensemble des mots clés des conditions qui ont validées ce caractère.
 
     Parsing result :
         Stream class : StringIO
         Inputs : {'args': ('Lorem ... laborum',), 'kwargs': {}}
-        Index result : [(5, ' '), (11, ' '), (17, ' '), (21, ' '), (26, ','), (27, ' '), (39, ' '), (50, ' '), (55, ','), (56, ' '), (60, ' '), (63, ' '), (71, ' '), (78, ' '), (89, ' '), (92, ' '), (99, ' '), (102, ' '), (109, ' '), (115, ' '), (122, '.'), (123, ' '), (126, ' '), (131, ' '), (134, ' '), (140, ' '), (147, ','), (148, ' '), (153, ' '), (161, ' '), (174, ' '), (182, ' '), (190, ' '), (195, ' '), (198, ' '), (206, ' '), (209, ' '), (212, ' '), (220, ' '), (230, '.'), (231, ' '), (236, ' '), (241, ' '), (247, ' '), (253, ' '), (256, ' '), (270, ' '), (273, ' '), (283, ' '), (289, ' '), (294, ' '), (301, ' '), (308, ' '), (311, ' '), (318, ' '), (324, ' '), (333, '.'), (334, ' '), (344, ' '), (349, ' '), (358, ' '), (368, ' '), (372, ' '), (381, ','), (382, ' '), (387, ' '), (390, ' '), (396, ' '), (400, ' '), (408, ' '), (417, ' '), (424, ' '), (429, ' '), (432, ' '), (436, ' ')]
+        Index result : [(5, ' ', Counter({None: 3})), (11, ' ', Counter({None: 3})), (17, ' ', Counter({None: 3})), 
+        (21, ' ', Counter({None: 3})), (26, ',', Counter({'key 1': 2})), ... (432, ' ', Counter({None: 3})), 
+        (436, ' ', Counter({None: 3}))]
         
 Création du résulat de parsage modifié:
 
     #Création du schéma de modification
-    modification_pattern = ModificationRemove() + ModificationAdd(';')
+    modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1, key_word='key 1')
 
     #Application de la modification au résultat de parsage précédent
     final_parsing_result = modification_pattern.generate_parsing_result(parsing_result)
+
+Le paramère *key_word* dans les schémas de modifition permet d'éffectuer certaines modifications uniquement lorsque le tuple du résultat de parsage possède ce mot clé. Dans cet exemple, on souhaite supprimer le caractère suivant le curseur uniquement dans le cas où une ponctuation a été détectée (un espace).
 
 On obtient un nouveau résultat de parsage (la variable *final_parsing_result*) qui contient entre autres les positions et les nouvelles valeurs des caractères à modifier:
 
@@ -84,14 +90,7 @@ Création du texte modifié:
     
 On obtient ce texte:
 
-    Lorem;ipsum;dolor;sit;amet;;consectetur;adipiscing;elit;;sed;do;eiusmod;tempor;incididunt;ut;labore;et;dolore;magna;aliqua;;
-    Ut;enim;ad;minim;veniam;;quis;nostrud;exercitation;ullamco;laboris;nisi;ut;aliquip;ex;ea;commodo;consequat;;Duis;aute;irure;
-    dolor;in;reprehenderit;in;voluptate;velit;esse;cillum;dolore;eu;fugiat;nulla;pariatur;;Excepteur;sint;occaecat;cupidatat;non;
-    proident;;sunt;in;culpa;qui;officia;deserunt;mollit;anim;id;est;laborum
-    
-Limitation
-----------
-
-Dans le résultat de l'exemple précédent, on peut remarquer des champs vides qui correspondent aux détections de conditions à plusieurs caractères (*' .'* ou *' ,'*). La cause de cette particularité vient de la méthode de création du résultat de parsage final qui applique la même opération à tous les caractères du résultat de parsage intermédiaire. Or dans l'idéal la modification devrait être différente pour une condition avec le caractère *' '* et pour une condition avec la chaine de caractères *' ,'* ou *' .'*.
-
-Cette amélioration ne devrait pas tarder à arriver dans une prochaine release ;)
+    Lorem;ipsum;dolor;sit;amet;consectetur;adipiscing;elit;sed;do;eiusmod;tempor;incididunt;ut;labore;et;dolore;magna;aliqua;
+    Ut;enim;ad;minim;veniam;quis;nostrud;exercitation;ullamco;laboris;nisi;ut;aliquip;ex;ea;commodo;consequat;Duis;aute;irure;
+    dolor;in;reprehenderit;in;voluptate;velit;esse;cillum;dolore;eu;fugiat;nulla;pariatur;Excepteur;sint;occaecat;cupidatat;non;
+    proident;sunt;in;culpa;qui;officia;deserunt;mollit;anim;id;est;laborum

@@ -1,6 +1,7 @@
 # coding: utf8
 
 from enum import Enum
+from collections import Counter
 
 import abc
 import copy
@@ -148,28 +149,33 @@ class ParsingOperator(ParsingEntity):
         return result
 
     def check(self, element, ref_position=0):
+        result_a = self.operandA.check(element, ref_position)
+        result_b = self.operandB.check(element, ref_position)
+        key_words = result_a[1] + result_b[1]
+
         if self.operatorType is OperatorType.AND:
-            if self.operandA.check(element, ref_position) is True and self.operandB.check(element, ref_position) is \
-                    True:
-                result = True
+            if result_a[0] is True and result_b[0] is True:
+                result = True, key_words
             else:
-                result = False
+                result = False, Counter({})
         elif self.operatorType is OperatorType.OR:
-            if self.operandA.check(element, ref_position) is True or self.operandB.check(element, ref_position) is True:
-                result = True
+            if result_a[0] is True or result_b[0] is True:
+                result = True, key_words
             else:
-                result = False
+                result = False, Counter({})
         else:
-            if (self.operandA.check(element, ref_position) is True) ^ \
-                    (self.operandB.check(element, ref_position) is True):
-                result = True
+            if (result_a[0] is True) ^ (result_b[0] is True):
+                result = True, key_words
             else:
-                result = False
+                result = False, Counter({})
 
         if self.isNot is False:
             return result
         else:
-            return not result
+            if result[0]:
+                return False, Counter({})
+            else:
+                return True, key_words
 
     def get_max_position(self):
         operand_a = self.operandA.get_max_position()
@@ -191,25 +197,28 @@ class ParsingOperator(ParsingEntity):
 
 
 class ParsingCondition(ParsingEntity):
-    def __new__(cls,  ar_character, rel_position=0):
+    def __new__(cls,  ar_character, rel_position=0, key_word=None):
         if len(ar_character) > 1:
-            result = ParsingCondition(ar_character[0], rel_position)
+            result = ParsingCondition(ar_character[0], rel_position=rel_position, key_word=key_word)
             for i, element in enumerate(ar_character):
                 if i > 0:
-                    result = result & ParsingCondition(ar_character[i], rel_position=rel_position+i)
+                    result = result & ParsingCondition(ar_character[i], rel_position=rel_position+i, key_word=key_word)
             return result
-        else:
+        elif len(ar_character) == 1:
             return super(ParsingCondition, cls).__new__(cls)
+        else:
+            return EmptyParsingCondition()
 
-    def __init__(self, ar_character, rel_position=0):
+    def __init__(self, ar_character, rel_position=0, key_word=None):
         super(ParsingCondition, self).__init__()
         self.relPosition = rel_position
-        self.character = ar_character[0]
+        self.character = ar_character
+        self.keyWord = key_word
 
     def __eq__(self, other):
         if isinstance(other, ParsingCondition):
             if self.relPosition == other.relPosition and self.character == other.character \
-                    and self.isNot == other.isNot:
+                    and self.isNot == other.isNot and self.keyWord == other.keyWord:
                 return True
             else:
                 return False
@@ -226,7 +235,7 @@ class ParsingCondition(ParsingEntity):
         return self.__str__()
 
     def __copy__(self):
-        result = ParsingCondition(self.character, self.relPosition)
+        result = ParsingCondition(self.character, self.relPosition, self.keyWord)
         result.isNot = self.isNot
         return result
 
@@ -239,14 +248,17 @@ class ParsingCondition(ParsingEntity):
             position = ref_position + self.relPosition
             if 0 <= position < element_size:
                 if self.character in element[position]:
-                    result = True
+                    result = (True, Counter({self.keyWord: 1}))
                 else:
-                    result = False
+                    result = (False, Counter({}))
 
                 if self.isNot is False:
                     return result
                 else:
-                    return not result
+                    if result[0]:
+                        return False, Counter({})
+                    else:
+                        return True, Counter({self.keyWord: 1})
             else:
                 raise IndexError('relative position out of range ( 0 <= ref_position + rel_position < len(element) )')
         else:
@@ -263,6 +275,46 @@ class ParsingCondition(ParsingEntity):
             return 0
         else:
             return self.relPosition
+
+
+class EmptyParsingCondition(ParsingEntity):
+    def __init__(self):
+        super(EmptyParsingCondition, self).__init__()
+
+    def __eq__(self, other):
+        if isinstance(other, EmptyParsingCondition):
+            if self.isNot == other.isNot:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def __contains__(self, item):
+        return self.__eq__(item)
+
+    def __str__(self):
+        return 'EmptyParsingCondition object'
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __copy__(self):
+        result = EmptyParsingCondition()
+        result.isNot = self.isNot
+        return result
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
+
+    def check(self, element, ref_position=0):
+        return False, Counter({None: 1})
+
+    def get_min_position(self):
+        return 0
+
+    def get_max_position(self):
+        return 0
 
 
 class ParsingStructure(Entity):
@@ -301,7 +353,7 @@ class ParsingPipeline(ParsingStructure):
     def check(self, element, ref_position=0):
         if not self.isEnded:
             result = self.arParsingStructure[self.current_parsing_block_index].check(element, ref_position)
-            if result[1]:
+            if result[1][0]:
                 if self.current_parsing_block_index < len(self.arParsingStructure)-1:
                     self.current_parsing_block_index += 1
                 else:
@@ -342,17 +394,16 @@ class ParsingBlock(ParsingStructure):
         else:
             raise TypeError('parser has to be ParsingStructure subclass')
 
-        if isinstance(border_condition, ParsingEntity) or border_condition is None:
+        if isinstance(border_condition, ParsingEntity):
             self.borderCondition = border_condition
+        elif border_condition is None:
+            self.borderCondition = EmptyParsingCondition()
         else:
             raise TypeError('border_condition has to be ParsingStructure subclass or None')
 
     def check(self, element, ref_position=0):
         parser_result = self.parser.check(element, ref_position)
-        if self.borderCondition is not None:
-            border_condition_result = self.borderCondition.check(element, ref_position)
-        else:
-            border_condition_result = False
+        border_condition_result = self.borderCondition.check(element, ref_position)
         return parser_result, border_condition_result
 
     def get_min_position(self):
@@ -369,7 +420,7 @@ class ParsingBlock(ParsingStructure):
 
 
 class ParsingResult:
-    def __init__(self, stream_class, read_method, write_method, return_method, args, kwargs, ar_index):
+    def __init__(self, stream_class, read_method, write_method, return_method, close_method, args, kwargs, ar_index):
         if hasattr(stream_class, '__name__'):
             self.streamClass = stream_class
         else:
@@ -390,6 +441,11 @@ class ParsingResult:
         else:
             raise TypeError('Return method has to be str object or None')
 
+        if isinstance(close_method, str) or close_method is None:
+            self.closeMethod = close_method
+        else:
+            raise TypeError('Close method has to be str object or None')
+
         if isinstance(args, (tuple, list)) and isinstance(kwargs, dict):
             self.arInput = {'args': args, 'kwargs': kwargs}
         else:
@@ -405,7 +461,7 @@ class ParsingResult:
             if ParsingResult.are_from_the_same_parsing(self, other):
                 new_parsing_result = copy.deepcopy(self)
                 for element in other.arIndex:
-                    if (element[0] not in new_parsing_result or \
+                    if (element[0] not in new_parsing_result or
                             (len(element) == 3 and (element[0], None, element[2]) not in new_parsing_result)) or \
                             (element[1] == '' and (element[0], element[1]) not in new_parsing_result):
                         new_parsing_result.arIndex.append(element)
@@ -455,7 +511,7 @@ class ParsingResult:
 
     def __copy__(self):
         return ParsingResult(self.streamClass, self.readMethod, self.writeMethod, self.returnMethod,
-                             self.arInput['args'], self.arInput['kwargs'], self.arIndex)
+                             self.closeMethod, self.arInput['args'], self.arInput['kwargs'], self.arIndex)
 
     def __deepcopy__(self, memodict={}):
         return self.__copy__()
@@ -468,7 +524,8 @@ class ParsingResult:
                     parsing_result_a.arInput['kwargs'] == parsing_result_b.arInput['kwargs'] and
                     parsing_result_a.readMethod == parsing_result_b.readMethod and
                     parsing_result_a.writeMethod == parsing_result_b.writeMethod and
-                    parsing_result_a.returnMethod == parsing_result_b.returnMethod)
+                    parsing_result_a.returnMethod == parsing_result_b.returnMethod and
+                    parsing_result_a.closeMethod == parsing_result_b.closeMethod)
         else:
             raise TypeError("Operands have to be ParsingResult classes or subclasses")
 
