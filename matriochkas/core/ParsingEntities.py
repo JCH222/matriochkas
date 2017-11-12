@@ -157,23 +157,23 @@ class ParsingOperator(ParsingEntity):
             if result_a[0] is True and result_b[0] is True:
                 result = True, key_words
             else:
-                result = False, key_words
+                result = False, Counter({})
         elif self.operatorType is OperatorType.OR:
             if result_a[0] is True or result_b[0] is True:
                 result = True, key_words
             else:
-                result = False, key_words
+                result = False, Counter({})
         else:
             if (result_a[0] is True) ^ (result_b[0] is True):
                 result = True, key_words
             else:
-                result = False, key_words
+                result = False, Counter({})
 
         if self.isNot is False:
             return result
         else:
             if result[0]:
-                return False, key_words
+                return False, Counter({})
             else:
                 return True, key_words
 

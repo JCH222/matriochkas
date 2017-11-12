@@ -330,7 +330,7 @@ def test_parsing_operator():
     ###################################################################################################################
 
     super_parsing_operator.operandB.name = 'entity c'
-    assert (super_parsing_operator.check(None, None) == (False, Counter({None: 3}))) is True
+    assert (super_parsing_operator.check(None, None) == (False, Counter({}))) is True
     super_parsing_operator.operandA.operandB.checkReturn = True
     assert (super_parsing_operator.check(None, None) == (True, Counter({None: 3}))) is True
     super_parsing_operator.operandA.operandB.checkReturn = False

@@ -51,7 +51,7 @@ class ModificationAdd(ModificationOperation):
         if isinstance(initial_parsing_result, ParsingResult):
             ar_index = list()
             for element in initial_parsing_result.arIndex:
-                if self.keyWord in element[2].keys():
+                if self.keyWord is None or self.keyWord in element[2].keys():
                     ar_index.append((element[0] + self.relPosition, self.ar_character, self.modificationSide))
             parsing_result = ParsingResult(initial_parsing_result.streamClass,
                                            initial_parsing_result.readMethod,
@@ -74,7 +74,7 @@ class ModificationRemove(ModificationOperation):
         if isinstance(initial_parsing_result, ParsingResult):
             ar_index = list()
             for element in initial_parsing_result.arIndex:
-                if self.keyWord in element[2].keys():
+                if self.keyWord is None or self.keyWord in element[2].keys():
                     ar_index.append((element[0]+self.relPosition, ''))
             parsing_result = ParsingResult(initial_parsing_result.streamClass,
                                            initial_parsing_result.readMethod,

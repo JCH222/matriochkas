@@ -90,10 +90,10 @@ def test_stream_reader():
     assert (len(result.arInput['args']) == 1) is True
     assert (result.arInput['args'][0] == text) is True
     assert (result.arInput['kwargs'] == {}) is True
-    assert (result.arIndex == [(26, ',', Counter({None: 3})), (55, ',', Counter({None: 3})),
-                               (122, '.', Counter({None: 3})), (147, ',', Counter({None: 3})),
-                               (230, '.', Counter({None: 3})), (333, '.', Counter({None: 3})),
-                               (381, ',', Counter({None: 3})), (444, '.', Counter({None: 3}))]) is True
+    assert (result.arIndex == [(26, ',', Counter({None: 2})), (55, ',', Counter({None: 2})),
+                               (122, '.', Counter({None: 2})), (147, ',', Counter({None: 2})),
+                               (230, '.', Counter({None: 2})), (333, '.', Counter({None: 2})),
+                               (381, ',', Counter({None: 2})), (444, '.', Counter({None: 2}))]) is True
 
     stream_entity_2 = IO.StreamReader(text, read_method='read', return_method='return', close_method='close')
     result_2 = stream_entity_2.read(pipeline)
@@ -103,10 +103,10 @@ def test_stream_reader():
     assert (len(result_2.arInput['args']) == 1) is True
     assert (result_2.arInput['args'][0] == text) is True
     assert (result_2.arInput['kwargs'] == {}) is True
-    assert (result_2.arIndex == [(26, ',', Counter({None: 3})), (55, ',', Counter({None: 3})),
-                               (122, '.', Counter({None: 3})), (147, ',', Counter({None: 3})),
-                               (230, '.', Counter({None: 3})), (333, '.', Counter({None: 3})),
-                               (381, ',', Counter({None: 3})), (444, '.', Counter({None: 3}))]) is True
+    assert (result_2.arIndex == [(26, ',', Counter({None: 2})), (55, ',', Counter({None: 2})),
+                               (122, '.', Counter({None: 2})), (147, ',', Counter({None: 2})),
+                               (230, '.', Counter({None: 2})), (333, '.', Counter({None: 2})),
+                               (381, ',', Counter({None: 2})), (444, '.', Counter({None: 2}))]) is True
 
     stream_entity_3 = IO.StreamReader('')
     try:
