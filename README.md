@@ -46,6 +46,14 @@ Création du schéma de parsage:
     
 Le paramètre *key_word* permet de définir un mot clé afin de savoir si les caractères dans le résultat de parsage ont été sélectionnés par l'une des conditions qui contient ce mot clé.
 
+    # Création d'un bloc de parsage qui définit la limite de parsage avec cette condition
+    # Dans ce cas on souhaite parser le texte entier avec cette condition d'où None
+    parsing_block = parsing_pattern >> None
+ 
+    # Création du pipeline de parsage qui définit l'ordre d'utilisation des blocs
+    # Dans ce cas il n'y a qu'un seul bloc d'où None
+    parsing_pipeline = parsing_block + None
+ 
 Parsage du texte:
 
     # Création du reader pour analyser le texte
