@@ -2,6 +2,7 @@
 
 from matriochkas.core.ParsingEntities import ParsingResult
 from matriochkas.core.ParsingEntities import ParsingCondition
+from matriochkas.core.ParsingEntities import EmptyParsingCondition
 from matriochkas.core.ParsingEntities import ParsingOperator
 from matriochkas.core.ParsingEntities import ParsingBlock
 from matriochkas.core.ParsingEntities import ParsingPipeline
