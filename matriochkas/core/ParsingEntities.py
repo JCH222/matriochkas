@@ -13,6 +13,11 @@ class OperatorType(Enum):
     XOR = 'xor'
 
 
+class ParsingResultOrigin(Enum):
+    READING = 'reading'
+    MODIFICATION = 'modification'
+
+
 class Entity(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def check(self, element, ref_position):

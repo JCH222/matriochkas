@@ -7,6 +7,7 @@ from matriochkas.core.ParsingEntities import ParsingOperator
 from matriochkas.core.ParsingEntities import ParsingBlock
 from matriochkas.core.ParsingEntities import ParsingPipeline
 from matriochkas.core.ParsingEntities import OperatorType
+from matriochkas.core.ParsingEntities import ParsingResultOrigin
 
 from matriochkas.core.ModificationEntities import ModificationRemove
 from matriochkas.core.ModificationEntities import ModificationSide

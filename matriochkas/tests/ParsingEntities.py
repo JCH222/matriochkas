@@ -90,6 +90,17 @@ def test_operator_type():
     assert ParsingEntities.OperatorType.XOR.value == 'xor'
 
 
+def test_parsing_result_type():
+
+    assert len(ParsingEntities.ParsingResultOrigin) == 2
+
+    assert ParsingEntities.ParsingResultOrigin.READING.name == 'READING'
+    assert ParsingEntities.ParsingResultOrigin.READING.value == 'reading'
+
+    assert ParsingEntities.ParsingResultOrigin.MODIFICATION.name == 'MODIFICATION'
+    assert ParsingEntities.ParsingResultOrigin.MODIFICATION.value == 'modification'
+
+
 def test_entity():
     class InstanceEntity(ParsingEntities.Entity):
         def check(self, element, ref_position):
