@@ -142,7 +142,7 @@ def test_stream_writer():
                   ' culpa qui officia deserunt mollit anim id est laborum-'
     parsing_result = ParsingEntities.ParsingResult(StringIO, ParsingEntities.ParsingResultOrigin.MODIFICATION,
                                                    ParsingEntities.ParsingResultType.VALUE,
-                                                   'read', 'write', 'return', 'close', [text], {},
+                                                   'read', 'write', 'return', 'close', 'seek', [text], {},
                                                    [(26, ''), (26, '-', ModificationEntities.ModificationSide.RIGHT),
                                                     (27, ''), (55, ''),
                                                     (55, '-', ModificationEntities.ModificationSide.RIGHT), (56, ''),
@@ -163,7 +163,7 @@ def test_stream_writer():
 
     parsing_result_2 = ParsingEntities.ParsingResult(StringIO, ParsingEntities.ParsingResultOrigin.READING,
                                                      ParsingEntities.ParsingResultType.VALUE,
-                                                     'read', 'write', 'return', 'close', [text], {},
+                                                     'read', 'write', 'return', 'close', 'seek', [text], {},
                                                      [(26, ''), (26, '-', ModificationEntities.ModificationSide.RIGHT),
                                                       (27, ''), (55, ''),
                                                       (55, '-', ModificationEntities.ModificationSide.RIGHT), (56, ''),

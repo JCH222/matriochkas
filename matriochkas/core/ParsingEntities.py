@@ -430,8 +430,8 @@ class ParsingBlock(ParsingStructure):
 
 
 class ParsingResult:
-    def __init__(self, stream_class, origin, result_type, read_method, write_method, return_method, close_method, args,
-                 kwargs, ar_index):
+    def __init__(self, stream_class, origin, result_type, read_method, write_method, return_method, close_method,
+                 seek_method, args, kwargs, ar_index):
         if hasattr(stream_class, '__name__'):
             self.streamClass = stream_class
         else:
@@ -466,6 +466,11 @@ class ParsingResult:
             self.closeMethod = close_method
         else:
             raise TypeError('Close method has to be str object or None')
+
+        if isinstance(seek_method, str) or seek_method is None:
+            self.seekMethod = seek_method
+        else:
+            raise TypeError('Seek method has to be str object or None')
 
         if isinstance(args, (tuple, list)) and isinstance(kwargs, dict):
             self.arInput = {'args': args, 'kwargs': kwargs}
@@ -534,8 +539,8 @@ class ParsingResult:
 
     def __copy__(self):
         return ParsingResult(self.streamClass, self.origin, self.resultType, self.readMethod, self.writeMethod,
-                             self.returnMethod, self.closeMethod, self.arInput['args'], self.arInput['kwargs'],
-                             self.arIndex)
+                             self.returnMethod, self.closeMethod, self.seekMethod, self.arInput['args'],
+                             self.arInput['kwargs'], self.arIndex)
 
     def __deepcopy__(self, memodict={}):
         return self.__copy__()
@@ -551,7 +556,8 @@ class ParsingResult:
                     parsing_result_a.readMethod == parsing_result_b.readMethod and
                     parsing_result_a.writeMethod == parsing_result_b.writeMethod and
                     parsing_result_a.returnMethod == parsing_result_b.returnMethod and
-                    parsing_result_a.closeMethod == parsing_result_b.closeMethod)
+                    parsing_result_a.closeMethod == parsing_result_b.closeMethod and
+                    parsing_result_a.seekMethod == parsing_result_b.seekMethod)
         else:
             raise TypeError("Operands have to be ParsingResult classes or subclasses")
 

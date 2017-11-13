@@ -78,6 +78,7 @@ def test_modification_add():
                                                                       matriochkas.core.ParsingEntities.ParsingResultType.VALUE,
                                                                       'read method 1', 'write method 1',
                                                                       'return method 1', 'close method 1',
+                                                                      'seek method 1',
                                                                       ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
                                                                       [(0, 'A', Counter({None: 1})),
                                                                        (2, 'B', Counter({None: 1}))])
@@ -89,6 +90,8 @@ def test_modification_add():
     assert (result.readMethod == 'read method 1') is True
     assert (result.writeMethod == 'write method 1') is True
     assert (result.returnMethod == 'return method 1') is True
+    assert (result.closeMethod == 'close method 1') is True
+    assert (result.seekMethod == 'seek method 1') is True
     assert (result.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
     assert (result.arIndex == [(1, '0', ModificationEntities.ModificationSide.RIGHT),
                                (3, '0', ModificationEntities.ModificationSide.RIGHT)]) is True
@@ -106,7 +109,8 @@ def test_modification_remove():
                                                                       matriochkas.core.ParsingEntities.ParsingResultOrigin.READING,
                                                                       matriochkas.core.ParsingEntities.ParsingResultType.VALUE,
                                                                       'read method 1', 'write method 1',
-                                                                      'return method 1', 'close method',
+                                                                      'return method 1', 'close method 1',
+                                                                      'seek method 1',
                                                                       ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
                                                                       [(0, 'A', Counter({None: 1})),
                                                                        (2, 'B', Counter({None: 1}))])
@@ -118,6 +122,8 @@ def test_modification_remove():
     assert (result.readMethod == 'read method 1') is True
     assert (result.writeMethod == 'write method 1') is True
     assert (result.returnMethod == 'return method 1') is True
+    assert (result.closeMethod == 'close method 1') is True
+    assert (result.seekMethod == 'seek method 1') is True
     assert (result.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
     assert (result.arIndex == [(1, ''), (3, '')]) is True
 
