@@ -5,6 +5,7 @@ from collections import deque
 from matriochkas.core.ModificationEntities import ModificationSide
 from matriochkas.core.ParsingEntities import ParsingResult
 from matriochkas.core.ParsingEntities import ParsingResultOrigin
+from matriochkas.core.ParsingEntities import ParsingResultType
 from matriochkas.core.Configuration import StreamClassConfiguration
 
 import abc
@@ -13,8 +14,8 @@ import copy
 
 class StreamEntity(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def __init__(self, args, kwargs, stream_class=None, read_method=None, write_method=None, return_method=None,
-                 close_method=None):
+    def __init__(self, args, kwargs, stream_class=None, read_method=None, write_method=None,
+                 return_method=None, close_method=None):
         self.streamClass = stream_class
         self.readMethod = read_method
         self.writeMethod = write_method
@@ -50,11 +51,17 @@ class StreamEntity(metaclass=abc.ABCMeta):
 
 
 class StreamReader(StreamEntity):
-    def __init__(self, *args, stream_class=StringIO, read_method=None, return_method=None, close_method=None, **kwargs):
-        super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class, read_method=read_method,
-                                           return_method=return_method, close_method=close_method)
+    def __init__(self, *args, stream_class=StringIO, result_type=ParsingResultType.VALUE, read_method=None,
+                 return_method=None, close_method=None, **kwargs):
+        super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class,
+                                           read_method=read_method, return_method=return_method,
+                                           close_method=close_method)
+        if isinstance(result_type, ParsingResultType):
+            self.resultType = result_type
+        else:
+            raise TypeError('Result type has to be ParsingResultType object')
 
-    def read(self, parsing_pipeline):
+    def read(self, parsing_pipeline, close_stream=True):
         parsing_pipeline.reset()
         min_position = parsing_pipeline.get_min_position()
         max_position = parsing_pipeline.get_max_position()
@@ -84,9 +91,21 @@ class StreamReader(StreamEntity):
                     break
                 current_position += 1
 
-            close_method()
-            return ParsingResult(self.streamClass, ParsingResultOrigin.READING, self.readMethod, self.writeMethod, self.returnMethod,
-                                 self.closeMethod, self.args, self.kwargs, ar_index)
+            if close_stream:
+                close_method()
+            else:
+                stream.seek(0)
+
+            if self.resultType == ParsingResultType.VALUE:
+                parsing_result = ParsingResult(self.streamClass, ParsingResultOrigin.READING, self.resultType,
+                                               self.readMethod, self.writeMethod, self.returnMethod, self.closeMethod,
+                                               self.args, self.kwargs, ar_index)
+            else:
+                parsing_result = ParsingResult(self.streamClass, ParsingResultOrigin.READING, self.resultType,
+                                               self.readMethod, self.writeMethod, self.returnMethod, self.closeMethod,
+                                               tuple(), {'reference': stream}, ar_index)
+
+            return parsing_result
         else:
             close_method()
             raise ValueError("Not enough characters to parse : " + str(len(element)))
@@ -99,7 +118,7 @@ class StreamWriter(StreamEntity):
                                            return_method=return_method, close_method=close_method)
 
     def write(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
-              args=None, kwargs=None):
+              args=None, kwargs=None, close_reading_stream=True):
         if isinstance(parsing_result, ParsingResult) and parsing_result.origin == ParsingResultOrigin.MODIFICATION:
             input_parsing_result = copy.deepcopy(parsing_result)
         else:
@@ -117,8 +136,12 @@ class StreamWriter(StreamEntity):
         if kwargs is not None:
             input_parsing_result.arInput['kwargs'] = kwargs
 
-        input_stream = input_parsing_result.streamClass(*input_parsing_result.arInput['args'],
-                                                        **input_parsing_result.arInput['kwargs'])
+        if input_parsing_result.resultType == ParsingResultType.VALUE:
+            input_stream = input_parsing_result.streamClass(*input_parsing_result.arInput['args'],
+                                                            **input_parsing_result.arInput['kwargs'])
+        else:
+            input_stream = input_parsing_result.arInput['kwargs']['reference']
+
         if input_parsing_result.readMethod is not None:
             input_read_method = getattr(input_stream, input_parsing_result.readMethod)
         else:
@@ -172,6 +195,9 @@ class StreamWriter(StreamEntity):
             index += 1
         result = output_return_method()
 
-        input_close_method()
+        if close_reading_stream:
+            input_close_method()
+        else:
+            input_stream.seek(0)
         output_close_method()
         return result

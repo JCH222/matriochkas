@@ -56,6 +56,7 @@ class ModificationAdd(ModificationOperation):
                     ar_index.append((element[0] + self.relPosition, self.ar_character, self.modificationSide))
             parsing_result = ParsingResult(initial_parsing_result.streamClass,
                                            ParsingResultOrigin.MODIFICATION,
+                                           initial_parsing_result.resultType,
                                            initial_parsing_result.readMethod,
                                            initial_parsing_result.writeMethod,
                                            initial_parsing_result.returnMethod,
@@ -80,6 +81,7 @@ class ModificationRemove(ModificationOperation):
                     ar_index.append((element[0]+self.relPosition, ''))
             parsing_result = ParsingResult(initial_parsing_result.streamClass,
                                            ParsingResultOrigin.MODIFICATION,
+                                           initial_parsing_result.resultType,
                                            initial_parsing_result.readMethod,
                                            initial_parsing_result.writeMethod,
                                            initial_parsing_result.returnMethod,

@@ -430,7 +430,8 @@ class ParsingBlock(ParsingStructure):
 
 
 class ParsingResult:
-    def __init__(self, stream_class, origin, read_method, write_method, return_method, close_method, args, kwargs, ar_index):
+    def __init__(self, stream_class, origin, result_type, read_method, write_method, return_method, close_method, args,
+                 kwargs, ar_index):
         if hasattr(stream_class, '__name__'):
             self.streamClass = stream_class
         else:
@@ -440,6 +441,11 @@ class ParsingResult:
             self.origin = origin
         else:
             raise TypeError('Origin has to be ParsingResultOrigin object')
+
+        if isinstance(result_type, ParsingResultType):
+            self.resultType = result_type
+        else:
+            raise TypeError('Type has to be ParsingResultType object')
 
         if isinstance(read_method, str) or read_method is None:
             self.readMethod = read_method
@@ -517,17 +523,19 @@ class ParsingResult:
             return False
 
     def __str__(self):
-        return str({'Stream class': str(self.streamClass.__name__), 'Origin': str(self.origin), 'Inputs': str(self.arInput),
+        return str({'Stream class': str(self.streamClass.__name__), 'Origin': str(self.origin),
+                    'Result type': str(self.resultType), 'Inputs': str(self.arInput),
                     'Index result': str(self.arIndex)})
 
     def __repr__(self):
         return 'Parsing result :' + '\n' + '   Stream class : ' + str(self.streamClass.__name__) + '\n' \
-               + '   Origin : ' + str(self.origin) + '\n' + '   Inputs : ' + str(self.arInput) + '\n' \
-               + '   Index result : ' + str(self.arIndex)
+               + '   Origin : ' + str(self.origin) + '\n' + '   Result type : ' + str(self.resultType) + '\n' \
+               + '   Inputs : ' + str(self.arInput) + '\n' + '   Index result : ' + str(self.arIndex)
 
     def __copy__(self):
-        return ParsingResult(self.streamClass, self.origin, self.readMethod, self.writeMethod, self.returnMethod,
-                             self.closeMethod, self.arInput['args'], self.arInput['kwargs'], self.arIndex)
+        return ParsingResult(self.streamClass, self.origin, self.resultType, self.readMethod, self.writeMethod,
+                             self.returnMethod, self.closeMethod, self.arInput['args'], self.arInput['kwargs'],
+                             self.arIndex)
 
     def __deepcopy__(self, memodict={}):
         return self.__copy__()
@@ -537,6 +545,7 @@ class ParsingResult:
         if isinstance(parsing_result_a, ParsingResult) and isinstance(parsing_result_b, ParsingResult):
             return (parsing_result_a.streamClass == parsing_result_b.streamClass and
                     parsing_result_a.origin == parsing_result_b.origin and
+                    parsing_result_a.resultType == parsing_result_b.resultType and
                     parsing_result_a.arInput['args'] == parsing_result_b.arInput['args'] and
                     parsing_result_a.arInput['kwargs'] == parsing_result_b.arInput['kwargs'] and
                     parsing_result_a.readMethod == parsing_result_b.readMethod and
