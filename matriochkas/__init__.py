@@ -16,6 +16,7 @@ from matriochkas.core.ModificationEntities import ModificationAdd
 from matriochkas.core.ModificationEntities import ModificationOperator
 
 from matriochkas.core.IO import StreamReader
+from matriochkas.core.IO import LinkedStreamReader
 from matriochkas.core.IO import StreamWriter
 
 from matriochkas.core.Configuration import StreamClassConfiguration

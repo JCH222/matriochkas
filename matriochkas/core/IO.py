@@ -116,6 +116,26 @@ class StreamReader(StreamEntity):
             raise ValueError("Not enough characters to parse : " + str(len(element)))
 
 
+class LinkedStreamReader(StreamReader):
+    def __init__(self, parsing_result):
+        if isinstance(parsing_result, ParsingResult):
+            super(LinkedStreamReader, self).__init__(*parsing_result.arInput['args'], **parsing_result.arInput['kwargs'],
+                                                     stream_class=parsing_result.streamClass,
+                                                     result_type=parsing_result.resultType,
+                                                     read_method=parsing_result.readMethod,
+                                                     return_method=parsing_result.returnMethod,
+                                                     close_method=parsing_result.closeMethod,
+                                                     seek_method=parsing_result.seekMethod)
+        else:
+            raise TypeError('Parsing result has to be ParsingResult object')
+
+    def _get_stream_object(self):
+        if self.resultType == ParsingResultType.VALUE:
+            return self.streamClass(*self.args, **self.kwargs)
+        else:
+            return self.kwargs['reference']
+
+
 class StreamWriter(StreamEntity):
     def __init__(self, *args, stream_class=StringIO, write_method=None, return_method=None, close_method=None,
                  seek_method=None, **kwargs):
