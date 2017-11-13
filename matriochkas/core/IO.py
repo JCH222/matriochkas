@@ -4,6 +4,7 @@ from io import StringIO
 from collections import deque
 from matriochkas.core.ModificationEntities import ModificationSide
 from matriochkas.core.ParsingEntities import ParsingResult
+from matriochkas.core.ParsingEntities import ParsingResultOrigin
 from matriochkas.core.Configuration import StreamClassConfiguration
 
 import abc
@@ -84,7 +85,7 @@ class StreamReader(StreamEntity):
                 current_position += 1
 
             close_method()
-            return ParsingResult(self.streamClass, self.readMethod, self.writeMethod, self.returnMethod,
+            return ParsingResult(self.streamClass, ParsingResultOrigin.READING, self.readMethod, self.writeMethod, self.returnMethod,
                                  self.closeMethod, self.args, self.kwargs, ar_index)
         else:
             close_method()
@@ -99,7 +100,10 @@ class StreamWriter(StreamEntity):
 
     def write(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
               args=None, kwargs=None):
-        input_parsing_result = copy.deepcopy(parsing_result)
+        if isinstance(parsing_result, ParsingResult) and parsing_result.origin == ParsingResultOrigin.MODIFICATION:
+            input_parsing_result = copy.deepcopy(parsing_result)
+        else:
+            raise TypeError('Parsing result has to be ParsingResult object with MODIFICATION origin')
         if stream_class is not None:
             input_parsing_result.streamClass = stream_class
         if read_method is not None:

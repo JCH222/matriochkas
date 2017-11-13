@@ -74,6 +74,7 @@ def test_modification_operation():
 def test_modification_add():
     modification_add_1 = ModificationEntities.ModificationAdd('0', 1, ModificationEntities.ModificationSide.RIGHT)
     parsing_result_1 = matriochkas.core.ParsingEntities.ParsingResult(matriochkas.tests.ParsingEntities.MockStreamClass,
+                                                                      matriochkas.core.ParsingEntities.ParsingResultOrigin.READING,
                                                                       'read method 1', 'write method 1',
                                                                       'return method 1', 'close method 1',
                                                                       ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
@@ -82,6 +83,7 @@ def test_modification_add():
     result = modification_add_1.generate_parsing_result(parsing_result_1)
     assert isinstance(result, matriochkas.core.ParsingEntities.ParsingResult) is True
     assert (result.streamClass == matriochkas.tests.ParsingEntities.MockStreamClass) is True
+    assert (result.origin == matriochkas.core.ParsingEntities.ParsingResultOrigin.MODIFICATION) is True
     assert (result.readMethod == 'read method 1') is True
     assert (result.writeMethod == 'write method 1') is True
     assert (result.returnMethod == 'return method 1') is True
@@ -99,6 +101,7 @@ def test_modification_add():
 def test_modification_remove():
     modification_remove_1 = ModificationEntities.ModificationRemove(1)
     parsing_result_1 = matriochkas.core.ParsingEntities.ParsingResult(matriochkas.tests.ParsingEntities.MockStreamClass,
+                                                                      matriochkas.core.ParsingEntities.ParsingResultOrigin.READING,
                                                                       'read method 1', 'write method 1',
                                                                       'return method 1', 'close method',
                                                                       ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
@@ -107,6 +110,7 @@ def test_modification_remove():
     result = modification_remove_1.generate_parsing_result(parsing_result_1)
     assert isinstance(result, matriochkas.core.ParsingEntities.ParsingResult) is True
     assert (result.streamClass == matriochkas.tests.ParsingEntities.MockStreamClass) is True
+    assert (result.origin == matriochkas.core.ParsingEntities.ParsingResultOrigin.MODIFICATION) is True
     assert (result.readMethod == 'read method 1') is True
     assert (result.writeMethod == 'write method 1') is True
     assert (result.returnMethod == 'return method 1') is True

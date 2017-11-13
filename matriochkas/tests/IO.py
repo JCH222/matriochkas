@@ -86,6 +86,7 @@ def test_stream_reader():
     result = stream_entity.read(pipeline)
     assert isinstance(result, ParsingEntities.ParsingResult) is True
     assert (result.streamClass == StringIO) is True
+    assert (result.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert isinstance(result.arInput['args'], tuple) is True
     assert (len(result.arInput['args']) == 1) is True
     assert (result.arInput['args'][0] == text) is True
@@ -99,6 +100,7 @@ def test_stream_reader():
     result_2 = stream_entity_2.read(pipeline)
     assert isinstance(result_2, ParsingEntities.ParsingResult) is True
     assert (result_2.streamClass == StringIO) is True
+    assert (result_2.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert isinstance(result_2.arInput['args'], tuple) is True
     assert (len(result_2.arInput['args']) == 1) is True
     assert (result_2.arInput['args'][0] == text) is True
@@ -133,7 +135,8 @@ def test_stream_writer():
                   'ut aliquip ex ea commodo consequat-Duis aute irure dolor in reprehenderit in voluptate velit esse' \
                   ' cillum dolore eu fugiat nulla pariatur-Excepteur sint occaecat cupidatat non proident-sunt in' \
                   ' culpa qui officia deserunt mollit anim id est laborum-'
-    parsing_result = ParsingEntities.ParsingResult(StringIO, 'read', 'write', 'return', 'close', [text], {},
+    parsing_result = ParsingEntities.ParsingResult(StringIO, ParsingEntities.ParsingResultOrigin.MODIFICATION,
+                                                   'read', 'write', 'return', 'close', [text], {},
                                                    [(26, ''), (26, '-', ModificationEntities.ModificationSide.RIGHT),
                                                     (27, ''), (55, ''),
                                                     (55, '-', ModificationEntities.ModificationSide.RIGHT), (56, ''),
@@ -151,3 +154,24 @@ def test_stream_writer():
 
     stream_entity_2 = IO.StreamWriter(write_method='write', return_method='getvalue', close_method='close')
     assert (stream_entity_2.write(parsing_result) == text_result) is True
+
+    parsing_result_2 = ParsingEntities.ParsingResult(StringIO, ParsingEntities.ParsingResultOrigin.READING,
+                                                   'read', 'write', 'return', 'close', [text], {},
+                                                   [(26, ''), (26, '-', ModificationEntities.ModificationSide.RIGHT),
+                                                    (27, ''), (55, ''),
+                                                    (55, '-', ModificationEntities.ModificationSide.RIGHT), (56, ''),
+                                                    (122, ''), (122, '-', ModificationEntities.ModificationSide.RIGHT),
+                                                    (123, ''), (147, ''),
+                                                    (147, '-', ModificationEntities.ModificationSide.RIGHT), (148, ''),
+                                                    (230, ''), (230, '-', ModificationEntities.ModificationSide.RIGHT),
+                                                    (231, ''), (333, ''),
+                                                    (333, '-', ModificationEntities.ModificationSide.RIGHT), (334, ''),
+                                                    (381, ''), (381, '-', ModificationEntities.ModificationSide.RIGHT),
+                                                    (382, ''), (444, ''),
+                                                    (444, '-', ModificationEntities.ModificationSide.RIGHT), (445, '')])
+    stream_entity_3 = IO.StreamWriter()
+    try:
+        stream_entity_3.write(parsing_result_2)
+        assert False
+    except TypeError:
+        assert True

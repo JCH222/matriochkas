@@ -635,10 +635,12 @@ def test_parsing_block():
 
 
 def test_parsing_result():
-    parsing_result_1 = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
-                                                     'return method 1', 'close method 1', ['arg a', 'arg b'],
+    parsing_result_1 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                     'read method 1', 'write method 1', 'return method 1',
+                                                     'close method 1', ['arg a', 'arg b'],
                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
     assert (parsing_result_1.streamClass == MockStreamClass) is True
+    assert (parsing_result_1.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_1.readMethod == 'read method 1') is True
     assert (parsing_result_1.writeMethod == 'write method 1') is True
     assert (parsing_result_1.returnMethod == 'return method 1') is True
@@ -646,65 +648,83 @@ def test_parsing_result():
     assert (parsing_result_1.arIndex == [(0, 'A'), (2, 'B')])
 
     try:
-        ParsingEntities.ParsingResult(None, 'read method', 'write method', 'return method', 'close method',
-                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+        ParsingEntities.ParsingResult(None, ParsingEntities.ParsingResultOrigin.READING, 'read method', 'write method',
+                                      'return method', 'close method', ['arg a', 'arg b'],
+                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
     try:
-        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 'return method', 'close method',
+        ParsingEntities.ParsingResult(MockStreamClass, None, 'read method', 'write method', 'return method',
+                                      'close method', ['arg a', 'arg b'],
+                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+        assert False
+    except TypeError:
+        assert True
+
+    try:
+        ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING, 'read method',
+                                      'write method', 'return method', 'close method',
                                       None, {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
     try:
-        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 'return method', 'close method',
+        ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                      'read method', 'write method', 'return method', 'close method',
                                       ['arg a', 'arg b'], None, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
     try:
-        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 'return method', 'close method',
+        ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                      'read method', 'write method', 'return method', 'close method',
                                       ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, None)
         assert False
     except TypeError:
         assert True
 
     try:
-        ParsingEntities.ParsingResult(MockStreamClass, 0, 'write method', 'return method', ['arg a', 'arg b'],
+        ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                      0, 'write method', 'return method', ['arg a', 'arg b'],
                                       'close method', {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
     try:
-        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 0, 'return method', 'close method',
+        ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                      'read method', 0, 'return method', 'close method',
                                       ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
     try:
-        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 0, 'close method',
+        ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                      'read method', 'write method', 0, 'close method',
                                       ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
     try:
-        ParsingEntities.ParsingResult(MockStreamClass, 'read method', 'write method', 'return method', 0,
+        ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                      'read method', 'write method', 'return method', 0,
                                       ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
         assert False
     except TypeError:
         assert True
 
-    parsing_result_2 = ParsingEntities.ParsingResult(MockStreamClass, None, 'write method 2', 'return method 2',
+    parsing_result_2 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                     None, 'write method 2', 'return method 2',
                                                      'close method 2', ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
                                                      [(0, 'A'), (2, 'B')])
     assert (parsing_result_2.streamClass == MockStreamClass) is True
+    assert (parsing_result_2.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert parsing_result_2.readMethod is None
     assert (parsing_result_2.writeMethod == 'write method 2') is True
     assert (parsing_result_2.returnMethod == 'return method 2') is True
@@ -712,10 +732,12 @@ def test_parsing_result():
     assert (parsing_result_2.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
     assert (parsing_result_2.arIndex == [(0, 'A'), (2, 'B')])
 
-    parsing_result_3 = ParsingEntities.ParsingResult(MockStreamClass, 'read method 3', None, 'return method 3',
+    parsing_result_3 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                     'read method 3', None, 'return method 3',
                                                      'close method 3', ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
                                                      [(0, 'A'), (2, 'B')])
     assert (parsing_result_3.streamClass == MockStreamClass) is True
+    assert (parsing_result_3.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_3.readMethod == 'read method 3') is True
     assert parsing_result_3.writeMethod is None
     assert (parsing_result_3.returnMethod == 'return method 3') is True
@@ -723,10 +745,12 @@ def test_parsing_result():
     assert (parsing_result_3.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
     assert (parsing_result_3.arIndex == [(0, 'A'), (2, 'B')])
 
-    parsing_result_4 = ParsingEntities.ParsingResult(MockStreamClass, 'read method 4', 'write method 4', None,
+    parsing_result_4 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                     'read method 4', 'write method 4', None,
                                                      'close method 4', ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
                                                      [(0, 'A'), (2, 'B')])
     assert (parsing_result_4.streamClass == MockStreamClass) is True
+    assert (parsing_result_4.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_4.readMethod == 'read method 4') is True
     assert (parsing_result_4.writeMethod == 'write method 4') is True
     assert parsing_result_4.returnMethod is None
@@ -734,10 +758,12 @@ def test_parsing_result():
     assert (parsing_result_4.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
     assert (parsing_result_4.arIndex == [(0, 'A'), (2, 'B')])
 
-    parsing_result_8 = ParsingEntities.ParsingResult(MockStreamClass, 'read method 8', 'write method 8',
+    parsing_result_8 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                     'read method 8', 'write method 8',
                                                      'return method 8', None, ['arg a', 'arg b'],
                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
     assert (parsing_result_8.streamClass == MockStreamClass) is True
+    assert (parsing_result_8.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_8.readMethod == 'read method 8') is True
     assert (parsing_result_8.writeMethod == 'write method 8') is True
     assert (parsing_result_8.returnMethod == 'return method 8') is True
@@ -747,14 +773,17 @@ def test_parsing_result():
 
     ###################################################################################################################
 
-    parsing_result_5a = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
+    parsing_result_5a = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                      'read method 1', 'write method 1',
                                                       'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
-    parsing_result_5b = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
+    parsing_result_5b = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                      'read method 1', 'write method 1',
                                                       'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
     parsing_result_5 = parsing_result_5a + parsing_result_5b
     assert (parsing_result_5.streamClass == MockStreamClass) is True
+    assert (parsing_result_5.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_5.readMethod == 'read method 1') is True
     assert (parsing_result_5.writeMethod == 'write method 1') is True
     assert (parsing_result_5.returnMethod == 'return method 1') is True
@@ -762,7 +791,8 @@ def test_parsing_result():
     assert (parsing_result_5.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
     assert (parsing_result_5.arIndex == [(0, 'A'), (2, 'B'), (4, 'D')])
 
-    parsing_result_5c = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
+    parsing_result_5c = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                      'read method 1', 'write method 1',
                                                       'return method 1', 'close method 1', ['arg e', 'arg f'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
     try:
@@ -771,7 +801,8 @@ def test_parsing_result():
     except ValueError:
         assert True
 
-    parsing_result_5d = ParsingEntities.ParsingResult(MockStreamClass, 'read method 2', 'write method 1',
+    parsing_result_5d = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                      'read method 2', 'write method 1',
                                                       'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
     try:
@@ -780,7 +811,8 @@ def test_parsing_result():
     except ValueError:
         assert True
 
-    parsing_result_5e = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 2',
+    parsing_result_5e = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                      'read method 1', 'write method 2',
                                                       'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
     try:
@@ -789,7 +821,8 @@ def test_parsing_result():
     except ValueError:
         assert True
 
-    parsing_result_5f = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
+    parsing_result_5f = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                      'read method 1', 'write method 1',
                                                       'return method 2', 'close method 1', ['arg a', 'arg b'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
     try:
@@ -798,7 +831,8 @@ def test_parsing_result():
     except ValueError:
         assert True
 
-    parsing_result_5h = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
+    parsing_result_5h = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                      'read method 1', 'write method 1',
                                                       'return method 1', 'close method 2', ['arg a', 'arg b'],
                                                       {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
     try:
@@ -807,7 +841,8 @@ def test_parsing_result():
     except ValueError:
         assert True
 
-    parsing_result_5g = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
+    parsing_result_5g = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                      'read method 1', 'write method 1',
                                                       'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                       {'arg d': 'd', 'arg e': 'e'}, [(0, 'C'), (4, 'D')])
     try:
@@ -825,7 +860,8 @@ def test_parsing_result():
 
     ###################################################################################################################
 
-    parsing_result_6 = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
+    parsing_result_6 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                     'read method 1', 'write method 1',
                                                      'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                      {'arg c': 'c', 'arg d': 'd'},
                                                      [(0, 'A'), (2, 'B', 'Left')])
@@ -851,6 +887,7 @@ def test_parsing_result():
 
     copy_parsing_result_1 = copy.copy(parsing_result_1)
     assert (copy_parsing_result_1.streamClass == MockStreamClass) is True
+    assert (copy_parsing_result_1.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (copy_parsing_result_1.readMethod == 'read method 1') is True
     assert (copy_parsing_result_1.writeMethod == 'write method 1') is True
     assert (copy_parsing_result_1.returnMethod == 'return method 1') is True
@@ -860,6 +897,7 @@ def test_parsing_result():
     assert (copy_parsing_result_1.arIndex == [(0, 'A'), (2, 'B')])
     copy_parsing_result_1.arInput = {'args': ['arg c', 'arg d'], 'kwargs': {'arg e': 'e', 'arg f': 'f'}}
     assert (copy_parsing_result_1.streamClass == MockStreamClass) is True
+    assert (copy_parsing_result_1.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (copy_parsing_result_1.readMethod == 'read method 1') is True
     assert (copy_parsing_result_1.writeMethod == 'write method 1') is True
     assert (copy_parsing_result_1.returnMethod == 'return method 1') is True
@@ -868,6 +906,7 @@ def test_parsing_result():
             {'args': ['arg c', 'arg d'], 'kwargs': {'arg e': 'e', 'arg f': 'f'}}) is True
     assert (copy_parsing_result_1.arIndex == [(0, 'A'), (2, 'B')])
     assert (parsing_result_1.streamClass == MockStreamClass) is True
+    assert (parsing_result_1.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_1.readMethod == 'read method 1') is True
     assert (parsing_result_1.writeMethod == 'write method 1') is True
     assert (parsing_result_1.returnMethod == 'return method 1') is True
@@ -878,7 +917,8 @@ def test_parsing_result():
 
     ###################################################################################################################
 
-    parsing_result_7 = ParsingEntities.ParsingResult(MockStreamClass, 'read method 1', 'write method 1',
+    parsing_result_7 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
+                                                     'read method 1', 'write method 1',
                                                      'return method 1', 'close method 1', ['arg a', 'arg b'],
                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
     assert ParsingEntities.ParsingResult.are_from_the_same_parsing(parsing_result_1, parsing_result_7) is True
