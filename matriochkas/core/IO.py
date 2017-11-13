@@ -35,13 +35,16 @@ class StreamEntity(metaclass=abc.ABCMeta):
 
     @staticmethod
     def generate_method(stream_object, method_key):
+        def none_return():
+            return None
+
         stream_class_name = type(stream_object).__name__
         for configuration in StreamClassConfiguration:
             if configuration.name == stream_class_name:
                 if configuration.value[method_key] != 'None':
                     return getattr(stream_object, configuration.value[method_key])
                 else:
-                    return None
+                    return none_return
         return None
 
 
@@ -163,10 +166,7 @@ class StreamWriter(StreamEntity):
                     is_ended = True
             character = input_read_method(1)
             index += 1
-        if output_return_method is None:
-            return None
-        else:
-            result = output_return_method()
+        result = output_return_method()
 
         input_close_method()
         output_close_method()
