@@ -115,6 +115,12 @@ def test_stream_reader():
     except ValueError:
         assert True
 
+    ###################################################################################################################
+
+    stream_object = stream_entity_2._get_stream_object()
+    assert isinstance(stream_object, StringIO) is True
+    assert (stream_object.getvalue() == text) is True
+
 
 def test_stream_writer():
     text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et ' \

@@ -30,6 +30,9 @@ class StreamEntity(metaclass=abc.ABCMeta):
         else:
             raise TypeError('args has to be dict object')
 
+    def _get_stream_object(self):
+        return self.streamClass(*self.args, **self.kwargs)
+
     @staticmethod
     def generate_method(stream_object, method_key):
         stream_class_name = type(stream_object).__name__
@@ -52,7 +55,7 @@ class StreamReader(StreamEntity):
         min_position = parsing_pipeline.get_min_position()
         max_position = parsing_pipeline.get_max_position()
         length = max_position - min_position + 1
-        stream = self.streamClass(*self.args, **self.kwargs)
+        stream = self._get_stream_object()
         if self.readMethod is not None:
             read_method = getattr(stream, self.readMethod)
         else:
