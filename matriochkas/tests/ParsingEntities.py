@@ -90,7 +90,7 @@ def test_operator_type():
     assert ParsingEntities.OperatorType.XOR.value == 'xor'
 
 
-def test_parsing_result_type():
+def test_parsing_result_origin():
 
     assert len(ParsingEntities.ParsingResultOrigin) == 2
 
@@ -99,6 +99,17 @@ def test_parsing_result_type():
 
     assert ParsingEntities.ParsingResultOrigin.MODIFICATION.name == 'MODIFICATION'
     assert ParsingEntities.ParsingResultOrigin.MODIFICATION.value == 'modification'
+
+
+def test_parsing_result_type():
+
+    assert len(ParsingEntities.ParsingResultType) == 2
+
+    assert ParsingEntities.ParsingResultType.VALUE.name == 'VALUE'
+    assert ParsingEntities.ParsingResultType.VALUE.value == 'value'
+
+    assert ParsingEntities.ParsingResultType.REFERENCE.name == 'REFERENCE'
+    assert ParsingEntities.ParsingResultType.REFERENCE.value == 'reference'
 
 
 def test_entity():

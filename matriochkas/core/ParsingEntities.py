@@ -18,6 +18,11 @@ class ParsingResultOrigin(Enum):
     MODIFICATION = 'modification'
 
 
+class ParsingResultType(Enum):
+    VALUE = 'value'
+    REFERENCE = 'reference'
+
+
 class Entity(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def check(self, element, ref_position):
