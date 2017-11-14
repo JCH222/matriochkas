@@ -182,7 +182,7 @@ class StreamWriter(StreamEntity):
             input_seek_method = getattr(input_stream, input_parsing_result.seekMethod)
         else:
             input_seek_method = StreamEntity.generate_method(input_stream, 'seek_method')
-        output_stream = self.streamClass(*self.args, **self.kwargs)
+        output_stream = self._get_stream_object()
         if self.writeMethod is not None:
             output_write_method = getattr(output_stream, self.writeMethod)
         else:
