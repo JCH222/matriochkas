@@ -93,7 +93,7 @@ Parsage du texte pour la détection des phrases:
     sentence_reader = LinkedStreamReader(word_parsing_result)
 
     # Parsage du texte avec le pipeline de parsage des phrases précédemment créé
-    sentence_parsing_result = sentence_reader.read(sentence_parsing_pipeline, close_stream=True)
+    sentence_parsing_result = sentence_reader.read(sentence_parsing_pipeline, close_stream=False)
 
 Création du résulat de parsage modifié pour la détection des mots:
 
@@ -108,7 +108,7 @@ Le paramère *key_word* dans les schémas de modifition permet d'éffectuer cert
 Création du résulat de parsage modifié pour la détection des phrases:
 
     #Création du schéma de modification
-    sentence_modification_pattern = ModificationRemove() + ModificationAdd(';')
+    sentence_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1)
 
     #Application de la modification au résultat de parsage précédent
     sentence_final_parsing_result = sentence_modification_pattern.generate_parsing_result(sentence_parsing_result)
