@@ -89,7 +89,7 @@ De plus, le stream ne doit pas être fermé à la fin du premier parsage afin de
 Parsage du texte pour la détection des phrases:
 
     # Création du reader pour analyser le texte pour la détection des phrases
-    # On utilise une instance de la *LinkedStreamReader* car elle prend en paramètre un résultat de parsage
+    # On utilise une instance de la LinkedStreamReader car elle prend en paramètre un résultat de parsage
     sentence_reader = LinkedStreamReader(word_parsing_result)
 
     # Parsage du texte avec le pipeline de parsage des phrases précédemment créé
@@ -129,7 +129,7 @@ On obtient deux nouveaux résultats de parsage (la variable *word_final_parsing_
         Origin : ParsingResultOrigin.MODIFICATION
         Result type : ParsingResultType.REFERENCE
         Inputs : {'args': (), 'kwargs': {'reference': <_io.StringIO object at 0x00468D50>}}
-        Index result : [(5, ''), (5, ';', <ModificationSide.RIGHT: 1>), ..., (436, ';', <ModificationSide.RIGHT: 1>)]
+        Index result : [(123, ''), (123, ';', <ModificationSide.RIGHT: 1>), ...]
         
 Création des textes modifiés:
 
@@ -148,7 +148,7 @@ On obtient ces textes:
     dolor;in;reprehenderit;in;voluptate;velit;esse;cillum;dolore;eu;fugiat;nulla;pariatur;Excepteur;sint;occaecat;cupidatat;non;
     proident;sunt;in;culpa;qui;officia;deserunt;mollit;anim;id;est;laborum
     
-    Lorem;ipsum;dolor;sit;amet;consectetur;adipiscing;elit;sed;do;eiusmod;tempor;incididunt;ut;labore;et;dolore;magna;aliqua;
-    Ut;enim;ad;minim;veniam;quis;nostrud;exercitation;ullamco;laboris;nisi;ut;aliquip;ex;ea;commodo;consequat;Duis;aute;irure;
-    dolor;in;reprehenderit;in;voluptate;velit;esse;cillum;dolore;eu;fugiat;nulla;pariatur;Excepteur;sint;occaecat;cupidatat;non;
-    proident;sunt;in;culpa;qui;officia;deserunt;mollit;anim;id;est;laborum
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua;
+    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat;
+    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur;
+    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
