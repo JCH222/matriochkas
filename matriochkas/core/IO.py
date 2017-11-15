@@ -4,6 +4,8 @@ from io import StringIO
 from collections import deque
 from matriochkas.core.ModificationEntities import ModificationSide
 from matriochkas.core.ParsingEntities import ParsingResult
+from matriochkas.core.ParsingEntities import ParsingResultOrigin
+from matriochkas.core.ParsingEntities import ParsingResultType
 from matriochkas.core.Configuration import StreamClassConfiguration
 
 import abc
@@ -12,13 +14,14 @@ import copy
 
 class StreamEntity(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def __init__(self, args, kwargs, stream_class=None, read_method=None, write_method=None, return_method=None,
-                 close_method=None):
+    def __init__(self, args, kwargs, stream_class=None, read_method=None, write_method=None,
+                 return_method=None, close_method=None, seek_method=None):
         self.streamClass = stream_class
         self.readMethod = read_method
         self.writeMethod = write_method
         self.returnMethod = return_method
         self.closeMethod = close_method
+        self.seekMethod = seek_method
 
         if isinstance(args, (list, tuple)):
             self.args = args
@@ -30,29 +33,41 @@ class StreamEntity(metaclass=abc.ABCMeta):
         else:
             raise TypeError('args has to be dict object')
 
+    def _get_stream_object(self):
+        return self.streamClass(*self.args, **self.kwargs)
+
     @staticmethod
     def generate_method(stream_object, method_key):
+        def none_return():
+            return None
+
         stream_class_name = type(stream_object).__name__
         for configuration in StreamClassConfiguration:
             if configuration.name == stream_class_name:
                 if configuration.value[method_key] != 'None':
                     return getattr(stream_object, configuration.value[method_key])
                 else:
-                    return None
+                    return none_return
         return None
 
 
 class StreamReader(StreamEntity):
-    def __init__(self, *args, stream_class=StringIO, read_method=None, return_method=None, close_method=None, **kwargs):
-        super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class, read_method=read_method,
-                                           return_method=return_method, close_method=close_method)
+    def __init__(self, *args, stream_class=StringIO, result_type=ParsingResultType.VALUE, read_method=None,
+                 return_method=None, close_method=None, seek_method=None, **kwargs):
+        super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class,
+                                           read_method=read_method, return_method=return_method,
+                                           close_method=close_method, seek_method=seek_method)
+        if isinstance(result_type, ParsingResultType):
+            self.resultType = result_type
+        else:
+            raise TypeError('Result type has to be ParsingResultType object')
 
-    def read(self, parsing_pipeline):
+    def read(self, parsing_pipeline, close_stream=True):
         parsing_pipeline.reset()
         min_position = parsing_pipeline.get_min_position()
         max_position = parsing_pipeline.get_max_position()
         length = max_position - min_position + 1
-        stream = self.streamClass(*self.args, **self.kwargs)
+        stream = self._get_stream_object()
         if self.readMethod is not None:
             read_method = getattr(stream, self.readMethod)
         else:
@@ -61,6 +76,10 @@ class StreamReader(StreamEntity):
             close_method = getattr(stream, self.closeMethod)
         else:
             close_method = StreamEntity.generate_method(stream, 'close_method')
+        if self.seekMethod is not None:
+            seek_method = getattr(stream, self.seekMethod)
+        else:
+            seek_method = StreamEntity.generate_method(stream, 'seek_method')
         current_position = -min_position
         ar_index = list()
         element = deque(read_method(length))
@@ -77,23 +96,59 @@ class StreamReader(StreamEntity):
                     break
                 current_position += 1
 
-            close_method()
-            return ParsingResult(self.streamClass, self.readMethod, self.writeMethod, self.returnMethod,
-                                 self.closeMethod, self.args, self.kwargs, ar_index)
+            if close_stream:
+                close_method()
+            else:
+                seek_method(0)
+
+            if self.resultType == ParsingResultType.VALUE:
+                parsing_result = ParsingResult(self.streamClass, ParsingResultOrigin.READING, self.resultType,
+                                               self.readMethod, self.writeMethod, self.returnMethod, self.closeMethod,
+                                               self.seekMethod, self.args, self.kwargs, ar_index)
+            else:
+                parsing_result = ParsingResult(self.streamClass, ParsingResultOrigin.READING, self.resultType,
+                                               self.readMethod, self.writeMethod, self.returnMethod, self.closeMethod,
+                                               self.seekMethod, tuple(), {'reference': stream}, ar_index)
+
+            return parsing_result
         else:
             close_method()
             raise ValueError("Not enough characters to parse : " + str(len(element)))
 
 
+class LinkedStreamReader(StreamReader):
+    def __init__(self, parsing_result):
+        if isinstance(parsing_result, ParsingResult):
+            super(LinkedStreamReader, self).__init__(*parsing_result.arInput['args'], **parsing_result.arInput['kwargs'],
+                                                     stream_class=parsing_result.streamClass,
+                                                     result_type=parsing_result.resultType,
+                                                     read_method=parsing_result.readMethod,
+                                                     return_method=parsing_result.returnMethod,
+                                                     close_method=parsing_result.closeMethod,
+                                                     seek_method=parsing_result.seekMethod)
+        else:
+            raise TypeError('Parsing result has to be ParsingResult object')
+
+    def _get_stream_object(self):
+        if self.resultType == ParsingResultType.VALUE:
+            return self.streamClass(*self.args, **self.kwargs)
+        else:
+            return self.kwargs['reference']
+
+
 class StreamWriter(StreamEntity):
     def __init__(self, *args, stream_class=StringIO, write_method=None, return_method=None, close_method=None,
-                 **kwargs):
+                 seek_method=None, **kwargs):
         super(StreamWriter, self).__init__(args, kwargs, stream_class=stream_class, write_method=write_method,
-                                           return_method=return_method, close_method=close_method)
+                                           return_method=return_method, close_method=close_method,
+                                           seek_method=seek_method)
 
     def write(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
-              args=None, kwargs=None):
-        input_parsing_result = copy.deepcopy(parsing_result)
+              seek_method=None, args=None, kwargs=None, close_reading_stream=True):
+        if isinstance(parsing_result, ParsingResult) and parsing_result.origin == ParsingResultOrigin.MODIFICATION:
+            input_parsing_result = copy.deepcopy(parsing_result)
+        else:
+            raise TypeError('Parsing result has to be ParsingResult object with MODIFICATION origin')
         if stream_class is not None:
             input_parsing_result.streamClass = stream_class
         if read_method is not None:
@@ -102,13 +157,19 @@ class StreamWriter(StreamEntity):
             input_parsing_result.returnMethod = return_method
         if close_method is not None:
             input_parsing_result.closeMethod = close_method
+        if seek_method is not None:
+            input_parsing_result.seekMethod = seek_method
         if args is not None:
             input_parsing_result.arInput['args'] = args
         if kwargs is not None:
             input_parsing_result.arInput['kwargs'] = kwargs
 
-        input_stream = input_parsing_result.streamClass(*input_parsing_result.arInput['args'],
-                                                        **input_parsing_result.arInput['kwargs'])
+        if input_parsing_result.resultType == ParsingResultType.VALUE:
+            input_stream = input_parsing_result.streamClass(*input_parsing_result.arInput['args'],
+                                                            **input_parsing_result.arInput['kwargs'])
+        else:
+            input_stream = input_parsing_result.arInput['kwargs']['reference']
+
         if input_parsing_result.readMethod is not None:
             input_read_method = getattr(input_stream, input_parsing_result.readMethod)
         else:
@@ -117,7 +178,11 @@ class StreamWriter(StreamEntity):
             input_close_method = getattr(input_stream, input_parsing_result.closeMethod)
         else:
             input_close_method = StreamEntity.generate_method(input_stream, 'close_method')
-        output_stream = self.streamClass(*self.args, **self.kwargs)
+        if input_parsing_result.seekMethod is not None:
+            input_seek_method = getattr(input_stream, input_parsing_result.seekMethod)
+        else:
+            input_seek_method = StreamEntity.generate_method(input_stream, 'seek_method')
+        output_stream = self._get_stream_object()
         if self.writeMethod is not None:
             output_write_method = getattr(output_stream, self.writeMethod)
         else:
@@ -160,11 +225,11 @@ class StreamWriter(StreamEntity):
                     is_ended = True
             character = input_read_method(1)
             index += 1
-        if output_return_method is None:
-            return None
-        else:
-            result = output_return_method()
+        result = output_return_method()
 
-        input_close_method()
+        if close_reading_stream:
+            input_close_method()
+        else:
+            input_seek_method(0)
         output_close_method()
         return result

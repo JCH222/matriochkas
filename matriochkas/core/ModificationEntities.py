@@ -2,6 +2,7 @@
 
 from enum import Enum
 from matriochkas.core.ParsingEntities import ParsingResult
+from matriochkas.core.ParsingEntities import ParsingResultOrigin
 
 import abc
 
@@ -54,10 +55,13 @@ class ModificationAdd(ModificationOperation):
                 if self.keyWord is None or self.keyWord in element[2].keys():
                     ar_index.append((element[0] + self.relPosition, self.ar_character, self.modificationSide))
             parsing_result = ParsingResult(initial_parsing_result.streamClass,
+                                           ParsingResultOrigin.MODIFICATION,
+                                           initial_parsing_result.resultType,
                                            initial_parsing_result.readMethod,
                                            initial_parsing_result.writeMethod,
                                            initial_parsing_result.returnMethod,
                                            initial_parsing_result.closeMethod,
+                                           initial_parsing_result.seekMethod,
                                            initial_parsing_result.arInput['args'],
                                            initial_parsing_result.arInput['kwargs'],
                                            ar_index)
@@ -77,10 +81,13 @@ class ModificationRemove(ModificationOperation):
                 if self.keyWord is None or self.keyWord in element[2].keys():
                     ar_index.append((element[0]+self.relPosition, ''))
             parsing_result = ParsingResult(initial_parsing_result.streamClass,
+                                           ParsingResultOrigin.MODIFICATION,
+                                           initial_parsing_result.resultType,
                                            initial_parsing_result.readMethod,
                                            initial_parsing_result.writeMethod,
                                            initial_parsing_result.returnMethod,
                                            initial_parsing_result.closeMethod,
+                                           initial_parsing_result.seekMethod,
                                            initial_parsing_result.arInput['args'],
                                            initial_parsing_result.arInput['kwargs'],
                                            ar_index)

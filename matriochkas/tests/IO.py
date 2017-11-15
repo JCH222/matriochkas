@@ -11,8 +11,10 @@ from collections import Counter
 
 
 class InstanceStreamEntity(IO.StreamEntity):
-    def __init__(self, name, args, kwargs, stream_class=None, read_method=None, write_method=None, return_method=None):
-        super(InstanceStreamEntity, self).__init__(args, kwargs, stream_class, read_method, write_method, return_method)
+    def __init__(self, name, args, kwargs, stream_class=None, read_method=None, write_method=None,
+                 return_method=None, close_method=None):
+        super(InstanceStreamEntity, self).__init__(args, kwargs, stream_class, read_method, write_method,
+                                                   return_method, close_method)
         self.name = name
 
 ########################################################################################################################
@@ -86,6 +88,8 @@ def test_stream_reader():
     result = stream_entity.read(pipeline)
     assert isinstance(result, ParsingEntities.ParsingResult) is True
     assert (result.streamClass == StringIO) is True
+    assert (result.origin == ParsingEntities.ParsingResultOrigin.READING) is True
+    assert (result.resultType == ParsingEntities.ParsingResultType.VALUE) is True
     assert isinstance(result.arInput['args'], tuple) is True
     assert (len(result.arInput['args']) == 1) is True
     assert (result.arInput['args'][0] == text) is True
@@ -95,18 +99,21 @@ def test_stream_reader():
                                (230, '.', Counter({None: 2})), (333, '.', Counter({None: 2})),
                                (381, ',', Counter({None: 2})), (444, '.', Counter({None: 2}))]) is True
 
-    stream_entity_2 = IO.StreamReader(text, read_method='read', return_method='return', close_method='close')
+    stream_entity_2 = IO.StreamReader(text, result_type=ParsingEntities.ParsingResultType.REFERENCE, read_method='read',
+                                      return_method='return', close_method='close')
     result_2 = stream_entity_2.read(pipeline)
     assert isinstance(result_2, ParsingEntities.ParsingResult) is True
     assert (result_2.streamClass == StringIO) is True
+    assert (result_2.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert isinstance(result_2.arInput['args'], tuple) is True
-    assert (len(result_2.arInput['args']) == 1) is True
-    assert (result_2.arInput['args'][0] == text) is True
-    assert (result_2.arInput['kwargs'] == {}) is True
+    assert (len(result_2.arInput['args']) == 0) is True
+    assert isinstance(result_2.arInput['kwargs'], dict) is True
+    assert (len(result_2.arInput['kwargs']) == 1) is True
+    assert isinstance(result_2.arInput['kwargs']['reference'], StringIO) is True
     assert (result_2.arIndex == [(26, ',', Counter({None: 2})), (55, ',', Counter({None: 2})),
-                               (122, '.', Counter({None: 2})), (147, ',', Counter({None: 2})),
-                               (230, '.', Counter({None: 2})), (333, '.', Counter({None: 2})),
-                               (381, ',', Counter({None: 2})), (444, '.', Counter({None: 2}))]) is True
+                                 (122, '.', Counter({None: 2})), (147, ',', Counter({None: 2})),
+                                 (230, '.', Counter({None: 2})), (333, '.', Counter({None: 2})),
+                                 (381, ',', Counter({None: 2})), (444, '.', Counter({None: 2}))]) is True
 
     stream_entity_3 = IO.StreamReader('')
     try:
@@ -114,6 +121,70 @@ def test_stream_reader():
         assert False
     except ValueError:
         assert True
+
+    ###################################################################################################################
+
+    stream_object = stream_entity_2._get_stream_object()
+    assert isinstance(stream_object, StringIO) is True
+    assert (stream_object.getvalue() == text) is True
+
+
+def test_linked_stream_reader():
+    text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et ' \
+           'dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ' \
+           'ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu ' \
+           'fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia ' \
+           'deserunt mollit anim id est laborum. '
+    parsing_result = ParsingEntities.ParsingResult(StringIO, ParsingEntities.ParsingResultOrigin.READING,
+                                                   ParsingEntities.ParsingResultType.VALUE,
+                                                   'read', 'write', 'return', 'close', 'seek', (text,), {}, [])
+    pipeline = ((ParsingEntities.ParsingCondition(', ') | ParsingEntities.ParsingCondition('. ')) >> None) + None
+    stream_entity = IO.LinkedStreamReader(parsing_result)
+    result = stream_entity.read(pipeline)
+    assert isinstance(result, ParsingEntities.ParsingResult) is True
+    assert (result.streamClass == StringIO) is True
+    assert (result.origin == ParsingEntities.ParsingResultOrigin.READING) is True
+    assert (result.resultType == ParsingEntities.ParsingResultType.VALUE) is True
+    assert isinstance(result.arInput['args'], tuple) is True
+    assert (len(result.arInput['args']) == 1) is True
+    assert (result.arInput['args'][0] == text) is True
+    assert (result.arInput['kwargs'] == {}) is True
+    assert (result.arIndex == [(26, ',', Counter({None: 2})), (55, ',', Counter({None: 2})),
+                               (122, '.', Counter({None: 2})), (147, ',', Counter({None: 2})),
+                               (230, '.', Counter({None: 2})), (333, '.', Counter({None: 2})),
+                               (381, ',', Counter({None: 2})), (444, '.', Counter({None: 2}))]) is True
+
+    stream = StringIO(text)
+    parsing_result = ParsingEntities.ParsingResult(StringIO, ParsingEntities.ParsingResultOrigin.READING,
+                                                   ParsingEntities.ParsingResultType.REFERENCE,
+                                                   'read', 'write', 'return', 'close', 'seek', tuple(),
+                                                   {'reference': stream}, [])
+    pipeline = ((ParsingEntities.ParsingCondition(', ') | ParsingEntities.ParsingCondition('. ')) >> None) + None
+    stream_entity_2 = IO.LinkedStreamReader(parsing_result)
+    result = stream_entity_2.read(pipeline)
+    assert isinstance(result, ParsingEntities.ParsingResult) is True
+    assert (result.streamClass == StringIO) is True
+    assert (result.origin == ParsingEntities.ParsingResultOrigin.READING) is True
+    assert (result.resultType == ParsingEntities.ParsingResultType.REFERENCE) is True
+    assert isinstance(result.arInput['args'], tuple) is True
+    assert (len(result.arInput['args']) == 0) is True
+    assert isinstance(result.arInput['kwargs'], dict) is True
+    assert (len(result.arInput['kwargs']) == 1) is True
+    assert (result.arInput['kwargs']['reference'] == stream) is True
+    assert (result.arIndex == [(26, ',', Counter({None: 2})), (55, ',', Counter({None: 2})),
+                               (122, '.', Counter({None: 2})), (147, ',', Counter({None: 2})),
+                               (230, '.', Counter({None: 2})), (333, '.', Counter({None: 2})),
+                               (381, ',', Counter({None: 2})), (444, '.', Counter({None: 2}))]) is True
+
+    ###################################################################################################################
+
+    stream_object = stream_entity._get_stream_object()
+    assert isinstance(stream_object, StringIO) is True
+    assert (stream_object.getvalue() == text) is True
+
+    stream_object_2 = stream_entity_2._get_stream_object()
+    assert isinstance(stream_object_2, StringIO) is True
+    assert (stream_object_2 == stream) is True
 
 
 def test_stream_writer():
@@ -127,7 +198,9 @@ def test_stream_writer():
                   'ut aliquip ex ea commodo consequat-Duis aute irure dolor in reprehenderit in voluptate velit esse' \
                   ' cillum dolore eu fugiat nulla pariatur-Excepteur sint occaecat cupidatat non proident-sunt in' \
                   ' culpa qui officia deserunt mollit anim id est laborum-'
-    parsing_result = ParsingEntities.ParsingResult(StringIO, 'read', 'write', 'return', 'close', [text], {},
+    parsing_result = ParsingEntities.ParsingResult(StringIO, ParsingEntities.ParsingResultOrigin.MODIFICATION,
+                                                   ParsingEntities.ParsingResultType.VALUE,
+                                                   'read', 'write', 'return', 'close', 'seek', [text], {},
                                                    [(26, ''), (26, '-', ModificationEntities.ModificationSide.RIGHT),
                                                     (27, ''), (55, ''),
                                                     (55, '-', ModificationEntities.ModificationSide.RIGHT), (56, ''),
@@ -145,3 +218,25 @@ def test_stream_writer():
 
     stream_entity_2 = IO.StreamWriter(write_method='write', return_method='getvalue', close_method='close')
     assert (stream_entity_2.write(parsing_result) == text_result) is True
+
+    parsing_result_2 = ParsingEntities.ParsingResult(StringIO, ParsingEntities.ParsingResultOrigin.READING,
+                                                     ParsingEntities.ParsingResultType.VALUE,
+                                                     'read', 'write', 'return', 'close', 'seek', [text], {},
+                                                     [(26, ''), (26, '-', ModificationEntities.ModificationSide.RIGHT),
+                                                      (27, ''), (55, ''),
+                                                      (55, '-', ModificationEntities.ModificationSide.RIGHT), (56, ''),
+                                                      (122, ''), (122, '-', ModificationEntities.ModificationSide.RIGHT),
+                                                      (123, ''), (147, ''),
+                                                      (147, '-', ModificationEntities.ModificationSide.RIGHT), (148, ''),
+                                                      (230, ''), (230, '-', ModificationEntities.ModificationSide.RIGHT),
+                                                      (231, ''), (333, ''),
+                                                      (333, '-', ModificationEntities.ModificationSide.RIGHT), (334, ''),
+                                                      (381, ''), (381, '-', ModificationEntities.ModificationSide.RIGHT),
+                                                      (382, ''), (444, ''),
+                                                      (444, '-', ModificationEntities.ModificationSide.RIGHT), (445, '')])
+    stream_entity_3 = IO.StreamWriter()
+    try:
+        stream_entity_3.write(parsing_result_2)
+        assert False
+    except TypeError:
+        assert True
