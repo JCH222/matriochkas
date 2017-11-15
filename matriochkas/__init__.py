@@ -22,4 +22,4 @@ from matriochkas.core.IO import StreamWriter
 from matriochkas.core.Configuration import StreamClassConfiguration
 
 
-__version__ = '0.2'
+__version__ = '0.3'
