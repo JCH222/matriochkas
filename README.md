@@ -61,10 +61,10 @@ Le paramètre *key_word* permet de définir un mot clé afin de savoir si les ca
     # Création du pipeline de parsage qui définit l'ordre d'utilisation des blocs
     # Dans ce cas il n'y a qu'un seul bloc d'où None
     word_parsing_pipeline = word_parsing_block + None
-    sentence_parsing_pipeline = word_parsing_block + None
+    sentence_parsing_pipeline = sentence_parsing_block + None
     
  
-Parsage du texte:
+Parsage du texte pour la détection des mots:
 
     # Création du reader pour analyser le texte pour la détection des mots
     word_reader = StreamReader(text, result_type=ParsingResultType.REFERENCE)
@@ -83,18 +83,39 @@ On obtient en resultat (la variable *word_parsing_result*) un objet qui contient
         (21, ' ', Counter({None: 3})), (26, ',', Counter({'key 1': 2})), ... (432, ' ', Counter({None: 3})), 
         (436, ' ', Counter({None: 3}))]
         
+Le paramètre *result_type* du constructeur permet de définir si l'on souhaite récupérer la référence de l'objet de stream créé lors de l'appel de la méthode *read* dans le résultat de parsage ou uniquement récupérer ses paramètres d'entrées. Dans cette exemple, on souhaite effectuer un deuxième parsage afin de récupérer un résultat pour détecter les phrases. Il est donc préférable de choisir *result_type=ParsingResultType.REFERENCE* afin d'utiliser le même stream pour le deuxième parsage et ainsi éviter la création d'un deuxième stream.  
+De plus, le stream ne doit pas être fermé à la fin du premier parsage afin de pouvoir être utilisé au second d'où le paramètre *close_stream=False* à l'appel de la méthode *read*.  
+
+Parsage du texte pour la détection des phrases:
+
+    # Création du reader pour analyser le texte pour la détection des phrases
+    # On utilise une instance de la *LinkedStreamReader* car elle prend en paramètre un résultat de parsage
+    sentence_reader = LinkedStreamReader(word_parsing_result)
+
+    # Parsage du texte avec le pipeline de parsage des phrases précédemment créé
+    sentence_parsing_result = sentence_reader.read(sentence_parsing_pipeline, close_stream=True)
+
 Création du résulat de parsage modifié pour la détection des mots:
 
     #Création du schéma de modification
     word_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1, key_word='key 1')
 
     #Application de la modification au résultat de parsage précédent
-    word_final_parsing_result = modification_pattern.generate_parsing_result(word_parsing_result)
+    word_final_parsing_result = word_modification_pattern.generate_parsing_result(word_parsing_result)
 
 Le paramère *key_word* dans les schémas de modifition permet d'éffectuer certaines modifications uniquement lorsque le tuple du résultat de parsage possède ce mot clé. Dans cet exemple, on souhaite supprimer le caractère suivant le curseur uniquement dans le cas où une ponctuation a été détectée (un espace).
 
-On obtient un nouveau résultat de parsage (la variable *word_final_parsing_result*) qui contient entre autres les positions et les nouvelles valeurs des caractères à modifier:
+Création du résulat de parsage modifié pour la détection des phrases:
 
+    #Création du schéma de modification
+    sentence_modification_pattern = ModificationRemove() + ModificationAdd(';')
+
+    #Application de la modification au résultat de parsage précédent
+    sentence_final_parsing_result = sentence_modification_pattern.generate_parsing_result(sentence_parsing_result)
+
+On obtient deux nouveaux résultats de parsage (la variable *word_final_parsing_result* et *sentence_final_parsing_result*) qui contiennent entre autres les positions et les nouvelles valeurs des caractères à modifier:
+
+    #Résultat de parsage final pour la détection des mots
     Parsing result :
         Stream class : StringIO
         Origin : ParsingResultOrigin.MODIFICATION
@@ -102,16 +123,31 @@ On obtient un nouveau résultat de parsage (la variable *word_final_parsing_resu
         Inputs : {'args': (), 'kwargs': {'reference': <_io.StringIO object at 0x00468D50>}}
         Index result : [(5, ''), (5, ';', <ModificationSide.RIGHT: 1>), ..., (436, ';', <ModificationSide.RIGHT: 1>)]
         
-Création du texte modifié:
+    #Résultat de parsage final pour la détection des phrases
+    Parsing result :
+        Stream class : StringIO
+        Origin : ParsingResultOrigin.MODIFICATION
+        Result type : ParsingResultType.REFERENCE
+        Inputs : {'args': (), 'kwargs': {'reference': <_io.StringIO object at 0x00468D50>}}
+        Index result : [(5, ''), (5, ';', <ModificationSide.RIGHT: 1>), ..., (436, ';', <ModificationSide.RIGHT: 1>)]
+        
+Création des textes modifiés:
 
-    #Création du writer pour créer un texte modifié
+    #Création des writer pour créer des textes modifiés
     word_writer = StreamWriter()
+    sentence_writer = StreamWriter()
     
-    #Création du texte modifié
-    new_text_1 = writer.write(word_final_parsing_result)
+    #Création des textes modifiés
+    new_text_1 = word_writer.write(word_final_parsing_result)
+    new_text_2 = sentence_writer.write(sentence_final_parsing_result)
     
-On obtient ce texte:
+On obtient ces textes:
 
+    Lorem;ipsum;dolor;sit;amet;consectetur;adipiscing;elit;sed;do;eiusmod;tempor;incididunt;ut;labore;et;dolore;magna;aliqua;
+    Ut;enim;ad;minim;veniam;quis;nostrud;exercitation;ullamco;laboris;nisi;ut;aliquip;ex;ea;commodo;consequat;Duis;aute;irure;
+    dolor;in;reprehenderit;in;voluptate;velit;esse;cillum;dolore;eu;fugiat;nulla;pariatur;Excepteur;sint;occaecat;cupidatat;non;
+    proident;sunt;in;culpa;qui;officia;deserunt;mollit;anim;id;est;laborum
+    
     Lorem;ipsum;dolor;sit;amet;consectetur;adipiscing;elit;sed;do;eiusmod;tempor;incididunt;ut;labore;et;dolore;magna;aliqua;
     Ut;enim;ad;minim;veniam;quis;nostrud;exercitation;ullamco;laboris;nisi;ut;aliquip;ex;ea;commodo;consequat;Duis;aute;irure;
     dolor;in;reprehenderit;in;voluptate;velit;esse;cillum;dolore;eu;fugiat;nulla;pariatur;Excepteur;sint;occaecat;cupidatat;non;
