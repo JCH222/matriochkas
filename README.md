@@ -138,8 +138,8 @@ Création des textes modifiés:
     sentence_writer = StreamWriter()
     
     #Création des textes modifiés
-    new_text_1 = word_writer.write(word_final_parsing_result)
-    new_text_2 = sentence_writer.write(sentence_final_parsing_result)
+    new_text_1 = word_writer.write(word_final_parsing_result, close_reading_stream=False)
+    new_text_2 = sentence_writer.write(sentence_final_parsing_result, close_reading_stream=True)
     
 On obtient ces textes:
 
