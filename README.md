@@ -152,3 +152,34 @@ On obtient ces textes:
     Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat;
     Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur;
     Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+    
+Ci-dessous l'exemple entier et condensé:
+
+    from matriochkas import *
+    
+    text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et ' \
+           'dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip' \
+           'ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu' \
+           'fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt' \
+           'mollit anim id est laborum'
+
+    space_parsing_pattern = ParsingCondition(' ') & (~ParsingCondition('.', rel_position=-1)) & (~ParsingCondition(',', rel_position=-1))
+    punctuation_parsing_pattern = ParsingCondition(', ', key_word='key 1') | ParsingCondition('. ', key_word='key 1')
+
+    word_parsing_pipeline = ((space_parsing_pattern | punctuation_parsing_pattern) >> None) + None
+    sentence_parsing_pipeline = (ParsingCondition('. ') >> None) + None
+
+    word_parsing_result = StreamReader(text, result_type=ParsingResultType.REFERENCE).read(word_parsing_pipeline, close_stream=False)
+    sentence_parsing_result = LinkedStreamReader(word_parsing_result).read(sentence_parsing_pipeline, close_stream=False)
+
+    word_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1, key_word='key 1')
+    word_final_parsing_result = word_modification_pattern.generate_parsing_result(word_parsing_result)
+
+    sentence_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1)
+    sentence_final_parsing_result = sentence_modification_pattern.generate_parsing_result(sentence_parsing_result)
+
+    new_text_1 = StreamWriter().write(word_final_parsing_result, close_reading_stream=False)
+    new_text_2 = StreamWriter().write(sentence_final_parsing_result, close_reading_stream=True)
+
+    print(new_text_1)
+    print(new_text_2)
