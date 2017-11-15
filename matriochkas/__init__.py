@@ -1,5 +1,6 @@
 # coding: utf8
 
+
 from matriochkas.core.ParsingEntities import ParsingResult
 from matriochkas.core.ParsingEntities import ParsingCondition
 from matriochkas.core.ParsingEntities import EmptyParsingCondition
