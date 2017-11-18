@@ -149,7 +149,7 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
 
     def __and__(self, other):
         """
-            Associates two ParsingEntity objects with and logic operator.
+            Associates two ParsingEntity objects with 'and' logic operator.
 
             :param other: ParsingEntity object to associate
             :return: ParsingOperator object
