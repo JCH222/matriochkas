@@ -21,8 +21,11 @@ class InstanceModificationEntity(ModificationEntities.ModificationEntity):
 
 
 class InstanceModificationOperation(ModificationEntities.ModificationOperation):
-    def __init__(self, name):
-        super(InstanceModificationOperation, self).__init__()
+    def __new__(cls, name, rel_position=0):
+        return super(InstanceModificationOperation, cls).__new__(cls, rel_position, None)
+
+    def __init__(self, name, rel_position=0):
+        super(InstanceModificationOperation, self).__init__(rel_position=rel_position)
         self.name = name
 
     def generate_parsing_result(self, initial_parsing_result):
@@ -69,6 +72,27 @@ def test_modification_operation():
     assert isinstance(modification_operation, ModificationEntities.ModificationOperation) is True
     assert (modification_operation.name == 'operation 1') is True
     assert (modification_operation.relPosition == 0) is True
+
+    modification_operation_2 = InstanceModificationOperation('operation 2', rel_position=2)
+    assert isinstance(modification_operation_2, ModificationEntities.ModificationOperation) is True
+    assert (modification_operation_2.name == 'operation 2') is True
+    assert (modification_operation_2.relPosition == 2) is True
+
+    modification_operation_3 = InstanceModificationOperation('operation 3', rel_position=[i for i in range(0, 3)])
+    assert isinstance(modification_operation_3, ModificationEntities.ModificationOperator) is True
+    assert isinstance(modification_operation_3.operandA, ModificationEntities.ModificationOperator) is True
+    assert isinstance(modification_operation_3.operandA.operandA, ModificationEntities.ModificationOperation) is True
+    assert (modification_operation_3.operandA.operandA.relPosition == 0) is True
+    assert isinstance(modification_operation_3.operandA.operandB, ModificationEntities.ModificationOperation) is True
+    assert (modification_operation_3.operandA.operandB.relPosition == 1) is True
+    assert isinstance(modification_operation_3.operandB, ModificationEntities.ModificationOperation) is True
+    assert (modification_operation_3.operandB.relPosition == 2) is True
+
+    try:
+        InstanceModificationOperation('invalid', rel_position=None)
+        assert False
+    except TypeError:
+        assert True
 
 
 def test_modification_add():
