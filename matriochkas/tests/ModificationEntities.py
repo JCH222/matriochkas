@@ -94,6 +94,12 @@ def test_modification_operation():
     except TypeError:
         assert True
 
+    try:
+        InstanceModificationOperation('invalid', rel_position=[])
+        assert False
+    except ValueError:
+        assert True
+
 
 def test_modification_add():
     modification_add_1 = ModificationEntities.ModificationAdd('0', 1, ModificationEntities.ModificationSide.RIGHT)
