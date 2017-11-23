@@ -498,6 +498,25 @@ class ParsingResult:
         else:
             raise TypeError("Operands have to be ParsingResult classes or subclasses")
 
+    def __sub__(self, other):
+        if isinstance(other, ParsingResult) and isinstance(self, ParsingResult):
+            if ParsingResult.are_from_the_same_parsing(self, other):
+                new_parsing_result = ParsingResult(self.streamClass, self.origin, self.resultType, self.readMethod,
+                                                   self.writeMethod, self.returnMethod, self.closeMethod,
+                                                   self.seekMethod, self.arInput['args'], self.arInput['kwargs'],
+                                                   [])
+                for element in self.arIndex:
+                    if (element[0] not in other or
+                            (len(element) == 3 and (element[0], None, element[2]) not in other)) or \
+                            (element[1] == '' and (element[0], element[1]) not in other):
+                        new_parsing_result.arIndex.append(element)
+                new_parsing_result.arIndex.sort()
+                return new_parsing_result
+            else:
+                raise ValueError("Operands have to come from the same parsing")
+        else:
+            raise TypeError("Operands have to be ParsingResult classes or subclasses")
+
     def __contains__(self, item):
         if isinstance(item, int):
             for element in self.arIndex:

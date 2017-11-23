@@ -961,6 +961,73 @@ def test_parsing_result():
     except TypeError:
         assert True
 
+    ###################################################################################################################
+
+    parsing_result_10 = parsing_result_5a - parsing_result_5b
+    assert (parsing_result_10.streamClass == MockStreamClass) is True
+    assert (parsing_result_10.origin == ParsingEntities.ParsingResultOrigin.READING) is True
+    assert (parsing_result_10.resultType == ParsingEntities.ParsingResultType.VALUE) is True
+    assert (parsing_result_10.readMethod == 'read method 1') is True
+    assert (parsing_result_10.writeMethod == 'write method 1') is True
+    assert (parsing_result_10.returnMethod == 'return method 1') is True
+    assert (parsing_result_10.closeMethod == 'close method 1') is True
+    assert (parsing_result_10.seekMethod == 'seek method 1') is True
+    assert (parsing_result_10.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
+    assert (parsing_result_10.arIndex == [(2, 'B')])
+
+    try:
+        parsing_result_5a - parsing_result_5c
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5d
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5e
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5f
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5h
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5i
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5g
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5h
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - None
+        assert False
+    except TypeError:
+        assert True
 
     ###################################################################################################################
 
@@ -975,6 +1042,7 @@ def test_parsing_result():
     assert ((0, 'A') in parsing_result_6) is True
     assert ((2, 'B', 'Left') in parsing_result_6) is True
     assert ((2, None, 'Left') in parsing_result_6) is True
+    assert ((2, None, 'Right') in parsing_result_6) is False
     assert (5 in parsing_result_6) is False
     assert ((0, 'B') in parsing_result_6) is False
     assert ((1, 'B', 'Right') in parsing_result_6) is False
