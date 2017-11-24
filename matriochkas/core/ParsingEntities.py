@@ -117,7 +117,7 @@ class Entity(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_max_position(self):
         """
-            Get the maximum relative position (in comparison to reference position) during check method execution.
+            Get the maximum relative position (in comparison to the reference position) during check method execution.
 
             :return: maximum relative position (int >= 0)
         """
@@ -127,7 +127,7 @@ class Entity(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_min_position(self):
         """
-            Get the minimum relative position (in comparison to reference position) during check method execution.
+            Get the minimum relative position (in comparison to the reference position) during check method execution.
 
             :return: minimum relative position (int <= 0)
         """
@@ -306,6 +306,14 @@ class ParsingOperator(ParsingEntity):
     """
 
     def __init__(self, operator_type, operand_a, operand_b):
+        """
+            Initialization
+
+            :param operator_type: OperatorType object
+            :param operand_a: ParsingEntity object
+            :param operand_b: ParsingEntity object
+        """
+
         super(ParsingOperator, self).__init__()
 
         if isinstance(operator_type, OperatorType):
@@ -320,6 +328,32 @@ class ParsingOperator(ParsingEntity):
             raise TypeError("Operands have to be ParsingEntity subclasses")
 
     def __eq__(self, other):
+        """
+            Equality operator.
+
+            :Example:
+
+            >>> from matriochkas import ParsingCondition
+            >>> condition_1 = ParsingCondition('.')
+            >>> condition_2 = ParsingCondition(' ', rel_position=1)
+            >>> condition_3 = ParsingCondition('-', rel_position=2)
+            >>> # Operators to compare
+            >>> operator_a = condition_1 & condition_2
+            >>> operator_b = operator_a & condition_3
+            >>> operator_c = operator_a & condition_3
+            >>> operator_d = condition_3 & operator_a
+            >>> # Equalities
+            >>> operator_b == operator_a
+            False
+            >>> operator_b == operator_c
+            True
+            >>> operator_b == operator_d
+            True
+
+            :param other: ParsingEntity object to compare
+            :return: bool
+        """
+
         if isinstance(other, ParsingOperator):
             if self.operatorType == other.operatorType and self.isNot == other.isNot and\
                     ((self.operandA == other.operandA and self.operandB == other.operandB)
@@ -331,6 +365,31 @@ class ParsingOperator(ParsingEntity):
             return False
 
     def __contains__(self, item):
+        """
+            Check if ParsingOperator object contains the selected item
+
+            >>> from matriochkas import ParsingCondition
+            >>> condition_1 = ParsingCondition('.')
+            >>> condition_2 = ParsingCondition(' ', rel_position=1)
+            >>> condition_3 = ParsingCondition('-', rel_position=2)
+            >>> condition_4 = ParsingCondition('*')
+            >>> # Operators to compare
+            >>> operator_a = condition_1 & condition_2
+            >>> operator_b = operator_a & condition_3
+            >>> operator_c = operator_a & condition_4
+            >>> # Comparison
+            >>> condition_1 in operator_b
+            True
+            >>> operator_a in operator_b
+            True
+            >>> operator_c in operator_b
+            False
+            >>> condition_4 in operator_b
+
+            :param item: ParsingEntity object
+            :return: bool
+        """
+
         if isinstance(item, ParsingEntity):
             if self.__eq__(item):
                 return True
@@ -349,16 +408,51 @@ class ParsingOperator(ParsingEntity):
         return self.__str__()
 
     def __copy__(self):
+        """
+            ParsingOperator's shallow copy
+
+            :return: ParsingOperator object
+        """
+
         result = ParsingOperator(self.operatorType, self.operandA, self.operandB)
         result.isNot = self.isNot
         return result
 
     def __deepcopy__(self, memodict={}):
+        """
+            ParsingOperator's deep copy
+
+            :return: ParsingOperator object
+        """
+
         result = ParsingOperator(self.operatorType, copy.deepcopy(self.operandA), copy.deepcopy(self.operandB))
         result.isNot = self.isNot
         return result
 
     def check(self, element, ref_position=0):
+        """
+            Check if the element is valid.
+
+            >>> from matriochkas import ParsingCondition
+            >>> condition_1 = ParsingCondition('.')
+            >>> condition_2 = ParsingCondition('-', rel_position=1)
+            >>> # Operator to check
+            >>> operator_a = condition_1 & condition_2
+            >>> # Check if element contain '.-' at reference position 2
+            >>> operator_a.check("ab.-cd", ref_position=2)
+            (True, Counter({None: 2}))
+            >>> # Check if element contain '.-' at reference position 0
+            >>> operator_a.check("ab.-cd", ref_position=0)
+            (False, Counter())
+
+            :param element: element to check (str)
+            :param ref_position: reference position in the element (int >= 0)
+            :return: tuple containing two values:
+
+                - boolean : True if the element is valid else False
+                - Counter : keys activated during checking if boolean is True else it is empty
+        """
+
         result_a = self.operandA.check(element, ref_position)
         result_b = self.operandB.check(element, ref_position)
         key_words = result_a[1] + result_b[1]
@@ -388,6 +482,12 @@ class ParsingOperator(ParsingEntity):
                 return True, key_words
 
     def get_max_position(self):
+        """
+            Get the maximum relative position (in comparison to the reference position) during check method execution.
+
+            :return: maximum relative position (int >= 0)
+        """
+
         operand_a = self.operandA.get_max_position()
         operand_b = self.operandB.get_max_position()
 
@@ -397,6 +497,12 @@ class ParsingOperator(ParsingEntity):
             return max([operand_a, operand_b])
 
     def get_min_position(self):
+        """
+            Get the minimum relative position (in comparison to the reference position) during check method execution.
+
+            :return: maximum relative position (int <= 0)
+        """
+
         operand_a = self.operandA.get_min_position()
         operand_b = self.operandB.get_min_position()
 
