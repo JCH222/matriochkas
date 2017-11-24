@@ -47,9 +47,9 @@ class OperatorType(Enum):
 
         There are currently 3 operator ids:
 
-            - AND
-            - OR
-            - XOR
+            - AND   ( & )
+            - OR    ( | )
+            - XOR   ( ^ )
     """
 
     AND = 'and'
@@ -277,6 +277,34 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
 
 
 class ParsingOperator(ParsingEntity):
+    """
+        Association between two parsing operations with logic operator
+        ==============================================================
+
+        This class enables to create custom parsing operation by combining different ParsingOperator's or
+        ParsingCondition's instances (See ParsingCondition class).
+
+        :Example:
+
+        >>> from matriochkas import ParsingOperator
+        >>> from matriochkas import ParsingCondition
+        >>> from matriochkas import OperatorType
+        >>> # Creates condition to parse '. -'
+        >>> condition_1 = ParsingCondition('.')
+        >>> condition_2 = ParsingCondition(' ', rel_position=1)
+        >>> condition_3 = ParsingCondition('-', rel_position=2)
+        >>> # Intermediate operator
+        >>> operator_a = condition_1 & condition_2
+        >>> # Final operator
+        >>> operator_b = operator_a & condition_3
+        >>> # Another way to write it
+        >>> operator_b = ParsingOperator(OperatorType.AND, operator_a, condition_3)
+        >>> # The simplest way
+        >>> operator_b = condition_1 & condition_2 & condition_3
+
+        Available logic operators are defined in OperatorType enumeration.
+    """
+
     def __init__(self, operator_type, operand_a, operand_b):
         super(ParsingOperator, self).__init__()
 
