@@ -7,15 +7,17 @@ from matriochkas.core.ParsingEntities import ParsingResult
 from matriochkas.core.ParsingEntities import ParsingResultOrigin
 from matriochkas.core.ParsingEntities import ParsingResultType
 from matriochkas.core.Configuration import StreamClassConfiguration
+from threading import Thread
 
 import abc
 import copy
 
 
-class StreamEntity(metaclass=abc.ABCMeta):
+class StreamEntity(Thread, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __init__(self, args, kwargs, stream_class=None, read_method=None, write_method=None,
                  return_method=None, close_method=None, seek_method=None):
+        super(StreamEntity, self).__init__()
         self.streamClass = stream_class
         self.readMethod = read_method
         self.writeMethod = write_method
@@ -62,64 +64,86 @@ class StreamReader(StreamEntity):
         else:
             raise TypeError('Result type has to be ParsingResultType object')
 
-    def read(self, parsing_pipeline, close_stream=True):
-        parsing_pipeline.reset()
-        min_position = parsing_pipeline.get_min_position()
-        max_position = parsing_pipeline.get_max_position()
-        length = max_position - min_position + 1
-        stream = self._get_stream_object()
-        if self.readMethod is not None:
-            read_method = getattr(stream, self.readMethod)
-        else:
-            read_method = StreamEntity.generate_method(stream, 'read_method')
-        if self.closeMethod is not None:
-            close_method = getattr(stream, self.closeMethod)
-        else:
-            close_method = StreamEntity.generate_method(stream, 'close_method')
-        if self.seekMethod is not None:
-            seek_method = getattr(stream, self.seekMethod)
-        else:
-            seek_method = StreamEntity.generate_method(stream, 'seek_method')
-        current_position = -min_position
-        ar_index = list()
-        element = deque(read_method(length))
-        if len(element) == length:
-            while True:
-                result = parsing_pipeline.check(element, ref_position=-min_position)
-                if result is not None and result[0][0]:
-                    ar_index.append((current_position, element[-min_position], result[0][1]))
-                next_character = read_method(1)
-                if next_character and result is not None:
-                    element.popleft()
-                    element.append(next_character)
+        self.readArgs = dict()
+        self.readResult = {'parsing_result': None, 'error': None}
+
+    def run(self):
+        try:
+            self.readArgs['parsing_pipeline'].reset()
+            min_position = self.readArgs['parsing_pipeline'].get_min_position()
+            max_position = self.readArgs['parsing_pipeline'].get_max_position()
+            length = max_position - min_position + 1
+            stream = self._get_stream_object()
+            if self.readMethod is not None:
+                read_method = getattr(stream, self.readMethod)
+            else:
+                read_method = StreamEntity.generate_method(stream, 'read_method')
+            if self.closeMethod is not None:
+                close_method = getattr(stream, self.closeMethod)
+            else:
+                close_method = StreamEntity.generate_method(stream, 'close_method')
+            if self.seekMethod is not None:
+                seek_method = getattr(stream, self.seekMethod)
+            else:
+                seek_method = StreamEntity.generate_method(stream, 'seek_method')
+            current_position = -min_position
+            ar_index = list()
+            element = deque(read_method(length))
+            if len(element) == length:
+                while True:
+                    result = self.readArgs['parsing_pipeline'].check(element, ref_position=-min_position)
+                    if result is not None and result[0][0]:
+                        ar_index.append((current_position, element[-min_position], result[0][1]))
+                    next_character = read_method(1)
+                    if next_character and result is not None:
+                        element.popleft()
+                        element.append(next_character)
+                    else:
+                        break
+                    current_position += 1
+
+                if self.readArgs['close_stream']:
+                    close_method()
                 else:
-                    break
-                current_position += 1
+                    seek_method(0)
 
-            if close_stream:
+                if self.resultType == ParsingResultType.VALUE:
+                    parsing_result = ParsingResult(self.streamClass, ParsingResultOrigin.READING, self.resultType,
+                                                   self.readMethod, self.writeMethod, self.returnMethod,
+                                                   self.closeMethod, self.seekMethod, self.args, self.kwargs, ar_index)
+                else:
+                    parsing_result = ParsingResult(self.streamClass, ParsingResultOrigin.READING, self.resultType,
+                                                   self.readMethod, self.writeMethod, self.returnMethod,
+                                                   self.closeMethod, self.seekMethod, tuple(), {'reference': stream},
+                                                   ar_index)
+
+                self.readArgs = dict()
+                self.readResult = {'parsing_result': parsing_result, 'error': None}
+            else:
                 close_method()
-            else:
-                seek_method(0)
+                self.readResult = {'parsing_result': None,
+                                   'error': ValueError("Not enough characters to parse : " + str(len(element)))}
+        except Exception as error:
+            self.readResult = {'parsing_result': None,
+                               'error': error}
 
-            if self.resultType == ParsingResultType.VALUE:
-                parsing_result = ParsingResult(self.streamClass, ParsingResultOrigin.READING, self.resultType,
-                                               self.readMethod, self.writeMethod, self.returnMethod, self.closeMethod,
-                                               self.seekMethod, self.args, self.kwargs, ar_index)
-            else:
-                parsing_result = ParsingResult(self.streamClass, ParsingResultOrigin.READING, self.resultType,
-                                               self.readMethod, self.writeMethod, self.returnMethod, self.closeMethod,
-                                               self.seekMethod, tuple(), {'reference': stream}, ar_index)
+    def read(self, parsing_pipeline, close_stream=True):
+        self.readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
+        self.readResult = {'parsing_result': None, 'error': None}
 
-            return parsing_result
+        self.start()
+        self.join()
+        if self.readResult['error'] is None:
+            return self.readResult['parsing_result']
         else:
-            close_method()
-            raise ValueError("Not enough characters to parse : " + str(len(element)))
+            raise self.readResult['error']
 
 
 class LinkedStreamReader(StreamReader):
     def __init__(self, parsing_result):
         if isinstance(parsing_result, ParsingResult):
-            super(LinkedStreamReader, self).__init__(*parsing_result.arInput['args'], **parsing_result.arInput['kwargs'],
+            super(LinkedStreamReader, self).__init__(*parsing_result.arInput['args'],
+                                                     **parsing_result.arInput['kwargs'],
                                                      stream_class=parsing_result.streamClass,
                                                      result_type=parsing_result.resultType,
                                                      read_method=parsing_result.readMethod,
@@ -143,93 +167,114 @@ class StreamWriter(StreamEntity):
                                            return_method=return_method, close_method=close_method,
                                            seek_method=seek_method)
 
+        self.writeArgs = dict()
+        self.writeResult = {'result': None, 'error': None}
+
+    def run(self):
+        try:
+            if (isinstance(self.writeArgs['parsing_result'], ParsingResult) and
+                        self.writeArgs['parsing_result'].origin == ParsingResultOrigin.MODIFICATION):
+                input_parsing_result = copy.deepcopy(self.writeArgs['parsing_result'])
+            else:
+                raise TypeError('Parsing result has to be ParsingResult object with MODIFICATION origin')
+
+            if self.writeArgs['stream_class'] is not None:
+                input_parsing_result.streamClass = self.writeArgs['stream_class']
+            if self.writeArgs['read_method'] is not None:
+                input_parsing_result.readMethod = self.writeArgs['read_method']
+            if self.writeArgs['return_method'] is not None:
+                input_parsing_result.returnMethod = self.writeArgs['return_method']
+            if self.writeArgs['close_method'] is not None:
+                input_parsing_result.closeMethod = self.writeArgs['close_method']
+            if self.writeArgs['seek_method'] is not None:
+                input_parsing_result.seekMethod = self.writeArgs['seek_method']
+            if self.writeArgs['args'] is not None:
+                input_parsing_result.arInput['args'] = self.writeArgs['args']
+            if self.writeArgs['kwargs'] is not None:
+                input_parsing_result.arInput['kwargs'] = self.writeArgs['kwargs']
+
+            if input_parsing_result.resultType == ParsingResultType.VALUE:
+                input_stream = input_parsing_result.streamClass(*input_parsing_result.arInput['args'],
+                                                                **input_parsing_result.arInput['kwargs'])
+            else:
+                input_stream = input_parsing_result.arInput['kwargs']['reference']
+
+            if input_parsing_result.readMethod is not None:
+                input_read_method = getattr(input_stream, input_parsing_result.readMethod)
+            else:
+                input_read_method = StreamEntity.generate_method(input_stream, 'read_method')
+            if input_parsing_result.closeMethod is not None:
+                input_close_method = getattr(input_stream, input_parsing_result.closeMethod)
+            else:
+                input_close_method = StreamEntity.generate_method(input_stream, 'close_method')
+            if input_parsing_result.seekMethod is not None:
+                input_seek_method = getattr(input_stream, input_parsing_result.seekMethod)
+            else:
+                input_seek_method = StreamEntity.generate_method(input_stream, 'seek_method')
+            output_stream = self._get_stream_object()
+            if self.writeMethod is not None:
+                output_write_method = getattr(output_stream, self.writeMethod)
+            else:
+                output_write_method = StreamEntity.generate_method(output_stream, 'write_method')
+            if self.returnMethod is not None:
+                output_return_method = getattr(output_stream, self.returnMethod)
+            else:
+                output_return_method = StreamEntity.generate_method(output_stream, 'return_method')
+            if self.closeMethod is not None:
+                output_close_method = getattr(output_stream, self.closeMethod)
+            else:
+                output_close_method = StreamEntity.generate_method(output_stream, 'close_method')
+
+            index = 0
+            input_parsing_result_index = 0
+            character = input_read_method(1)
+            while character:
+                is_ended = False
+                left_side = None
+                right_side = None
+                other = None
+                while is_ended is False:
+                    if input_parsing_result_index < len(input_parsing_result.arIndex) \
+                            and index == input_parsing_result.arIndex[input_parsing_result_index][0]:
+                        if len(input_parsing_result.arIndex[input_parsing_result_index]) == 3:
+                            if input_parsing_result.arIndex[input_parsing_result_index][2] == ModificationSide.LEFT:
+                                left_side = input_parsing_result.arIndex[input_parsing_result_index]
+                            else:
+                                right_side = input_parsing_result.arIndex[input_parsing_result_index]
+                        else:
+                            other = input_parsing_result.arIndex[input_parsing_result_index]
+                        input_parsing_result_index += 1
+                    else:
+                        if left_side is not None:
+                            output_write_method(left_side[1])
+                        if other is None:
+                            output_write_method(character)
+                        if right_side is not None:
+                            output_write_method(right_side[1])
+                        is_ended = True
+                character = input_read_method(1)
+                index += 1
+            result = output_return_method()
+
+            if self.writeArgs['close_reading_stream']:
+                input_close_method()
+            else:
+                input_seek_method(0)
+            output_close_method()
+            self.writeResult = {'result': result, 'error': None}
+        except Exception as error:
+            self.writeResult = {'result': None, 'error': error}
+
     def write(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
               seek_method=None, args=None, kwargs=None, close_reading_stream=True):
-        if isinstance(parsing_result, ParsingResult) and parsing_result.origin == ParsingResultOrigin.MODIFICATION:
-            input_parsing_result = copy.deepcopy(parsing_result)
-        else:
-            raise TypeError('Parsing result has to be ParsingResult object with MODIFICATION origin')
-        if stream_class is not None:
-            input_parsing_result.streamClass = stream_class
-        if read_method is not None:
-            input_parsing_result.readMethod = read_method
-        if return_method is not None:
-            input_parsing_result.returnMethod = return_method
-        if close_method is not None:
-            input_parsing_result.closeMethod = close_method
-        if seek_method is not None:
-            input_parsing_result.seekMethod = seek_method
-        if args is not None:
-            input_parsing_result.arInput['args'] = args
-        if kwargs is not None:
-            input_parsing_result.arInput['kwargs'] = kwargs
+        self.writeArgs = {'parsing_result': parsing_result, 'stream_class': stream_class, 'read_method': read_method,
+                          'return_method': return_method, 'close_method': close_method, 'seek_method': seek_method,
+                          'args': args, 'kwargs': kwargs, 'close_reading_stream': close_reading_stream}
+        self.writeResult = {'result': None, 'error': None}
 
-        if input_parsing_result.resultType == ParsingResultType.VALUE:
-            input_stream = input_parsing_result.streamClass(*input_parsing_result.arInput['args'],
-                                                            **input_parsing_result.arInput['kwargs'])
+        self.start()
+        self.join()
+        if self.writeResult['error'] is None:
+            return self.writeResult['result']
         else:
-            input_stream = input_parsing_result.arInput['kwargs']['reference']
-
-        if input_parsing_result.readMethod is not None:
-            input_read_method = getattr(input_stream, input_parsing_result.readMethod)
-        else:
-            input_read_method = StreamEntity.generate_method(input_stream, 'read_method')
-        if input_parsing_result.closeMethod is not None:
-            input_close_method = getattr(input_stream, input_parsing_result.closeMethod)
-        else:
-            input_close_method = StreamEntity.generate_method(input_stream, 'close_method')
-        if input_parsing_result.seekMethod is not None:
-            input_seek_method = getattr(input_stream, input_parsing_result.seekMethod)
-        else:
-            input_seek_method = StreamEntity.generate_method(input_stream, 'seek_method')
-        output_stream = self._get_stream_object()
-        if self.writeMethod is not None:
-            output_write_method = getattr(output_stream, self.writeMethod)
-        else:
-            output_write_method = StreamEntity.generate_method(output_stream, 'write_method')
-        if self.returnMethod is not None:
-            output_return_method = getattr(output_stream, self.returnMethod)
-        else:
-            output_return_method = StreamEntity.generate_method(output_stream, 'return_method')
-        if self.closeMethod is not None:
-            output_close_method = getattr(output_stream, self.closeMethod)
-        else:
-            output_close_method = StreamEntity.generate_method(output_stream, 'close_method')
-
-        index = 0
-        input_parsing_result_index = 0
-        character = input_read_method(1)
-        while character:
-            is_ended = False
-            left_side = None
-            right_side = None
-            other = None
-            while is_ended is False:
-                if input_parsing_result_index < len(input_parsing_result.arIndex) \
-                        and index == input_parsing_result.arIndex[input_parsing_result_index][0]:
-                    if len(input_parsing_result.arIndex[input_parsing_result_index]) == 3:
-                        if input_parsing_result.arIndex[input_parsing_result_index][2] == ModificationSide.LEFT:
-                            left_side = input_parsing_result.arIndex[input_parsing_result_index]
-                        else:
-                            right_side = input_parsing_result.arIndex[input_parsing_result_index]
-                    else:
-                        other = input_parsing_result.arIndex[input_parsing_result_index]
-                    input_parsing_result_index += 1
-                else:
-                    if left_side is not None:
-                        output_write_method(left_side[1])
-                    if other is None:
-                        output_write_method(character)
-                    if right_side is not None:
-                        output_write_method(right_side[1])
-                    is_ended = True
-            character = input_read_method(1)
-            index += 1
-        result = output_return_method()
-
-        if close_reading_stream:
-            input_close_method()
-        else:
-            input_seek_method(0)
-        output_close_method()
-        return result
+            raise self.writeResult['error']
