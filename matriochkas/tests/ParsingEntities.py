@@ -1106,6 +1106,23 @@ def test_parsing_result():
 
     ###################################################################################################################
 
+    assert (parsing_result_1.__iter__() == parsing_result_1) is True
+
+    ###################################################################################################################
+
+    assert (parsing_result_1.iterPosition == 0) is True
+    assert (parsing_result_1.__next__() == (0, 'A')) is True
+    assert (parsing_result_1.iterPosition == 1) is True
+    assert (parsing_result_1.__next__() == (2, 'B')) is True
+    assert (parsing_result_1.iterPosition == 2) is True
+    try:
+        parsing_result_1.__next__()
+        assert False
+    except StopIteration:
+        assert (parsing_result_1.iterPosition == 0) is True
+
+    ###################################################################################################################
+
     parsing_result_7 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                                      ParsingEntities.ParsingResultType.VALUE,
                                                      'read method 1', 'write method 1',
