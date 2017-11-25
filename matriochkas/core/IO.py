@@ -88,6 +88,20 @@ class StreamReader(StreamEntity):
                 seek_method = StreamEntity.generate_method(stream, 'seek_method')
             current_position = -min_position
             ar_index = list()
+
+            if self.resultType == ParsingResultType.VALUE:
+                self.readResult = {'parsing_result': ParsingResult(self.streamClass, ParsingResultOrigin.READING,
+                                                                   self.resultType, self.readMethod, self.writeMethod,
+                                                                   self.returnMethod, self.closeMethod, self.seekMethod,
+                                                                   self.args, self.kwargs, ar_index),
+                                   'error': None}
+            else:
+                self.readResult = {'parsing_result': ParsingResult(self.streamClass, ParsingResultOrigin.READING,
+                                                                   self.resultType, self.readMethod, self.writeMethod,
+                                                                   self.returnMethod, self.closeMethod, self.seekMethod,
+                                                                   tuple(), {'reference': stream}, ar_index),
+                                   'error': None}
+
             element = deque(read_method(length))
             if len(element) == length:
                 while True:
@@ -107,18 +121,7 @@ class StreamReader(StreamEntity):
                 else:
                     seek_method(0)
 
-                if self.resultType == ParsingResultType.VALUE:
-                    parsing_result = ParsingResult(self.streamClass, ParsingResultOrigin.READING, self.resultType,
-                                                   self.readMethod, self.writeMethod, self.returnMethod,
-                                                   self.closeMethod, self.seekMethod, self.args, self.kwargs, ar_index)
-                else:
-                    parsing_result = ParsingResult(self.streamClass, ParsingResultOrigin.READING, self.resultType,
-                                                   self.readMethod, self.writeMethod, self.returnMethod,
-                                                   self.closeMethod, self.seekMethod, tuple(), {'reference': stream},
-                                                   ar_index)
-
                 self.readArgs = dict()
-                self.readResult = {'parsing_result': parsing_result, 'error': None}
             else:
                 close_method()
                 self.readResult = {'parsing_result': None,
