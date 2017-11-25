@@ -2,6 +2,8 @@
 
 from matriochkas.core import ParsingEntities
 from collections import Counter
+from threading import Thread
+from time import sleep
 
 import copy
 
@@ -72,6 +74,13 @@ class InstanceParsingStructure(ParsingEntities.ParsingStructure):
 
 class MockStreamClass:
     pass
+
+########################################################################################################################
+
+
+class MockThread(Thread):
+    def run(self):
+        sleep(5)
 
 ########################################################################################################################
 
@@ -1127,5 +1136,23 @@ def test_parsing_result():
     try:
         parsing_result_7.check_indexes()
         assert False
+    except TypeError:
+        assert True
+
+    ###################################################################################################################
+
+    thread = MockThread()
+    thread.start()
+    for i, index in enumerate(parsing_result_1.create_stream_generator(thread)):
+        if i == 0:
+            assert (index == (0, 'A')) is True
+        elif i == 1:
+            assert (index == (2, 'B')) is True
+        else:
+            assert False
+
+    try:
+        for index in parsing_result_1.create_stream_generator(None):
+            assert False
     except TypeError:
         assert True
