@@ -2,6 +2,8 @@
 
 from enum import Enum
 from collections import Counter
+from threading import Thread
+from time import sleep
 
 import abc
 import copy
@@ -605,3 +607,15 @@ class ParsingResult:
                 raise TypeError("Indexes characters have to be 'str' objects with a length of 1")
 
         return True
+
+    def create_stream_generator(self, thread_ref,  sleep_time=0.5):
+        current_position = 0
+        if isinstance(thread_ref, Thread):
+            while thread_ref.is_alive() or current_position < len(self.arIndex):
+                if current_position < len(self.arIndex):
+                    current_position += 1
+                    yield self.arIndex[current_position-1]
+                else:
+                    sleep(sleep_time)
+        else:
+            raise TypeError('Thread reference has to be Thread object')
