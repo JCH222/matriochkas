@@ -482,6 +482,8 @@ class ParsingResult:
         else:
             raise TypeError('ar_index has to be list object')
 
+        self.iterPosition = 0
+
     def __add__(self, other):
         if isinstance(other, ParsingResult) and isinstance(self, ParsingResult):
             if ParsingResult.are_from_the_same_parsing(self, other):
@@ -563,6 +565,18 @@ class ParsingResult:
 
     def __deepcopy__(self, memodict={}):
         return self.__copy__()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.iterPosition < len(self.arIndex):
+            result = self.arIndex[self.iterPosition]
+            self.iterPosition += 1
+            return result
+        else:
+            self.iterPosition = 0
+            raise StopIteration
 
     @staticmethod
     def are_from_the_same_parsing(parsing_result_a, parsing_result_b):
