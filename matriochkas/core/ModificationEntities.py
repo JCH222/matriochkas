@@ -73,9 +73,7 @@ class ModificationAdd(ModificationOperation):
     def generate_parsing_result(self, initial_parsing_result):
         if isinstance(initial_parsing_result, ParsingResult):
             ar_index = list()
-            for element in initial_parsing_result.create_stream_generator():
-                if self.keyWord is None or self.keyWord in element[2].keys():
-                    ar_index.append((element[0] + self.relPosition, self.ar_character, self.modificationSide))
+
             parsing_result = ParsingResult(initial_parsing_result.streamClass,
                                            ParsingResultOrigin.MODIFICATION,
                                            initial_parsing_result.resultType,
@@ -87,6 +85,11 @@ class ModificationAdd(ModificationOperation):
                                            initial_parsing_result.arInput['args'],
                                            initial_parsing_result.arInput['kwargs'],
                                            ar_index)
+
+            for element in initial_parsing_result.create_stream_generator():
+                if self.keyWord is None or self.keyWord in element[2].keys():
+                    ar_index.append((element[0] + self.relPosition, self.ar_character, self.modificationSide))
+
             return parsing_result
         else:
             raise TypeError('Parameter has to be ParsingResult class or subclass')
@@ -102,9 +105,7 @@ class ModificationRemove(ModificationOperation):
     def generate_parsing_result(self, initial_parsing_result):
         if isinstance(initial_parsing_result, ParsingResult):
             ar_index = list()
-            for element in initial_parsing_result.create_stream_generator():
-                if self.keyWord is None or self.keyWord in element[2].keys():
-                    ar_index.append((element[0]+self.relPosition, ''))
+
             parsing_result = ParsingResult(initial_parsing_result.streamClass,
                                            ParsingResultOrigin.MODIFICATION,
                                            initial_parsing_result.resultType,
@@ -116,6 +117,11 @@ class ModificationRemove(ModificationOperation):
                                            initial_parsing_result.arInput['args'],
                                            initial_parsing_result.arInput['kwargs'],
                                            ar_index)
+
+            for element in initial_parsing_result.create_stream_generator():
+                if self.keyWord is None or self.keyWord in element[2].keys():
+                    ar_index.append((element[0]+self.relPosition, ''))
+
             return parsing_result
         else:
             raise TypeError('Parameter has to be ParsingResult class or subclass')
