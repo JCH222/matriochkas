@@ -102,7 +102,7 @@ class Entity(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def check(self, element, ref_position):
         """
-            Check if the element is valid.
+            Checks if the element is valid.
 
             :param element: element to check
             :param ref_position: reference position in the element (int >= 0)
@@ -117,7 +117,7 @@ class Entity(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_max_position(self):
         """
-            Get the maximum relative position (in comparison to the reference position) during check method execution.
+            Gets the maximum relative position (in comparison to the reference position) during check method execution.
 
             :return: maximum relative position (int >= 0)
         """
@@ -127,7 +127,7 @@ class Entity(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_min_position(self):
         """
-            Get the minimum relative position (in comparison to the reference position) during check method execution.
+            Gets the minimum relative position (in comparison to the reference position) during check method execution.
 
             :return: minimum relative position (int <= 0)
         """
@@ -216,7 +216,7 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
 
     def __invert__(self):
         """
-            Associate ParsingEntity object with 'not' logic operator.
+            Associates ParsingEntity object with 'not' logic operator.
 
             :return: ParsingEntity object
         """
@@ -239,7 +239,7 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __contains__(self, item):
         """
-            Check if ParsingEntity object contains the selected item
+            Checks if ParsingEntity object contains the selected item
 
             :param item: object to check
             :return: bool
@@ -366,7 +366,9 @@ class ParsingOperator(ParsingEntity):
 
     def __contains__(self, item):
         """
-            Check if ParsingOperator object contains the selected item
+            Checks if ParsingOperator object contains the selected item
+
+            :Example:
 
             >>> from matriochkas import ParsingCondition
             >>> condition_1 = ParsingCondition('.')
@@ -431,7 +433,9 @@ class ParsingOperator(ParsingEntity):
 
     def check(self, element, ref_position=0):
         """
-            Check if the element is valid.
+            Checks if the element is valid.
+
+            :Example:
 
             >>> from matriochkas import ParsingCondition
             >>> condition_1 = ParsingCondition('.')
@@ -483,7 +487,7 @@ class ParsingOperator(ParsingEntity):
 
     def get_max_position(self):
         """
-            Get the maximum relative position (in comparison to the reference position) during check method execution.
+            Gets the maximum relative position (in comparison to the reference position) during check method execution.
 
             :return: maximum relative position (int >= 0)
         """
@@ -498,9 +502,9 @@ class ParsingOperator(ParsingEntity):
 
     def get_min_position(self):
         """
-            Get the minimum relative position (in comparison to the reference position) during check method execution.
+            Gets the minimum relative position (in comparison to the reference position) during check method execution.
 
-            :return: maximum relative position (int <= 0)
+            :return: minimum relative position (int <= 0)
         """
 
         operand_a = self.operandA.get_min_position()
@@ -513,7 +517,54 @@ class ParsingOperator(ParsingEntity):
 
 
 class ParsingCondition(ParsingEntity):
+    """
+        Basic condition in the parsing process
+        ======================================
+
+        This class checks whether characters match with the condition during the parsing process.
+
+        :Example:
+
+        >>> from matriochkas import ParsingCondition
+        >>> # Parsing condition creation (condition is true if character checked is 'l')
+        >>> condition = ParsingCondition('l')
+        >>> text = 'Hello World !'
+        >>> # Check if text contains 'l'
+        >>> result = list()
+        >>> for position in range(0, len(text)):
+        >>>     result.append((text[position], condition.check(text, position)[0]))
+        >>> print(result)
+        [('H', False), ('e', False), ('l', True), ('l', True), ('o', False), (' ', False), ('W', False), ('o', False),
+        ('r', False), ('l', True), ('d', False), (' ', False), ('!', False)]
+    """
+
     def __new__(cls,  ar_character, rel_position=0, key_word=None):
+        """
+            Defines class to use during the instance creation.
+
+            :Example:
+
+            >>> from matriochkas import ParsingCondition
+            >>> # Return ParsingCondition object (len(ar_character) == 1)
+            >>> condition = ParsingCondition('a')
+            >>> type(condition)
+            <class 'matriochkas.core.ParsingEntities.ParsingCondition'>
+            >>> # Return ParsingOperator object (len(ar_character) > 1)
+            >>> operator = ParsingCondition('abc')
+            >>> type(operator)
+            <class 'matriochkas.core.ParsingEntities.ParsingOperator'>
+            >>> # Return EmptyParsingCondition object (len(ar_character) == 0)
+            >>> empty_condition = ParsingCondition('')
+            >>> type(empty_condition)
+            <class 'matriochkas.core.ParsingEntities.EmptyParsingCondition'>
+
+            :param ar_character: condition to use during parsing process (str)
+            :param rel_position: condition relative position (in comparison to the stream position)
+             during parsing process (int>=0)
+            :param key_word: category id (str or None)
+            :return: class instance (ParsingCondition, EmptyParsingCondition or ParsingOperator)
+        """
+
         if len(ar_character) > 1:
             result = ParsingCondition(ar_character[0], rel_position=rel_position, key_word=key_word)
             for i, element in enumerate(ar_character):
@@ -526,12 +577,44 @@ class ParsingCondition(ParsingEntity):
             return EmptyParsingCondition()
 
     def __init__(self, ar_character, rel_position=0, key_word=None):
+        """
+            Initialization
+
+            :param ar_character: characters to use during parsing process (str)
+            :param rel_position: characters relative position (in comparison to the stream position)
+             during parsing process (int>=0)
+            :param key_word: category id (str or None)
+        """
+
         super(ParsingCondition, self).__init__()
         self.relPosition = rel_position
         self.character = ar_character
         self.keyWord = key_word
 
     def __eq__(self, other):
+        """
+            Equality operator.
+
+            :Example:
+
+            >>> from matriochkas import ParsingCondition
+            >>> # Conditions to compare
+            >>> condition_1 = ParsingCondition('.')
+            >>> condition_2 = ParsingCondition(' ', rel_position=1)
+            >>> condition_3 = ParsingCondition('.', rel_position=2)
+            >>> condition_4 = ParsingCondition('.', rel_position=0)
+            >>> # Equalities
+            >>> condition_1 == condition_2
+            False
+            >>> condition_1 == condition_3
+            False
+            >>> condition_1 == condition_4
+            True
+
+            :param other: ParsingCondition object to compare
+            :return: bool
+        """
+
         if isinstance(other, ParsingCondition):
             if self.relPosition == other.relPosition and self.character == other.character \
                     and self.isNot == other.isNot and self.keyWord == other.keyWord:
@@ -542,6 +625,13 @@ class ParsingCondition(ParsingEntity):
             return False
 
     def __contains__(self, item):
+        """
+            Is identical to equality operator
+
+            :param item: ParsingCondition object to compare
+            :return: bool
+        """
+
         return self.__eq__(item)
 
     def __str__(self):
@@ -551,14 +641,49 @@ class ParsingCondition(ParsingEntity):
         return self.__str__()
 
     def __copy__(self):
+        """
+            ParsingCondition's shallow copy
+
+            :return: ParsingCondition object
+        """
+
         result = ParsingCondition(self.character, self.relPosition, self.keyWord)
         result.isNot = self.isNot
         return result
 
     def __deepcopy__(self, memodict={}):
+        """
+            ParsingCondition's deep copy
+
+            :return: ParsingCondition object
+        """
+
         return self.__copy__()
 
     def check(self, element, ref_position=0):
+        """
+            Checks if the element is valid.
+
+            :Example:
+
+            >>> from matriochkas import ParsingCondition
+            >>> # Condition to check
+            >>> condition = ParsingCondition('.')
+            >>> # Check if element contain '.' at reference position 2
+            >>> condition.check("ab.-cd", ref_position=2)
+            (True, Counter({None: 1}))
+            >>> # Check if element contain '.' at reference position 0
+            >>> condition.check("ab.-cd")
+            (False, Counter())
+
+            :param element: element to check (str)
+            :param ref_position: reference position in the element (int >= 0)
+            :return: tuple containing two values:
+
+                - boolean : True if the element is valid else False
+                - Counter : keys activated during checking if boolean is True else it is empty
+        """
+
         element_size = len(element)
         if 0 <= ref_position < element_size:
             position = ref_position + self.relPosition
@@ -581,12 +706,24 @@ class ParsingCondition(ParsingEntity):
             raise IndexError('reference position out of range ( 0 <= ref_position < len(element) )')
 
     def get_min_position(self):
+        """
+            Gets the minimum relative position (in comparison to the reference position) during check method execution.
+
+            :return: minimum relative position (int <= 0)
+        """
+
         if self.relPosition > 0:
             return 0
         else:
             return self.relPosition
 
     def get_max_position(self):
+        """
+            Gets the maximum relative position (in comparison to the reference position) during check method execution.
+
+            :return: maximum relative position (int >= 0)
+        """
+
         if self.relPosition < 0:
             return 0
         else:
