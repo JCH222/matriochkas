@@ -67,6 +67,18 @@ def test_modification_entity():
     assert modification_entity_1.generate_parsing_result(None) is True
 
 
+def test_modification_operator():
+    modification_operator = ModificationEntities.ModificationOperator(InstanceModificationEntity('entity 1'),
+                                                                      InstanceModificationEntity('entity 2'))
+    assert isinstance(modification_operator, ModificationEntities.ModificationOperator) is True
+    assert (modification_operator.operandA.name == 'entity 1') is True
+    assert (modification_operator.operandB.name == 'entity 2') is True
+
+    ###################################################################################################################
+
+    assert (modification_operator.generate_parsing_result(None) == 2) is True
+
+
 def test_modification_operation():
     modification_operation = InstanceModificationOperation('operation 1')
     assert isinstance(modification_operation, ModificationEntities.ModificationOperation) is True
