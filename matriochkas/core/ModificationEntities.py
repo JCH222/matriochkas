@@ -97,9 +97,9 @@ class ModificationOperation(ModificationEntity, metaclass=abc.ABCMeta):
             ar_rel_position_size = len(rel_position)
             if ar_rel_position_size >= 1:
                 result = ModificationOperation(rel_position=rel_position[0], key_word=key_word)
-                for i in rel_position:
-                    if i > 0:
-                        result = result + ModificationOperation(rel_position=rel_position[i], key_word=key_word)
+                for j, i in enumerate(rel_position):
+                    if j > 0:
+                        result = result + ModificationOperation(rel_position=i, key_word=key_word)
                 return result
             else:
                 raise ValueError("Relative position list is empty")
