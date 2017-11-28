@@ -64,14 +64,14 @@ class StreamReader(StreamEntity):
         else:
             raise TypeError('Result type has to be ParsingResultType object')
 
-        self.readArgs = dict()
-        self.readResult = {'parsing_result': None, 'error': None}
+        self._readArgs = dict()
+        self._readResult = {'parsing_result': None, 'error': None}
 
     def run(self):
         try:
-            self.readArgs['parsing_pipeline'].reset()
-            min_position = self.readArgs['parsing_pipeline'].get_min_position()
-            max_position = self.readArgs['parsing_pipeline'].get_max_position()
+            self._readArgs['parsing_pipeline'].reset()
+            min_position = self._readArgs['parsing_pipeline'].get_min_position()
+            max_position = self._readArgs['parsing_pipeline'].get_max_position()
             length = max_position - min_position + 1
             stream = self._get_stream_object()
             if self.readMethod is not None:
@@ -90,13 +90,13 @@ class StreamReader(StreamEntity):
             ar_index = list()
 
             if self.resultType == ParsingResultType.VALUE:
-                self.readResult = {'parsing_result': ParsingResult(self.streamClass, ParsingResultOrigin.READING,
+                self._readResult = {'parsing_result': ParsingResult(self.streamClass, ParsingResultOrigin.READING,
                                                                    self.resultType, self.readMethod, self.writeMethod,
                                                                    self.returnMethod, self.closeMethod, self.seekMethod,
                                                                    self.args, self.kwargs, ar_index),
                                    'error': None}
             else:
-                self.readResult = {'parsing_result': ParsingResult(self.streamClass, ParsingResultOrigin.READING,
+                self._readResult = {'parsing_result': ParsingResult(self.streamClass, ParsingResultOrigin.READING,
                                                                    self.resultType, self.readMethod, self.writeMethod,
                                                                    self.returnMethod, self.closeMethod, self.seekMethod,
                                                                    tuple(), {'reference': stream}, ar_index),
@@ -105,7 +105,7 @@ class StreamReader(StreamEntity):
             element = deque(read_method(length))
             if len(element) == length:
                 while True:
-                    result = self.readArgs['parsing_pipeline'].check(element, ref_position=-min_position)
+                    result = self._readArgs['parsing_pipeline'].check(element, ref_position=-min_position)
                     if result is not None and result[0][0]:
                         ar_index.append((current_position, element[-min_position], result[0][1]))
                     next_character = read_method(1)
@@ -116,30 +116,30 @@ class StreamReader(StreamEntity):
                         break
                     current_position += 1
 
-                if self.readArgs['close_stream']:
+                if self._readArgs['close_stream']:
                     close_method()
                 else:
                     seek_method(0)
 
-                self.readArgs = dict()
+                self._readArgs = dict()
             else:
                 close_method()
-                self.readResult = {'parsing_result': None,
+                self._readResult = {'parsing_result': None,
                                    'error': ValueError("Not enough characters to parse : " + str(len(element)))}
         except Exception as error:
-            self.readResult = {'parsing_result': None,
+            close_method()
+            self._readResult = {'parsing_result': None,
                                'error': error}
 
     def read(self, parsing_pipeline, close_stream=True):
-        self.readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
-        self.readResult = {'parsing_result': None, 'error': None}
+        self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
+        self._readResult = {'parsing_result': None, 'error': None}
 
-        self.start()
-        self.join()
-        if self.readResult['error'] is None:
-            return self.readResult['parsing_result']
+        self.run()
+        if self._readResult['error'] is None:
+            return self._readResult['parsing_result']
         else:
-            raise self.readResult['error']
+            raise self._readResult['error']
 
 
 class LinkedStreamReader(StreamReader):
@@ -275,8 +275,7 @@ class StreamWriter(StreamEntity):
                           'args': args, 'kwargs': kwargs, 'close_reading_stream': close_reading_stream}
         self.writeResult = {'result': None, 'error': None}
 
-        self.start()
-        self.join()
+        self.run()
         if self.writeResult['error'] is None:
             return self.writeResult['result']
         else:

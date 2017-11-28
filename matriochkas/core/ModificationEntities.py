@@ -3,6 +3,7 @@
 from enum import Enum
 from matriochkas.core.ParsingEntities import ParsingResult
 from matriochkas.core.ParsingEntities import ParsingResultOrigin
+from threading import Thread
 
 import abc
 
@@ -12,7 +13,12 @@ class ModificationSide(Enum):
     RIGHT = 1
 
 
-class ModificationEntity(metaclass=abc.ABCMeta):
+class ModificationEntity(Thread, metaclass=abc.ABCMeta):
+    def __init__(self):
+        super(ModificationEntity, self).__init__()
+        self._modificationArgs = dict()
+        self._modificationResult = {'parsing_result': None, 'error': None}
+
     def __add__(self, other):
         if isinstance(self, ModificationEntity) and isinstance(other, ModificationEntity):
             modification_operator = ModificationOperator(self, other)
@@ -20,20 +26,67 @@ class ModificationEntity(metaclass=abc.ABCMeta):
         else:
             raise TypeError("Operands have to be ModificationEntity's subclasses")
 
-    @abc.abstractmethod
+    def run(self):
+        try:
+            ar_index = list()
+
+            self._modificationResult = {'parsing_result':
+                                        ParsingResult(self._modificationArgs['initial_parsing_result'].streamClass,
+                                                      ParsingResultOrigin.MODIFICATION,
+                                                      self._modificationArgs['initial_parsing_result'].resultType,
+                                                      self._modificationArgs['initial_parsing_result'].readMethod,
+                                                      self._modificationArgs['initial_parsing_result'].writeMethod,
+                                                      self._modificationArgs['initial_parsing_result'].returnMethod,
+                                                      self._modificationArgs['initial_parsing_result'].closeMethod,
+                                                      self._modificationArgs['initial_parsing_result'].seekMethod,
+                                                      self._modificationArgs['initial_parsing_result'].arInput['args'],
+                                                      self._modificationArgs['initial_parsing_result'].arInput['kwargs'],
+                                                      ar_index),
+                                        'error': None}
+
+            for index in self.create_indexes_generator(self._modificationArgs['initial_parsing_result'],
+                                                       self._modificationArgs['thread_ref'],
+                                                       self._modificationArgs['sleep_time']):
+                ar_index += index
+        except Exception as error:
+            self._modificationResult = {'parsing_result': None, 'error': error}
+
     def generate_parsing_result(self, initial_parsing_result):
+        self._modificationArgs = {'initial_parsing_result': initial_parsing_result, 'thread_ref': None,
+                                  'sleep_time': 0.5}
+        self._modificationResult = {'parsing_result': None, 'error': None}
+        self.run()
+
+        if self._modificationResult['parsing_result'] is not None:
+            self._modificationResult['parsing_result'].arIndex.sort()
+            return self._modificationResult['parsing_result']
+        else:
+            raise self._modificationResult['error']
+
+    @abc.abstractmethod
+    def create_indexes_generator(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
         pass
 
 
 class ModificationOperator(ModificationEntity):
     def __init__(self, operand_a, operand_b):
+        super(ModificationOperator, self).__init__()
         self.operandA = operand_a
         self.operandB = operand_b
 
-    def generate_parsing_result(self, initial_parsing_result):
-        parsing_result_a = self.operandA.generate_parsing_result(initial_parsing_result)
-        parsing_result_b = self.operandB.generate_parsing_result(initial_parsing_result)
-        return parsing_result_a + parsing_result_b
+    def create_indexes_generator(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
+        operator_a = self.operandA.create_indexes_generator(initial_parsing_result, thread_ref=thread_ref,
+                                                            sleep_time=sleep_time)
+        operator_b = self.operandB.create_indexes_generator(initial_parsing_result, thread_ref=thread_ref,
+                                                            sleep_time=sleep_time)
+
+        try:
+            while True:
+                index_a = operator_a.__next__()
+                index_b = operator_b.__next__()
+                yield index_a + index_b
+        except StopIteration:
+            raise StopIteration()
 
 
 class ModificationOperation(ModificationEntity, metaclass=abc.ABCMeta):
@@ -54,11 +107,12 @@ class ModificationOperation(ModificationEntity, metaclass=abc.ABCMeta):
             raise TypeError('Relative position has to be int or list object')
 
     def __init__(self, rel_position=0, key_word=None):
+        super(ModificationOperation, self).__init__()
         self.relPosition = rel_position
         self.keyWord = key_word
 
-    def generate_parsing_result(self, initial_parsing_result):
-        raise NotImplementedError('<generate_parsing_result> method has to be implemented')
+    def create_indexes_generator(self, initial_parsing_result):
+        raise NotImplementedError('<create_indexes_generator> method has to be implemented')
 
 
 class ModificationAdd(ModificationOperation):
@@ -70,27 +124,13 @@ class ModificationAdd(ModificationOperation):
         self.ar_character = ar_character
         self.modificationSide = modification_side
 
-    def generate_parsing_result(self, initial_parsing_result):
+    def create_indexes_generator(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
         if isinstance(initial_parsing_result, ParsingResult):
-            ar_index = list()
-
-            parsing_result = ParsingResult(initial_parsing_result.streamClass,
-                                           ParsingResultOrigin.MODIFICATION,
-                                           initial_parsing_result.resultType,
-                                           initial_parsing_result.readMethod,
-                                           initial_parsing_result.writeMethod,
-                                           initial_parsing_result.returnMethod,
-                                           initial_parsing_result.closeMethod,
-                                           initial_parsing_result.seekMethod,
-                                           initial_parsing_result.arInput['args'],
-                                           initial_parsing_result.arInput['kwargs'],
-                                           ar_index)
-
-            for element in initial_parsing_result.create_stream_generator():
+            for element in initial_parsing_result.create_stream_generator(thread_ref=thread_ref, sleep_time=sleep_time):
                 if self.keyWord is None or self.keyWord in element[2].keys():
-                    ar_index.append((element[0] + self.relPosition, self.ar_character, self.modificationSide))
-
-            return parsing_result
+                    yield [(element[0] + self.relPosition, self.ar_character, self.modificationSide)]
+                else:
+                    yield []
         else:
             raise TypeError('Parameter has to be ParsingResult class or subclass')
 
@@ -102,26 +142,12 @@ class ModificationRemove(ModificationOperation):
     def __init__(self, rel_position=0, key_word=None):
         super(ModificationRemove, self).__init__(rel_position=rel_position, key_word=key_word)
 
-    def generate_parsing_result(self, initial_parsing_result):
+    def create_indexes_generator(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
         if isinstance(initial_parsing_result, ParsingResult):
-            ar_index = list()
-
-            parsing_result = ParsingResult(initial_parsing_result.streamClass,
-                                           ParsingResultOrigin.MODIFICATION,
-                                           initial_parsing_result.resultType,
-                                           initial_parsing_result.readMethod,
-                                           initial_parsing_result.writeMethod,
-                                           initial_parsing_result.returnMethod,
-                                           initial_parsing_result.closeMethod,
-                                           initial_parsing_result.seekMethod,
-                                           initial_parsing_result.arInput['args'],
-                                           initial_parsing_result.arInput['kwargs'],
-                                           ar_index)
-
-            for element in initial_parsing_result.create_stream_generator():
+            for element in initial_parsing_result.create_stream_generator(thread_ref=thread_ref, sleep_time=sleep_time):
                 if self.keyWord is None or self.keyWord in element[2].keys():
-                    ar_index.append((element[0]+self.relPosition, ''))
-
-            return parsing_result
+                    yield [(element[0] + self.relPosition, '')]
+                else:
+                    yield []
         else:
             raise TypeError('Parameter has to be ParsingResult class or subclass')
