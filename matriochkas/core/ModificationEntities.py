@@ -37,12 +37,34 @@ class ModificationOperator(ModificationEntity):
 
 
 class ModificationOperation(ModificationEntity, metaclass=abc.ABCMeta):
+    def __new__(cls, rel_position=0, key_word=None):
+        if isinstance(rel_position, int):
+            return super(ModificationOperation, cls).__new__(cls)
+        elif isinstance(rel_position, list):
+            ar_rel_position_size = len(rel_position)
+            if ar_rel_position_size >= 1:
+                result = ModificationOperation(rel_position=rel_position[0], key_word=key_word)
+                for i in rel_position:
+                    if i > 0:
+                        result = result + ModificationOperation(rel_position=rel_position[i], key_word=key_word)
+                return result
+            else:
+                raise ValueError("Relative position list is empty")
+        else:
+            raise TypeError('Relative position has to be int or list object')
+
     def __init__(self, rel_position=0, key_word=None):
         self.relPosition = rel_position
         self.keyWord = key_word
 
+    def generate_parsing_result(self, initial_parsing_result):
+        raise NotImplementedError('<generate_parsing_result> method has to be implemented')
+
 
 class ModificationAdd(ModificationOperation):
+    def __new__(cls, ar_character, rel_position=0, modification_side=ModificationSide.RIGHT, key_word=None):
+        return super(ModificationAdd, cls).__new__(cls, rel_position, key_word)
+
     def __init__(self, ar_character, rel_position=0, modification_side=ModificationSide.RIGHT, key_word=None):
         super(ModificationAdd, self).__init__(rel_position=rel_position, key_word=key_word)
         self.ar_character = ar_character
@@ -71,6 +93,9 @@ class ModificationAdd(ModificationOperation):
 
 
 class ModificationRemove(ModificationOperation):
+    def __new__(cls, rel_position=0, key_word=None):
+        return super(ModificationRemove, cls).__new__(cls, rel_position, key_word)
+
     def __init__(self, rel_position=0, key_word=None):
         super(ModificationRemove, self).__init__(rel_position=rel_position, key_word=key_word)
 
