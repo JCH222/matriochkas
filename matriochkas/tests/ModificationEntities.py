@@ -102,6 +102,12 @@ def test_modification_operator():
     assert isinstance(result, matriochkas.core.ParsingEntities.ParsingResult) is True
     assert (result.arIndex == ['', '']) is True
 
+    try:
+        modification_operator.generate_parsing_result(None)
+        assert False
+    except AttributeError:
+        assert True
+
 
 def test_modification_operation():
     modification_operation = InstanceModificationOperation('operation 1')
