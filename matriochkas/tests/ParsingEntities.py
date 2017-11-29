@@ -1168,8 +1168,16 @@ def test_parsing_result():
         else:
             assert False
 
+    for i, index in enumerate(parsing_result_1.create_stream_generator(None)):
+        if i == 0:
+            assert (index == (0, 'A')) is True
+        elif i == 1:
+            assert (index == (2, 'B')) is True
+        else:
+            assert False
+
     try:
-        for index in parsing_result_1.create_stream_generator(None):
+        for index in parsing_result_1.create_stream_generator(0):
             assert False
     except TypeError:
         assert True
