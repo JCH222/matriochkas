@@ -731,10 +731,41 @@ class ParsingCondition(ParsingEntity):
 
 
 class EmptyParsingCondition(ParsingEntity):
+    """
+        Empty condition in the parsing process
+        ======================================
+
+        This class checks whether characters match with empty character during the parsing process
+
+        :Example:
+
+        >>> from matriochkas import ParsingCondition
+        >>> # Empty parsing condition creation
+        >>> condition = EmptyParsingCondition()
+        >>> text = 'Hello World !'
+        >>> result = list()
+        >>> for position in range(0, len(text)):
+        >>>     result.append((text[position], condition.check(text, position)[0]))
+        >>> print(result)
+        [('H', False), ('e', False), ('l', False), ('l', False), ('o', False), (' ', False), ('W', False), ('o', False),
+         ('r', False), ('l', False), ('d', False), (' ', False), ('!', False)]
+    """
+
     def __init__(self):
+        """
+            Initialization
+        """
+
         super(EmptyParsingCondition, self).__init__()
 
     def __eq__(self, other):
+        """
+            Equality operator.
+
+            :param other: EmptyParsingCondition object to compare
+            :return: bool
+        """
+
         if isinstance(other, EmptyParsingCondition):
             if self.isNot == other.isNot:
                 return True
@@ -744,6 +775,13 @@ class EmptyParsingCondition(ParsingEntity):
             return False
 
     def __contains__(self, item):
+        """
+            Is identical to equality operator
+
+            :param item: EmptyParsingCondition object to compare
+            :return: bool
+        """
+
         return self.__eq__(item)
 
     def __str__(self):
@@ -753,20 +791,55 @@ class EmptyParsingCondition(ParsingEntity):
         return self.__str__()
 
     def __copy__(self):
+        """
+            EmptyParsingCondition's shallow copy
+
+            :return: EmptyParsingCondition object
+        """
+
         result = EmptyParsingCondition()
         result.isNot = self.isNot
         return result
 
     def __deepcopy__(self, memodict={}):
+        """
+            EmptyParsingCondition's deep copy
+
+            :return: EmptyParsingCondition object
+        """
+
         return self.__copy__()
 
     def check(self, element, ref_position=0):
+        """
+            Checks if the element is valid.
+
+            :param element: element to check (str)
+            :param ref_position: reference position in the element (int >= 0)
+            :return: tuple containing two values:
+
+                - boolean : False
+                - Counter : keys activated during checking if boolean is True else it is empty
+        """
+
         return False, Counter({None: 1})
 
     def get_min_position(self):
+        """
+            Gets the minimum relative position (in comparison to the reference position) during check method execution.
+
+            :return: minimum relative position (int <= 0)
+        """
+
         return 0
 
     def get_max_position(self):
+        """
+            Gets the maximum relative position (in comparison to the reference position) during check method execution.
+
+            :return: maximum relative position (int >= 0)
+        """
+        
         return 0
 
 
