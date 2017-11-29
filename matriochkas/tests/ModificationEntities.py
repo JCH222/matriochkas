@@ -17,7 +17,7 @@ class InstanceModificationEntity(ModificationEntities.ModificationEntity):
         self.name = name
 
     def create_indexes_generator(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
-        return True
+        yield ['']
 
 ########################################################################################################################
 
@@ -63,7 +63,20 @@ def test_modification_entity():
 
     ###################################################################################################################
 
-    assert modification_entity_1.create_indexes_generator(None) is True
+    parsing_result = matriochkas.core.ParsingEntities.ParsingResult(matriochkas.tests.ParsingEntities.MockStreamClass,
+                                                                    matriochkas.core.ParsingEntities.ParsingResultOrigin.READING,
+                                                                    matriochkas.core.ParsingEntities.ParsingResultType.VALUE,
+                                                                    'read method 1', 'write method 1',
+                                                                    'return method 1', 'close method 1',
+                                                                    'seek method 1',
+                                                                    ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
+                                                                    [(0, 'A', Counter({None: 1})),
+                                                                     (2, 'B', Counter({None: 1}))])
+    for i, index in enumerate(modification_entity_1.create_indexes_generator(parsing_result)):
+        if i == 0:
+            assert (index == ['']) is True
+        else:
+            assert False
 
 
 def test_modification_operator():
@@ -75,7 +88,19 @@ def test_modification_operator():
 
     ###################################################################################################################
 
-    assert (modification_operator.generate_parsing_result(None) == 2) is True
+    parsing_result = matriochkas.core.ParsingEntities.ParsingResult(matriochkas.tests.ParsingEntities.MockStreamClass,
+                                                                    matriochkas.core.ParsingEntities.ParsingResultOrigin.READING,
+                                                                    matriochkas.core.ParsingEntities.ParsingResultType.VALUE,
+                                                                    'read method 1', 'write method 1',
+                                                                    'return method 1', 'close method 1',
+                                                                    'seek method 1',
+                                                                    ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
+                                                                    [(0, 'A', Counter({None: 1})),
+                                                                     (2, 'B', Counter({None: 1}))])
+
+    result = modification_operator.generate_parsing_result(parsing_result)
+    assert isinstance(result, matriochkas.core.ParsingEntities.ParsingResult) is True
+    assert (result.arIndex == ['', '']) is True
 
 
 def test_modification_operation():
