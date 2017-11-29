@@ -1,9 +1,11 @@
 # coding: utf8
 
 from matriochkas.core import ModificationEntities
+from matriochkas.tests.ParsingEntities import MockThread
+from collections import Counter
+
 import matriochkas.core.ParsingEntities
 import matriochkas.tests.ParsingEntities
-from collections import Counter
 
 
 ########################################################################################################################
@@ -14,7 +16,7 @@ class InstanceModificationEntity(ModificationEntities.ModificationEntity):
         super(InstanceModificationEntity, self).__init__()
         self.name = name
 
-    def generate_parsing_result(self, initial_parsing_result):
+    def create_indexes_generator(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
         return True
 
 ########################################################################################################################
@@ -26,10 +28,7 @@ class InstanceModificationOperation(ModificationEntities.ModificationOperation):
 
     def __init__(self, name, rel_position=0):
         super(InstanceModificationOperation, self).__init__(rel_position=rel_position)
-        self.name = name
-
-    def generate_parsing_result(self, initial_parsing_result):
-        return True
+        self.id = name
 
 ########################################################################################################################
 
@@ -64,7 +63,7 @@ def test_modification_entity():
 
     ###################################################################################################################
 
-    assert modification_entity_1.generate_parsing_result(None) is True
+    assert modification_entity_1.create_indexes_generator(None) is True
 
 
 def test_modification_operator():
@@ -82,12 +81,12 @@ def test_modification_operator():
 def test_modification_operation():
     modification_operation = InstanceModificationOperation('operation 1')
     assert isinstance(modification_operation, ModificationEntities.ModificationOperation) is True
-    assert (modification_operation.name == 'operation 1') is True
+    assert (modification_operation.id == 'operation 1') is True
     assert (modification_operation.relPosition == 0) is True
 
     modification_operation_2 = InstanceModificationOperation('operation 2', rel_position=2)
     assert isinstance(modification_operation_2, ModificationEntities.ModificationOperation) is True
-    assert (modification_operation_2.name == 'operation 2') is True
+    assert (modification_operation_2.id == 'operation 2') is True
     assert (modification_operation_2.relPosition == 2) is True
 
     modification_operation_3 = InstanceModificationOperation('operation 3', rel_position=[i for i in range(0, 3)])
@@ -110,6 +109,14 @@ def test_modification_operation():
         InstanceModificationOperation('invalid', rel_position=[])
         assert False
     except ValueError:
+        assert True
+
+    ###################################################################################################################
+
+    try:
+        modification_operation.create_indexes_generator(None)
+        assert False
+    except NotImplementedError:
         assert True
 
 
@@ -141,8 +148,30 @@ def test_modification_add():
     try:
         modification_add_1.generate_parsing_result(None)
         assert False
-    except TypeError:
+    except AttributeError:
         assert True
+
+    ###################################################################################################################
+
+    generator_1 = modification_add_1.create_indexes_generator(parsing_result_1, None)
+    for i, index in enumerate(generator_1):
+        if i == 0:
+            assert index == [(1, '0', ModificationEntities.ModificationSide.RIGHT)]
+        elif i == 1:
+            assert index == [(3, '0', ModificationEntities.ModificationSide.RIGHT)]
+        else:
+            assert False
+
+    thread = MockThread()
+    thread.start()
+    generator_2 = modification_add_1.create_indexes_generator(parsing_result_1, thread)
+    for i, index in enumerate(generator_2):
+        if i == 0:
+            assert index == [(1, '0', ModificationEntities.ModificationSide.RIGHT)]
+        elif i == 1:
+            assert index == [(3, '0', ModificationEntities.ModificationSide.RIGHT)]
+        else:
+            assert False
 
 
 def test_modification_remove():
@@ -172,5 +201,27 @@ def test_modification_remove():
     try:
         modification_remove_1.generate_parsing_result(None)
         assert False
-    except TypeError:
+    except AttributeError:
         assert True
+
+    ###################################################################################################################
+
+    generator_1 = modification_remove_1.create_indexes_generator(parsing_result_1, None)
+    for i, index in enumerate(generator_1):
+        if i == 0:
+            assert index == [(1, '')]
+        elif i == 1:
+            assert index == [(3, '')]
+        else:
+            assert False
+
+    thread = MockThread()
+    thread.start()
+    generator_2 = modification_remove_1.create_indexes_generator(parsing_result_1, thread)
+    for i, index in enumerate(generator_2):
+        if i == 0:
+            assert index == [(1, '')]
+        elif i == 1:
+            assert index == [(3, '')]
+        else:
+            assert False

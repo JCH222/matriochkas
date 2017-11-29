@@ -608,7 +608,7 @@ class ParsingResult:
 
         return True
 
-    def create_stream_generator(self, thread_ref,  sleep_time=0.5):
+    def create_stream_generator(self, thread_ref=None,  sleep_time=0.5):
         current_position = 0
         if isinstance(thread_ref, Thread):
             while thread_ref.is_alive() or current_position < len(self.arIndex):
@@ -617,5 +617,8 @@ class ParsingResult:
                     yield self.arIndex[current_position-1]
                 else:
                     sleep(sleep_time)
+        elif thread_ref is None:
+            for current_position, index in enumerate(self.arIndex):
+                yield index
         else:
-            raise TypeError('Thread reference has to be Thread object')
+            raise TypeError('Thread reference has to be Thread object or None')
