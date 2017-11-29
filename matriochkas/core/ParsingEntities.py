@@ -3,7 +3,7 @@
 
 """
     Parsing module
-    ====================
+    ==============
 
     This module contains classes required to create parsing operations.
 
@@ -25,7 +25,7 @@
     They can be classified in 4 groups:
 
         - Enumerations
-        - Parsing organisations
+        - Parsing organizations
         - Parsing operations
         - Parsing results
 """
@@ -147,6 +147,10 @@ class ParsingEntity(Entity, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def __init__(self):
+        """
+            Initialization
+        """
+
         self.isNot = False
 
     def __and__(self, other):
@@ -846,7 +850,21 @@ class EmptyParsingCondition(ParsingEntity):
 
 
 class ParsingStructure(Entity):
+    """
+        Fundamental parsing organization class
+        ===================================
+
+        Superclass for all parsing organizations from this module.
+    """
+
     def __add__(self, other):
+        """
+            Sum operator
+
+            :param other: ParsingStructure object to add or None
+            :return: ParsingPipeline object
+        """
+
         if isinstance(self, ParsingStructure) and (isinstance(other, ParsingStructure) or other is None):
             parsing_pipeline = ParsingPipeline(self)
             if other is not None:
