@@ -33,6 +33,8 @@
 
 from enum import Enum
 from collections import Counter
+from threading import Thread
+from time import sleep
 
 import abc
 import copy
@@ -998,6 +1000,8 @@ class ParsingResult:
         else:
             raise TypeError('ar_index has to be list object')
 
+        self.iterPosition = 0
+
     def __add__(self, other):
         if isinstance(other, ParsingResult) and isinstance(self, ParsingResult):
             if ParsingResult.are_from_the_same_parsing(self, other):
@@ -1006,6 +1010,25 @@ class ParsingResult:
                     if (element[0] not in new_parsing_result or
                             (len(element) == 3 and (element[0], None, element[2]) not in new_parsing_result)) or \
                             (element[1] == '' and (element[0], element[1]) not in new_parsing_result):
+                        new_parsing_result.arIndex.append(element)
+                new_parsing_result.arIndex.sort()
+                return new_parsing_result
+            else:
+                raise ValueError("Operands have to come from the same parsing")
+        else:
+            raise TypeError("Operands have to be ParsingResult classes or subclasses")
+
+    def __sub__(self, other):
+        if isinstance(other, ParsingResult) and isinstance(self, ParsingResult):
+            if ParsingResult.are_from_the_same_parsing(self, other):
+                new_parsing_result = ParsingResult(self.streamClass, self.origin, self.resultType, self.readMethod,
+                                                   self.writeMethod, self.returnMethod, self.closeMethod,
+                                                   self.seekMethod, self.arInput['args'], self.arInput['kwargs'],
+                                                   [])
+                for element in self.arIndex:
+                    if (element[0] not in other or
+                            (len(element) == 3 and (element[0], None, element[2]) not in other)) or \
+                            (element[1] == '' and (element[0], element[1]) not in other):
                         new_parsing_result.arIndex.append(element)
                 new_parsing_result.arIndex.sort()
                 return new_parsing_result
@@ -1061,6 +1084,18 @@ class ParsingResult:
     def __deepcopy__(self, memodict={}):
         return self.__copy__()
 
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.iterPosition < len(self.arIndex):
+            result = self.arIndex[self.iterPosition]
+            self.iterPosition += 1
+            return result
+        else:
+            self.iterPosition = 0
+            raise StopIteration
+
     @staticmethod
     def are_from_the_same_parsing(parsing_result_a, parsing_result_b):
         if isinstance(parsing_result_a, ParsingResult) and isinstance(parsing_result_b, ParsingResult):
@@ -1088,3 +1123,15 @@ class ParsingResult:
                 raise TypeError("Indexes characters have to be 'str' objects with a length of 1")
 
         return True
+
+    def create_stream_generator(self, thread_ref,  sleep_time=0.5):
+        current_position = 0
+        if isinstance(thread_ref, Thread):
+            while thread_ref.is_alive() or current_position < len(self.arIndex):
+                if current_position < len(self.arIndex):
+                    current_position += 1
+                    yield self.arIndex[current_position-1]
+                else:
+                    sleep(sleep_time)
+        else:
+            raise TypeError('Thread reference has to be Thread object')

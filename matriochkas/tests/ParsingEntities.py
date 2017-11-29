@@ -2,6 +2,8 @@
 
 from matriochkas.core import ParsingEntities
 from collections import Counter
+from threading import Thread
+from time import sleep
 
 import copy
 
@@ -72,6 +74,13 @@ class InstanceParsingStructure(ParsingEntities.ParsingStructure):
 
 class MockStreamClass:
     pass
+
+########################################################################################################################
+
+
+class MockThread(Thread):
+    def run(self):
+        sleep(5)
 
 ########################################################################################################################
 
@@ -961,6 +970,73 @@ def test_parsing_result():
     except TypeError:
         assert True
 
+    ###################################################################################################################
+
+    parsing_result_10 = parsing_result_5a - parsing_result_5b
+    assert (parsing_result_10.streamClass == MockStreamClass) is True
+    assert (parsing_result_10.origin == ParsingEntities.ParsingResultOrigin.READING) is True
+    assert (parsing_result_10.resultType == ParsingEntities.ParsingResultType.VALUE) is True
+    assert (parsing_result_10.readMethod == 'read method 1') is True
+    assert (parsing_result_10.writeMethod == 'write method 1') is True
+    assert (parsing_result_10.returnMethod == 'return method 1') is True
+    assert (parsing_result_10.closeMethod == 'close method 1') is True
+    assert (parsing_result_10.seekMethod == 'seek method 1') is True
+    assert (parsing_result_10.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
+    assert (parsing_result_10.arIndex == [(2, 'B')])
+
+    try:
+        parsing_result_5a - parsing_result_5c
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5d
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5e
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5f
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5h
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5i
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5g
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - parsing_result_5h
+        assert False
+    except ValueError:
+        assert True
+
+    try:
+        parsing_result_5a - None
+        assert False
+    except TypeError:
+        assert True
 
     ###################################################################################################################
 
@@ -975,6 +1051,7 @@ def test_parsing_result():
     assert ((0, 'A') in parsing_result_6) is True
     assert ((2, 'B', 'Left') in parsing_result_6) is True
     assert ((2, None, 'Left') in parsing_result_6) is True
+    assert ((2, None, 'Right') in parsing_result_6) is False
     assert (5 in parsing_result_6) is False
     assert ((0, 'B') in parsing_result_6) is False
     assert ((1, 'B', 'Right') in parsing_result_6) is False
@@ -1029,6 +1106,23 @@ def test_parsing_result():
 
     ###################################################################################################################
 
+    assert (parsing_result_1.__iter__() == parsing_result_1) is True
+
+    ###################################################################################################################
+
+    assert (parsing_result_1.iterPosition == 0) is True
+    assert (parsing_result_1.__next__() == (0, 'A')) is True
+    assert (parsing_result_1.iterPosition == 1) is True
+    assert (parsing_result_1.__next__() == (2, 'B')) is True
+    assert (parsing_result_1.iterPosition == 2) is True
+    try:
+        parsing_result_1.__next__()
+        assert False
+    except StopIteration:
+        assert (parsing_result_1.iterPosition == 0) is True
+
+    ###################################################################################################################
+
     parsing_result_7 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                                      ParsingEntities.ParsingResultType.VALUE,
                                                      'read method 1', 'write method 1',
@@ -1059,5 +1153,23 @@ def test_parsing_result():
     try:
         parsing_result_7.check_indexes()
         assert False
+    except TypeError:
+        assert True
+
+    ###################################################################################################################
+
+    thread = MockThread()
+    thread.start()
+    for i, index in enumerate(parsing_result_1.create_stream_generator(thread)):
+        if i == 0:
+            assert (index == (0, 'A')) is True
+        elif i == 1:
+            assert (index == (2, 'B')) is True
+        else:
+            assert False
+
+    try:
+        for index in parsing_result_1.create_stream_generator(None):
+            assert False
     except TypeError:
         assert True
