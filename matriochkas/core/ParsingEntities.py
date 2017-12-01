@@ -861,6 +861,18 @@ class ParsingStructure(Entity):
         """
             Sum operator
 
+            :Example:
+
+            >>> from matriochkas import ParsingCondition
+            >>> from matriochkas import ParsingBlock
+            >>> # ParsingBlock creation
+            >>> block_1 = ParsingBlock(ParsingCondition(','), ParsingCondition('.'))
+            >>> block_2 = ParsingBlock(ParsingCondition(';'), None)
+            >>> # ParsingStructure sum
+            >>> pipeline = block_1 + block_2
+            >>> type(pipeline)
+            <class 'matriochkas.core.ParsingEntities.ParsingPipeline'>
+
             :param other: ParsingStructure object to add or None
             :return: ParsingPipeline object
         """
@@ -875,14 +887,31 @@ class ParsingStructure(Entity):
 
     @abc.abstractmethod
     def check(self, element, ref_position):
+        """
+            Checks if the element is valid.
+
+            :param element: element to check (str)
+            :param ref_position: reference position in the element (int >= 0)
+        """
+
         pass
 
     @abc.abstractmethod
     def get_max_position(self):
-        pass
+        """
+            Gets the maximum relative position (in comparison to the reference position) during check method execution.
+
+            :return: maximum relative position (int >= 0)
+        """
 
     @abc.abstractmethod
     def get_min_position(self):
+        """
+            Gets the minimum relative position (in comparison to the reference position) during check method execution.
+
+            :return: minimum relative position (int <= 0)
+        """
+
         pass
 
 
