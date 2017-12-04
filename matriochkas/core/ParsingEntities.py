@@ -852,7 +852,7 @@ class EmptyParsingCondition(ParsingEntity):
 class ParsingStructure(Entity):
     """
         Fundamental parsing organization class
-        ===================================
+        ======================================
 
         Superclass for all parsing organizations from this module.
     """
@@ -916,6 +916,34 @@ class ParsingStructure(Entity):
 
 
 class ParsingPipeline(ParsingStructure):
+    """
+        Contains ParsingBlock objects and defines their execution order during the parsing process
+        ==========================================================================================
+
+        This class is the interface between parsing patterns created with ParsingCondition, ParsingOperator and
+        ParsingBlock objects and StreamEntity objects.
+
+        :Example:
+
+        >>> from matriochkas import ParsingCondition
+        >>> from matriochkas import ParsingBlock
+        >>> # ParsingBlock creation
+        >>> block_1 = ParsingBlock(ParsingCondition(','), ParsingCondition('.'))
+        >>> block_2 = ParsingBlock(ParsingCondition(';'), None)
+        >>> # ParsingPipeline creation
+        >>> pipeline = block_1 + block_2
+        >>> # Text to parse (gets all characters separated by ',' or ';')
+        >>> text = 'a,b,c.1;2;3'
+        >>> result = list()
+        >>> for position in range(0, len(text)):
+        >>>     result.append((text[position], pipeline.check(text, position)[0]))
+        >>> print(result)
+        [('a', (False, Counter())), (',', (True, Counter({None: 1}))), ('b', (False, Counter())),
+        (',', (True, Counter({None: 1}))), ('c', (False, Counter())), ('.', (False, Counter())),
+        ('1', (False, Counter())), (';', (True, Counter({None: 1}))), ('2', (False, Counter())),
+        (';', (True, Counter({None: 1}))), ('3', (False, Counter()))]
+    """
+
     def __init__(self, first_parsing_structure):
         if isinstance(first_parsing_structure, ParsingStructure):
             self.arParsingStructure = list()
