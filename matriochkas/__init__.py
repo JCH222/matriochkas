@@ -21,5 +21,6 @@ from matriochkas.core.IO import StreamWriter
 
 from matriochkas.core.Configuration import StreamClassConfiguration
 
+from matriochkas.core.StreamEntities import StreamTwoDimDeque
 
 __version__ = '1.0'
