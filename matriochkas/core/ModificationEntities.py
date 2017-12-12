@@ -109,6 +109,8 @@ class ModificationOperation(ModificationEntity, metaclass=abc.ABCMeta):
     def __init__(self, rel_position=0, key_word=None):
         super(ModificationOperation, self).__init__()
         self.relPosition = rel_position
+        if key_word is not None and not isinstance(key_word, list) and not isinstance(key_word, tuple):
+            key_word = [key_word]
         self.keyWord = key_word
 
     def create_indexes_generator(self, initial_parsing_result):
@@ -127,7 +129,7 @@ class ModificationAdd(ModificationOperation):
     def create_indexes_generator(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
         if isinstance(initial_parsing_result, ParsingResult):
             for element in initial_parsing_result.create_stream_generator(thread_ref=thread_ref, sleep_time=sleep_time):
-                if self.keyWord is None or self.keyWord in element[2].keys():
+                if self.keyWord is None or any(key_word in element[2] for key_word in self.keyWord):
                     yield [(element[0] + self.relPosition, self.ar_character, self.modificationSide)]
                 else:
                     yield []
@@ -145,7 +147,7 @@ class ModificationRemove(ModificationOperation):
     def create_indexes_generator(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
         if isinstance(initial_parsing_result, ParsingResult):
             for element in initial_parsing_result.create_stream_generator(thread_ref=thread_ref, sleep_time=sleep_time):
-                if self.keyWord is None or self.keyWord in element[2].keys():
+                if self.keyWord is None or any(key_word in element[2] for key_word in self.keyWord):
                     yield [(element[0] + self.relPosition, '')]
                 else:
                     yield []
