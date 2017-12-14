@@ -1086,7 +1086,10 @@ class ParsingResult:
                             (len(element) == 3 and (element[0], None, element[2]) not in new_parsing_result)) or \
                             (element[1] == '' and (element[0], element[1]) not in new_parsing_result):
                         new_parsing_result.arIndex.append(element)
-                new_parsing_result.arIndex.sort()
+                if self.origin == ParsingResultOrigin.READING:
+                    new_parsing_result.arIndex.sort(key=lambda index: index[0])
+                else:
+                    new_parsing_result.arIndex.sort()
                 return new_parsing_result
             else:
                 raise ValueError("Operands have to come from the same parsing")

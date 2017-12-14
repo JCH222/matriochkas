@@ -68,3 +68,5 @@ class StreamClassConfiguration(Enum):
                 'seek_method': 'seek'}
     TextIOWrapper = {'read_method': 'read', 'write_method': 'write', 'return_method': 'None', 'close_method': 'close',
                      'seek_method': 'seek'}
+    StreamTwoDimDeque = {'read_method': 'read', 'write_method': 'write', 'return_method': 'get_value',
+                         'close_method': 'close', 'seek_method': 'seek'}
