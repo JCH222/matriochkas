@@ -569,7 +569,7 @@ def test_parsing_structure():
 def test_parsing_pipeline():
     parsing_pipeline_1 = ParsingEntities.ParsingPipeline(InstanceParsingStructure('structure 1'))
     assert (len(parsing_pipeline_1.arParsingStructure) == 1) is True
-    assert (parsing_pipeline_1.current_parsing_block_index == 0) is True
+    assert (parsing_pipeline_1.current_parsing_structure_index == 0) is True
     assert parsing_pipeline_1.isEnded is False
 
     try:
@@ -581,13 +581,13 @@ def test_parsing_pipeline():
     ###################################################################################################################
 
     parsing_pipeline_1.add_structure(ParsingEntities.ParsingPipeline(InstanceParsingStructure('structure 2')))
-    assert (parsing_pipeline_1.current_parsing_block_index == 0) is True
+    assert (parsing_pipeline_1.current_parsing_structure_index == 0) is True
     assert parsing_pipeline_1.isEnded is False
     assert (parsing_pipeline_1.check(None, None) == ((True, Counter({None: 1})), (True, Counter({None: 1})))) is True
-    assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
+    assert (parsing_pipeline_1.current_parsing_structure_index == 1) is True
     assert parsing_pipeline_1.isEnded is False
     assert (parsing_pipeline_1.check(None, None) == ((True, Counter({None: 1})), (True, Counter({None: 1})))) is True
-    assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
+    assert (parsing_pipeline_1.current_parsing_structure_index == 1) is True
     assert parsing_pipeline_1.isEnded is True
     assert parsing_pipeline_1.check(None, None) is None
 
@@ -611,10 +611,10 @@ def test_parsing_pipeline():
     ###################################################################################################################
 
     assert parsing_pipeline_1.isEnded is True
-    assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
+    assert (parsing_pipeline_1.current_parsing_structure_index == 1) is True
     parsing_pipeline_1.reset()
     assert parsing_pipeline_1.isEnded is False
-    assert (parsing_pipeline_1.current_parsing_block_index == 0) is True
+    assert (parsing_pipeline_1.current_parsing_structure_index == 0) is True
 
 
 def test_parsing_block():

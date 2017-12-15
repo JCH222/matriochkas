@@ -917,8 +917,8 @@ class ParsingStructure(Entity):
 
 class ParsingPipeline(ParsingStructure):
     """
-        Contains ParsingBlock objects and defines their execution order during the parsing process
-        ==========================================================================================
+        Contains ParsingStructure objects and defines their execution order during the parsing process
+        ==============================================================================================
 
         This class is the interface between parsing patterns created with ParsingCondition, ParsingOperator and
         ParsingBlock objects and StreamEntity objects.
@@ -945,20 +945,35 @@ class ParsingPipeline(ParsingStructure):
     """
 
     def __init__(self, first_parsing_structure):
+        """
+            Initialization
+
+            :param first_parsing_structure: first parsing structure object contained in the parsing pipeline object
+            (ParsingStructure)
+        """
+
         if isinstance(first_parsing_structure, ParsingStructure):
             self.arParsingStructure = list()
             self.arParsingStructure.append(first_parsing_structure)
-            self.current_parsing_block_index = 0
+            self.current_parsing_structure_index = 0
             self.isEnded = False
         else:
             raise TypeError("Object has to be ParsingStructure object")
 
     def check(self, element, ref_position=0):
+        """
+            Checks if the element is valid.
+
+            :param element: element to check (str)
+            :param ref_position: reference position in the element (int >= 0)
+            :return: tuple containing two tuples from ParsingStructure's check method
+        """
+
         if not self.isEnded:
-            result = self.arParsingStructure[self.current_parsing_block_index].check(element, ref_position)
+            result = self.arParsingStructure[self.current_parsing_structure_index].check(element, ref_position)
             if result[1][0]:
-                if self.current_parsing_block_index < len(self.arParsingStructure)-1:
-                    self.current_parsing_block_index += 1
+                if self.current_parsing_structure_index < len(self.arParsingStructure)-1:
+                    self.current_parsing_structure_index += 1
                 else:
                     self.isEnded = True
             return result
@@ -966,18 +981,37 @@ class ParsingPipeline(ParsingStructure):
             return None
 
     def get_min_position(self):
+        """
+            Gets the minimum relative position (in comparison to the reference position) during check method execution.
+
+            :return: minimum relative position (int <= 0)
+        """
+
         ar_min_position = list()
         for parsing_structure in self.arParsingStructure:
             ar_min_position.append(parsing_structure.get_min_position())
         return min(ar_min_position)
 
     def get_max_position(self):
+        """
+            Gets the maximum relative position (in comparison to the reference position) during check method execution.
+
+            :return: maximum relative position (int >= 0)
+        """
+
         ar_max_position = list()
         for parsing_structure in self.arParsingStructure:
             ar_max_position.append(parsing_structure.get_max_position())
         return max(ar_max_position)
 
     def add_structure(self, parsing_structure):
+        """
+            Adds next ParsingStructure object used during parsing process in the ParsingPipeline object.
+
+            :param parsing_structure: ParsingStructure object to add
+            :return: None
+        """
+
         if isinstance(parsing_structure, ParsingPipeline):
             self.arParsingStructure = self.arParsingStructure + parsing_structure.arParsingStructure
         elif isinstance(parsing_structure, ParsingStructure):
@@ -986,7 +1020,13 @@ class ParsingPipeline(ParsingStructure):
             raise TypeError("Object to add has to be ParsingStructure object")
 
     def reset(self):
-        self.current_parsing_block_index = 0
+        """
+            Resets the current parsing structure used during the parsing process
+
+            :return: None
+        """
+
+        self.current_parsing_structure_index = 0
         self.isEnded = False
 
 
