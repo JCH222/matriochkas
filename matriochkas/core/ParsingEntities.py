@@ -938,10 +938,17 @@ class ParsingPipeline(ParsingStructure):
         >>> for position in range(0, len(text)):
         >>>     result.append((text[position], pipeline.check(text, position)[0]))
         >>> print(result)
-        [('a', (False, Counter())), (',', (True, Counter({None: 1}))), ('b', (False, Counter())),
-        (',', (True, Counter({None: 1}))), ('c', (False, Counter())), ('.', (False, Counter())),
-        ('1', (False, Counter())), (';', (True, Counter({None: 1}))), ('2', (False, Counter())),
-        (';', (True, Counter({None: 1}))), ('3', (False, Counter()))]
+        [('a', (False, Counter())),
+        (',', (True, Counter({None: 1}))),
+        ('b', (False, Counter())),
+        (',', (True, Counter({None: 1}))),
+        ('c', (False, Counter())),
+        ('.', (False, Counter())),
+        ('1', (False, Counter())),
+        (';', (True, Counter({None: 1}))),
+        ('2', (False, Counter())),
+        (';', (True, Counter({None: 1}))),
+        ('3', (False, Counter()))]
     """
 
     def __init__(self, first_parsing_structure):
@@ -966,7 +973,7 @@ class ParsingPipeline(ParsingStructure):
 
             :param element: element to check (str)
             :param ref_position: reference position in the element (int >= 0)
-            :return: tuple containing two tuples from ParsingStructure's check method
+            :return: tuple containing two tuples from ParsingEntity's check method
         """
 
         if not self.isEnded:
@@ -1031,7 +1038,43 @@ class ParsingPipeline(ParsingStructure):
 
 
 class ParsingBlock(ParsingStructure):
+    """
+        Parsing structure containing parsing pattern and parsing end pattern to use during parsing process
+        ==================================================================================================
+
+        :Example:
+
+        >>> from matriochkas import ParsingCondition
+        >>> from matriochkas import ParsingBlock
+        >>> # ParsingBlock creation
+        >>> block = ParsingBlock(ParsingCondition(','), ParsingCondition('.'))
+        >>> # Text to parse (gets all characters separated by ',' until the current character is '.')
+        >>> text = 'a,b,c.1,2,3'
+        >>> result = list()
+        >>> for position in range(0, len(text)):
+        >>>     result.append((text[position], block.check(text, position)))
+        >>> print(result)
+        [('a', ((False, Counter()),         (False, Counter()))),
+        (',', ((True, Counter({None: 1})),  (False, Counter()))),
+        ('b', ((False, Counter()),          (False, Counter()))),
+        (',', ((True, Counter({None: 1})),  (False, Counter()))),
+        ('c', ((False, Counter()),          (False, Counter()))),
+        ('.', ((False, Counter()),          (True, Counter({None: 1})))),
+        ('1', ((False, Counter()),          (False, Counter()))),
+        (',', ((True, Counter({None: 1})),  (False, Counter()))),
+        ('2', ((False, Counter()),          (False, Counter()))),
+        (',', ((True, Counter({None: 1})),  (False, Counter()))),
+        ('3', ((False, Counter()),          (False, Counter())))]
+    """
+
     def __init__(self, parser, border_condition):
+        """
+            Initialization
+
+            :param parser: parsing pattern
+            :param border_condition: parsing end pattern
+        """
+
         if isinstance(parser, ParsingEntity):
             self.parser = parser
         else:
@@ -1045,17 +1088,37 @@ class ParsingBlock(ParsingStructure):
             raise TypeError('border_condition has to be ParsingStructure subclass or None')
 
     def check(self, element, ref_position=0):
+        """
+            Checks if the element is valid.
+
+            :param element: element to check (str)
+            :param ref_position: reference position in the element (int >= 0)
+            :return: tuple containing two tuples from two ParsingEntity's check methods
+        """
+
         parser_result = self.parser.check(element, ref_position)
         border_condition_result = self.borderCondition.check(element, ref_position)
         return parser_result, border_condition_result
 
     def get_min_position(self):
+        """
+            Gets the minimum relative position (in comparison to the reference position) during check method execution.
+
+            :return: minimum relative position (int <= 0)
+        """
+
         if self.borderCondition is not None:
             return min([self.parser.get_min_position(), self.borderCondition.get_min_position()])
         else:
             return self.parser.get_min_position()
 
     def get_max_position(self):
+        """
+            Gets the maximum relative position (in comparison to the reference position) during check method execution.
+
+            :return: maximum relative position (int >= 0)
+        """
+
         if self.borderCondition is not None:
             return max([self.parser.get_max_position(), self.borderCondition.get_max_position()])
         else:
