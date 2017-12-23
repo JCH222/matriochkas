@@ -50,7 +50,7 @@ class StreamEntity(Thread, metaclass=abc.ABCMeta):
                     return getattr(stream_object, configuration.value[method_key])
                 else:
                     return none_return
-        return None
+        raise ValueError(stream_class_name + " class doesn't found in StreamClassConfiguration enumeration")
 
 
 class StreamReader(StreamEntity):
@@ -127,7 +127,8 @@ class StreamReader(StreamEntity):
                 self._readResult = {'parsing_result': None,
                                    'error': ValueError("Not enough characters to parse : " + str(len(element)))}
         except Exception as error:
-            close_method()
+            if hasattr(self, 'close_method'):
+                close_method()
             self._readResult = {'parsing_result': None,
                                'error': error}
 
