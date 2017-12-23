@@ -50,7 +50,8 @@ class StreamEntity(Thread, metaclass=abc.ABCMeta):
                     return getattr(stream_object, configuration.value[method_key])
                 else:
                     return none_return
-        raise ValueError(stream_class_name + " class doesn't found in StreamClassConfiguration enumeration")
+        raise ValueError(stream_class_name + " class not found in StreamClassConfiguration enumeration : please define "
+                                             "methods to use during parsing process")
 
 
 class StreamReader(StreamEntity):
@@ -267,6 +268,10 @@ class StreamWriter(StreamEntity):
             output_close_method()
             self.writeResult = {'result': result, 'error': None}
         except Exception as error:
+            if 'input_close_method' in locals():
+                input_close_method()
+            if 'output_close_method' in locals():
+                output_close_method()
             self.writeResult = {'result': None, 'error': error}
 
     def write(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
