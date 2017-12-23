@@ -65,7 +65,7 @@ class ModificationEntity(Thread, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def create_indexes_generator(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
-        pass
+        raise NotImplementedError('<create_indexes_generator> method has to be implemented')
 
 
 class ModificationOperator(ModificationEntity):
