@@ -8,6 +8,7 @@ from matriochkas.core.ParsingEntities import ParsingResultOrigin
 from matriochkas.core.ParsingEntities import ParsingResultType
 from matriochkas.core.Configuration import StreamClassConfiguration
 from threading import Thread
+from threading import Event
 
 import abc
 import copy
@@ -34,6 +35,10 @@ class StreamEntity(Thread, metaclass=abc.ABCMeta):
             self.kwargs = kwargs
         else:
             raise TypeError('args has to be dict object')
+
+    @abc.abstractmethod
+    def launch(self):
+        pass
 
     def _get_stream_object(self):
         return self.streamClass(*self.args, **self.kwargs)
@@ -67,6 +72,7 @@ class StreamReader(StreamEntity):
 
         self._readArgs = dict()
         self._readResult = {'parsing_result': None, 'error': None}
+        self._isInitialized = Event()
 
     def run(self):
         try:
@@ -103,6 +109,8 @@ class StreamReader(StreamEntity):
                                                                    tuple(), {'reference': stream}, ar_index),
                                    'error': None}
 
+            self._isInitialized.set()
+
             element = deque(read_method(length))
             if len(element) == length:
                 while True:
@@ -128,6 +136,7 @@ class StreamReader(StreamEntity):
                 self._readResult = {'parsing_result': None,
                                    'error': ValueError("Not enough characters to parse : " + str(len(element)))}
         except Exception as error:
+            self._isInitialized.set()
             if hasattr(self, 'close_method'):
                 close_method()
             self._readResult = {'parsing_result': None,
@@ -138,6 +147,21 @@ class StreamReader(StreamEntity):
         self._readResult = {'parsing_result': None, 'error': None}
 
         self.run()
+        if self._readResult['error'] is None:
+            return self._readResult['parsing_result']
+        else:
+            raise self._readResult['error']
+
+    def launch(self, parsing_pipeline, close_stream=True):
+        self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
+        self._readResult = {'parsing_result': None, 'error': None}
+        self.start()
+
+    def wait_initialization(self):
+        self._isInitialized.wait()
+
+    def get_result(self):
+        self.wait_initialization()
         if self._readResult['error'] is None:
             return self._readResult['parsing_result']
         else:
@@ -174,6 +198,7 @@ class StreamWriter(StreamEntity):
 
         self.writeArgs = dict()
         self.writeResult = {'result': None, 'error': None}
+        self._isFinished = Event()
 
     def run(self):
         try:
@@ -273,6 +298,8 @@ class StreamWriter(StreamEntity):
             if 'output_close_method' in locals():
                 output_close_method()
             self.writeResult = {'result': None, 'error': error}
+        finally:
+            self._isFinished.set()
 
     def write(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
               seek_method=None, args=None, kwargs=None, close_reading_stream=True):
@@ -282,6 +309,21 @@ class StreamWriter(StreamEntity):
         self.writeResult = {'result': None, 'error': None}
 
         self.run()
+        if self.writeResult['error'] is None:
+            return self.writeResult['result']
+        else:
+            raise self.writeResult['error']
+
+    def launch(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
+               seek_method=None, args=None, kwargs=None, close_reading_stream=True):
+        self.writeArgs = {'parsing_result': parsing_result, 'stream_class': stream_class, 'read_method': read_method,
+                          'return_method': return_method, 'close_method': close_method, 'seek_method': seek_method,
+                          'args': args, 'kwargs': kwargs, 'close_reading_stream': close_reading_stream}
+        self.writeResult = {'result': None, 'error': None}
+        self.start()
+
+    def get_result(self):
+        self._isFinished.wait()
         if self.writeResult['error'] is None:
             return self.writeResult['result']
         else:

@@ -17,6 +17,9 @@ class InstanceStreamEntity(IO.StreamEntity):
                                                    return_method, close_method)
         self.name = name
 
+    def launch(self):
+        pass
+
 ########################################################################################################################
 
 
