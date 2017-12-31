@@ -148,7 +148,10 @@ class StreamReader(StreamEntity):
 
         self.run()
         if self._readResult['error'] is None:
-            return self._readResult['parsing_result']
+            if self._readResult['parsing_result'] is not None:
+                return self._readResult['parsing_result']
+            else:
+                raise NotImplementedError('Parsing result is not implemented and no errors are detected')
         else:
             raise self._readResult['error']
 
