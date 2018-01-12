@@ -41,6 +41,17 @@ class ThreadB(ThreadRoot):
         sleep(1)
 
 
+class ThreadC(ThreadRoot):
+    def __init__(self, method, name):
+        super(ThreadC, self).__init__(method, name)
+
+    def run(self):
+        self.arCharacter[1] = self.method(1, self.name)
+        sleep(1)
+        self.arCharacter[2] = self.method(1, self.name)
+        sleep(1)
+
+
 def test_reading_wrapper():
     initial_text = 'abcd'
 
@@ -77,5 +88,24 @@ def test_reading_wrapper():
     wrapper_2.start()
     sleep(10)
 
-    thread_a.arCharacter == {1: 'a', 2: 'bcd', 3: ''}
-    thread_b.arCharacter == {1: 'a', 2: 'b', 3: 'cd'}
+    assert thread_a.arCharacter == {1: 'a', 2: 'bcd', 3: ''}
+    assert thread_b.arCharacter == {1: 'a', 2: 'b', 3: 'cd'}
+
+    ###################################################################################################################
+
+    reader_3 = StringIO(initial_text)
+    wrapper_3 = ReadingWrapper(reader_3.read)
+
+    thread_a = ThreadA(wrapper_3.get_method("stream_reader_A"), "stream_reader_A")
+    thread_c = ThreadC(wrapper_3.get_method("stream_reader_C"), "stream_reader_C")
+
+    thread_a.start()
+    thread_c.start()
+    wrapper_3.start()
+    sleep(2)
+
+    wrapper_3.remove("stream_reader_C")
+    sleep(8)
+
+    assert thread_a.arCharacter == {1: 'a', 2: 'bcd', 3: ''}
+    assert thread_c.arCharacter == {1: 'a', 2: 'b'}

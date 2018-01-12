@@ -31,12 +31,29 @@ class ReadingWrapper(Thread):
                 break
         return result
 
+    def remove(self, stream_reader):
+        if stream_reader in self.arReadingEvent:
+            self.arReadingEvent[stream_reader].set()
+            self.arTriggerEvent[stream_reader].set()
+            del self.arReadingEvent[stream_reader]
+            del self.arTriggerEvent[stream_reader]
+
+    def key_generator(self):
+        ar_trigger_event_key = list(self.arTriggerEvent.keys())
+        for key in ar_trigger_event_key:
+            if key in self.arTriggerEvent:
+                yield key
+            else:
+                yield None
+
     def run(self):
         while self.currentCharacter:
-            for key in self.arTriggerEvent:
-                self.arTriggerEvent[key].wait()
+            for key in self.key_generator():
+                if key is not None:
+                    self.arTriggerEvent[key].wait()
             self.currentCharacter = self.nextCurrentCharacter
             self.nextCurrentCharacter = self.readMethod(1)
-            for key in self.arReadingEvent:
-                self.arTriggerEvent[key].clear()
-                self.arReadingEvent[key].set()
+            for key in self.key_generator():
+                if key is not None:
+                    self.arTriggerEvent[key].clear()
+                    self.arReadingEvent[key].set()
