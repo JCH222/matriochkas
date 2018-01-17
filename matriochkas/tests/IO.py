@@ -17,6 +17,9 @@ class InstanceStreamEntity(IO.StreamEntity):
                                                    return_method, close_method)
         self.name = name
 
+    def launch(self):
+        pass
+
 ########################################################################################################################
 
 
@@ -53,8 +56,11 @@ def test_stream_entity():
     result = method_1(3)
     assert (result == 'bcd') is True
 
-    method_2 = IO.StreamEntity.generate_method('Unknown object', 'read_method')
-    assert method_2 is None
+    try:
+        IO.StreamEntity.generate_method('Unknown object', 'read_method')
+        assert False
+    except ValueError:
+        assert True
 
     method_3 = IO.StreamEntity.generate_method(stream_object, 'write_method')
     assert (str(type(method_3)) == "<class 'builtin_function_or_method'>") is True
@@ -63,16 +69,22 @@ def test_stream_entity():
     method_3("234")
     assert (stream_object.getvalue() == 'abcd1234ijklmnopqrstuvwxyz') is True
 
-    method_4 = IO.StreamEntity.generate_method('Unknown object', 'write_method')
-    assert method_4 is None
+    try:
+        IO.StreamEntity.generate_method('Unknown object', 'write_method')
+        assert False
+    except ValueError:
+        assert True
 
     method_5 = IO.StreamEntity.generate_method(stream_object, 'return_method')
     assert (str(type(method_5)) == "<class 'builtin_function_or_method'>") is True
     result = method_5()
     assert (result == 'abcd1234ijklmnopqrstuvwxyz') is True
 
-    method_6 = IO.StreamEntity.generate_method('Unknown object', 'return_method')
-    assert method_6 is None
+    try:
+        IO.StreamEntity.generate_method('Unknown object', 'return_method')
+        assert False
+    except ValueError:
+        assert True
 
     stream_object.close()
 

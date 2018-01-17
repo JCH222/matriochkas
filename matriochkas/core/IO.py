@@ -7,7 +7,9 @@ from matriochkas.core.ParsingEntities import ParsingResult
 from matriochkas.core.ParsingEntities import ParsingResultOrigin
 from matriochkas.core.ParsingEntities import ParsingResultType
 from matriochkas.core.Configuration import StreamClassConfiguration
+from matriochkas.core import READING_WRAPPER
 from threading import Thread
+from threading import Event
 
 import abc
 import copy
@@ -24,6 +26,7 @@ class StreamEntity(Thread, metaclass=abc.ABCMeta):
         self.returnMethod = return_method
         self.closeMethod = close_method
         self.seekMethod = seek_method
+        self.isMultiThreading = False
 
         if isinstance(args, (list, tuple)):
             self.args = args
@@ -34,6 +37,10 @@ class StreamEntity(Thread, metaclass=abc.ABCMeta):
             self.kwargs = kwargs
         else:
             raise TypeError('args has to be dict object')
+
+    @abc.abstractmethod
+    def launch(self):
+        pass
 
     def _get_stream_object(self):
         return self.streamClass(*self.args, **self.kwargs)
@@ -50,7 +57,8 @@ class StreamEntity(Thread, metaclass=abc.ABCMeta):
                     return getattr(stream_object, configuration.value[method_key])
                 else:
                     return none_return
-        return None
+        raise ValueError(stream_class_name + " class not found in StreamClassConfiguration enumeration : please define "
+                                             "methods to use during parsing process")
 
 
 class StreamReader(StreamEntity):
@@ -66,6 +74,7 @@ class StreamReader(StreamEntity):
 
         self._readArgs = dict()
         self._readResult = {'parsing_result': None, 'error': None}
+        self._isInitialized = Event()
 
     def run(self):
         try:
@@ -86,6 +95,11 @@ class StreamReader(StreamEntity):
                 seek_method = getattr(stream, self.seekMethod)
             else:
                 seek_method = StreamEntity.generate_method(stream, 'seek_method')
+
+            if self.isMultiThreading is True:
+                initial_read_method = read_method
+                read_method = READING_WRAPPER.get_method(read_method, self)
+
             current_position = -min_position
             ar_index = list()
 
@@ -102,13 +116,22 @@ class StreamReader(StreamEntity):
                                                                    tuple(), {'reference': stream}, ar_index),
                                    'error': None}
 
-            element = deque(read_method(length))
+            self._isInitialized.set()
+
+            if self.isMultiThreading is False:
+                element = deque(read_method(length))
+            else:
+                element = deque(read_method(length, self))
+
             if len(element) == length:
                 while True:
                     result = self._readArgs['parsing_pipeline'].check(element, ref_position=-min_position)
                     if result is not None and result[0][0]:
                         ar_index.append((current_position, element[-min_position], result[0][1]))
-                    next_character = read_method(1)
+                    if self.isMultiThreading is False:
+                        next_character = read_method(1)
+                    else:
+                        next_character = read_method(1, self)
                     if next_character and result is not None:
                         element.popleft()
                         element.append(next_character)
@@ -116,10 +139,13 @@ class StreamReader(StreamEntity):
                         break
                     current_position += 1
 
-                if self._readArgs['close_stream']:
-                    close_method()
+                if self.isMultiThreading is False:
+                    if self._readArgs['close_stream']:
+                        close_method()
+                    else:
+                        seek_method(0)
                 else:
-                    seek_method(0)
+                    pass
 
                 self._readArgs = dict()
             else:
@@ -127,15 +153,39 @@ class StreamReader(StreamEntity):
                 self._readResult = {'parsing_result': None,
                                    'error': ValueError("Not enough characters to parse : " + str(len(element)))}
         except Exception as error:
-            close_method()
+            self._isInitialized.set()
+            if hasattr(self, 'close_method'):
+                close_method()
             self._readResult = {'parsing_result': None,
                                'error': error}
+        finally:
+            if self.isMultiThreading is True:
+                READING_WRAPPER.arWrapper[initial_read_method].remove(self)
 
     def read(self, parsing_pipeline, close_stream=True):
         self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
         self._readResult = {'parsing_result': None, 'error': None}
 
         self.run()
+        if self._readResult['error'] is None:
+            if self._readResult['parsing_result'] is not None:
+                return self._readResult['parsing_result']
+            else:
+                raise NotImplementedError('Parsing result is not implemented and no errors are detected')
+        else:
+            raise self._readResult['error']
+
+    def launch(self, parsing_pipeline, close_stream=True):
+        self.isMultiThreading = True
+        self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
+        self._readResult = {'parsing_result': None, 'error': None}
+        self.start()
+
+    def wait_initialization(self):
+        self._isInitialized.wait()
+
+    def get_result(self):
+        self.wait_initialization()
         if self._readResult['error'] is None:
             return self._readResult['parsing_result']
         else:
@@ -172,6 +222,7 @@ class StreamWriter(StreamEntity):
 
         self.writeArgs = dict()
         self.writeResult = {'result': None, 'error': None}
+        self._isFinished = Event()
 
     def run(self):
         try:
@@ -266,7 +317,13 @@ class StreamWriter(StreamEntity):
             output_close_method()
             self.writeResult = {'result': result, 'error': None}
         except Exception as error:
+            if 'input_close_method' in locals():
+                input_close_method()
+            if 'output_close_method' in locals():
+                output_close_method()
             self.writeResult = {'result': None, 'error': error}
+        finally:
+            self._isFinished.set()
 
     def write(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
               seek_method=None, args=None, kwargs=None, close_reading_stream=True):
@@ -276,6 +333,22 @@ class StreamWriter(StreamEntity):
         self.writeResult = {'result': None, 'error': None}
 
         self.run()
+        if self.writeResult['error'] is None:
+            return self.writeResult['result']
+        else:
+            raise self.writeResult['error']
+
+    def launch(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
+               seek_method=None, args=None, kwargs=None, close_reading_stream=True):
+        self.isMultiThreading = True
+        self.writeArgs = {'parsing_result': parsing_result, 'stream_class': stream_class, 'read_method': read_method,
+                          'return_method': return_method, 'close_method': close_method, 'seek_method': seek_method,
+                          'args': args, 'kwargs': kwargs, 'close_reading_stream': close_reading_stream}
+        self.writeResult = {'result': None, 'error': None}
+        self.start()
+
+    def get_result(self):
+        self._isFinished.wait()
         if self.writeResult['error'] is None:
             return self.writeResult['result']
         else:

@@ -29,6 +29,8 @@ class ModificationEntity(Thread, metaclass=abc.ABCMeta):
     def run(self):
         try:
             ar_index = list()
+            if self._modificationArgs['thread_ref'] is not None:
+                self._modificationArgs['thread_ref'].wait_initialization()
 
             self._modificationResult = {'parsing_result':
                                         ParsingResult(self._modificationArgs['initial_parsing_result'].streamClass,
@@ -51,9 +53,15 @@ class ModificationEntity(Thread, metaclass=abc.ABCMeta):
         except Exception as error:
             self._modificationResult = {'parsing_result': None, 'error': error}
 
-    def generate_parsing_result(self, initial_parsing_result):
-        self._modificationArgs = {'initial_parsing_result': initial_parsing_result, 'thread_ref': None,
-                                  'sleep_time': 0.5}
+    def generate_parsing_result(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
+        # Don't ask me why...
+        from matriochkas.core.IO import StreamReader
+
+        if thread_ref is not None and not isinstance(thread_ref, StreamReader):
+            raise ValueError('Thread reference has to be a StreamReader object or None')
+
+        self._modificationArgs = {'initial_parsing_result': initial_parsing_result, 'thread_ref': thread_ref,
+                                  'sleep_time': sleep_time}
         self._modificationResult = {'parsing_result': None, 'error': None}
         self.run()
 
@@ -65,7 +73,7 @@ class ModificationEntity(Thread, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def create_indexes_generator(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
-        pass
+        raise NotImplementedError('<create_indexes_generator> method has to be implemented')
 
 
 class ModificationOperator(ModificationEntity):
