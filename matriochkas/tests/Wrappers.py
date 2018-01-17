@@ -52,6 +52,18 @@ class ThreadC(ThreadRoot):
         sleep(1)
 
 
+class ThreadD(ThreadRoot):
+    def __init__(self, method, name, wrapper):
+        super(ThreadD, self).__init__(method, name)
+        self.wrapper = wrapper
+
+    def run(self):
+        self.arCharacter[1] = self.method(1, self.name)
+        sleep(1)
+        self.wrapper.remove(self.name)
+        raise RuntimeError("Unit test error")
+
+
 def test_reading_wrapper():
     initial_text = 'abcd'
 
@@ -109,3 +121,23 @@ def test_reading_wrapper():
 
     assert thread_a.arCharacter == {1: 'a', 2: 'bcd', 3: ''}
     assert thread_c.arCharacter == {1: 'a', 2: 'b'}
+
+    ###################################################################################################################
+
+    reader_4 = StringIO(initial_text)
+    wrapper_4 = ReadingWrapper(reader_4.read)
+
+    thread_a = ThreadA(wrapper_4.get_method("stream_reader_A"), "stream_reader_A")
+    thread_d = ThreadD(wrapper_4.get_method("stream_reader_D"), "stream_reader_D", wrapper_4)
+
+    try:
+        thread_a.start()
+        thread_d.start()
+        wrapper_4.start()
+
+        sleep(10)
+
+        assert thread_a.arCharacter == {1: 'a', 2: 'bcd', 3: ''}
+        assert thread_d.arCharacter == {1: 'a'}
+    except RuntimeError:
+        pass
