@@ -7,6 +7,7 @@ from matriochkas.core.ParsingEntities import ParsingResult
 from matriochkas.core.ParsingEntities import ParsingResultOrigin
 from matriochkas.core.ParsingEntities import ParsingResultType
 from matriochkas.core.Configuration import StreamClassConfiguration
+from matriochkas.core import READING_WRAPPER
 from threading import Thread
 from threading import Event
 
@@ -25,6 +26,7 @@ class StreamEntity(Thread, metaclass=abc.ABCMeta):
         self.returnMethod = return_method
         self.closeMethod = close_method
         self.seekMethod = seek_method
+        self.isMultiThreading = False
 
         if isinstance(args, (list, tuple)):
             self.args = args
@@ -93,6 +95,11 @@ class StreamReader(StreamEntity):
                 seek_method = getattr(stream, self.seekMethod)
             else:
                 seek_method = StreamEntity.generate_method(stream, 'seek_method')
+
+            if self.isMultiThreading is True:
+                initial_read_method = read_method
+                read_method = READING_WRAPPER.get_method(read_method, self)
+
             current_position = -min_position
             ar_index = list()
 
@@ -111,13 +118,20 @@ class StreamReader(StreamEntity):
 
             self._isInitialized.set()
 
-            element = deque(read_method(length))
+            if self.isMultiThreading is False:
+                element = deque(read_method(length))
+            else:
+                element = deque(read_method(length, self))
+
             if len(element) == length:
                 while True:
                     result = self._readArgs['parsing_pipeline'].check(element, ref_position=-min_position)
                     if result is not None and result[0][0]:
                         ar_index.append((current_position, element[-min_position], result[0][1]))
-                    next_character = read_method(1)
+                    if self.isMultiThreading is False:
+                        next_character = read_method(1)
+                    else:
+                        next_character = read_method(1, self)
                     if next_character and result is not None:
                         element.popleft()
                         element.append(next_character)
@@ -125,10 +139,13 @@ class StreamReader(StreamEntity):
                         break
                     current_position += 1
 
-                if self._readArgs['close_stream']:
-                    close_method()
+                if self.isMultiThreading is False:
+                    if self._readArgs['close_stream']:
+                        close_method()
+                    else:
+                        seek_method(0)
                 else:
-                    seek_method(0)
+                    pass
 
                 self._readArgs = dict()
             else:
@@ -141,6 +158,9 @@ class StreamReader(StreamEntity):
                 close_method()
             self._readResult = {'parsing_result': None,
                                'error': error}
+        finally:
+            if self.isMultiThreading is True:
+                READING_WRAPPER.arWrapper[initial_read_method].remove(self)
 
     def read(self, parsing_pipeline, close_stream=True):
         self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
@@ -156,6 +176,7 @@ class StreamReader(StreamEntity):
             raise self._readResult['error']
 
     def launch(self, parsing_pipeline, close_stream=True):
+        self.isMultiThreading = True
         self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
         self._readResult = {'parsing_result': None, 'error': None}
         self.start()
@@ -319,6 +340,7 @@ class StreamWriter(StreamEntity):
 
     def launch(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
                seek_method=None, args=None, kwargs=None, close_reading_stream=True):
+        self.isMultiThreading = True
         self.writeArgs = {'parsing_result': parsing_result, 'stream_class': stream_class, 'read_method': read_method,
                           'return_method': return_method, 'close_method': close_method, 'seek_method': seek_method,
                           'args': args, 'kwargs': kwargs, 'close_reading_stream': close_reading_stream}
