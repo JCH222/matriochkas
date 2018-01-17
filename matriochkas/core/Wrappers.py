@@ -57,3 +57,18 @@ class ReadingWrapper(Thread):
                 if key is not None:
                     self.arTriggerEvent[key].clear()
                     self.arReadingEvent[key].set()
+
+
+class ReadingWrappersHandler(Thread):
+    def __init__(self):
+        super(ReadingWrappersHandler, self).__init__()
+        self.arWrapper = dict()
+
+    def get_method(self, read_method, stream_reader):
+        if read_method not in self.arWrapper:
+            self.arWrapper[read_method] = ReadingWrapper(read_method)
+        return self.arWrapper[read_method].get_method(stream_reader)
+
+    def run(self):
+        for key in self.arWrapper:
+            self.arWrapper[key].start()
