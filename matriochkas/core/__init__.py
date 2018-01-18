@@ -5,12 +5,14 @@
     Functional package
     ==================
 
-    It contains 4 functional modules:
+    It contains 6 functional modules:
 
     - Configuration.py
     - IO.py
     - ModificationEntities.py
     - ParsingEntities.py
+    - StreamEntities.py
+    - Wrappers.py
 """
 
 from matriochkas.core.Wrappers import ReadingWrappersHandler
