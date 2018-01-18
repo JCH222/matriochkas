@@ -72,3 +72,20 @@ class ReadingWrappersHandler(Thread):
     def run(self):
         for key in self.arWrapper:
             self.arWrapper[key].start()
+
+
+class ClosingWrapper(Thread):
+    def __init__(self, close_method):
+        super(ClosingWrapper, self).__init__()
+
+    def get_method(self, stream_reader):
+        pass
+
+    def close(self, stream_reader):
+        pass
+
+    def remove(self, stream_reader):
+        pass
+
+    def run(self):
+        pass
