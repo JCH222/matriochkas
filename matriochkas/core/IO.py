@@ -78,6 +78,9 @@ class StreamReader(StreamEntity):
         self._isInitialized = Event()
 
     def run(self):
+        initial_read_method = None
+        initial_close_method = None
+
         try:
             self._readArgs['parsing_pipeline'].reset()
             min_position = self._readArgs['parsing_pipeline'].get_min_position()
@@ -169,8 +172,10 @@ class StreamReader(StreamEntity):
                                'error': error}
         finally:
             if self.isMultiThreading is True:
-                READING_WRAPPER.arWrapper[initial_read_method].remove(self)
-                CLOSING_WRAPPER.arWrapper[initial_close_method].remove(self)
+                if initial_read_method is not None:
+                    READING_WRAPPER.arWrapper[initial_read_method].remove(self)
+                if initial_close_method is not None:
+                    CLOSING_WRAPPER.arWrapper[initial_close_method].remove(self)
 
     def read(self, parsing_pipeline, close_stream=True):
         self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
