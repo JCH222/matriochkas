@@ -7,8 +7,7 @@ from matriochkas.core.ParsingEntities import ParsingResult
 from matriochkas.core.ParsingEntities import ParsingResultOrigin
 from matriochkas.core.ParsingEntities import ParsingResultType
 from matriochkas.core.Configuration import StreamClassConfiguration
-from matriochkas.core import READING_WRAPPER
-from matriochkas.core import CLOSING_WRAPPER
+from matriochkas.core.Configuration import HandlersConfiguration
 from threading import Thread
 from threading import Event
 
@@ -102,9 +101,9 @@ class StreamReader(StreamEntity):
 
             if self.isMultiThreading is True:
                 initial_read_method = read_method
-                read_method = READING_WRAPPER.get_method(read_method, self)
+                read_method = HandlersConfiguration.READING_WRAPPER.get_method(read_method, self)
                 initial_close_method = close_method
-                close_method = CLOSING_WRAPPER.get_method(close_method, self)
+                close_method = HandlersConfiguration.CLOSING_WRAPPER.get_method(close_method, self)
 
             current_position = -min_position
             ar_index = list()
@@ -173,9 +172,9 @@ class StreamReader(StreamEntity):
         finally:
             if self.isMultiThreading is True:
                 if initial_read_method is not None:
-                    READING_WRAPPER.arWrapper[initial_read_method].remove(self)
+                    HandlersConfiguration.READING_WRAPPER.arWrapper[initial_read_method].remove(self)
                 if initial_close_method is not None:
-                    CLOSING_WRAPPER.arWrapper[initial_close_method].remove(self)
+                    HandlersConfiguration.CLOSING_WRAPPER.arWrapper[initial_close_method].remove(self)
 
     def read(self, parsing_pipeline, close_stream=True):
         self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
