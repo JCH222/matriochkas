@@ -1,4 +1,3 @@
-# coding: utf8
 
 
 """
@@ -14,8 +13,3 @@
     - StreamEntities.py
     - Wrappers.py
 """
-
-from matriochkas.core.Wrappers import ReadingWrappersHandler
-
-
-READING_WRAPPER = ReadingWrappersHandler()

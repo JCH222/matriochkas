@@ -7,7 +7,7 @@ from matriochkas.core.ParsingEntities import ParsingResult
 from matriochkas.core.ParsingEntities import ParsingResultOrigin
 from matriochkas.core.ParsingEntities import ParsingResultType
 from matriochkas.core.Configuration import StreamClassConfiguration
-from matriochkas.core import READING_WRAPPER
+from matriochkas.core.Configuration import HandlersConfiguration
 from threading import Thread
 from threading import Event
 
@@ -77,6 +77,9 @@ class StreamReader(StreamEntity):
         self._isInitialized = Event()
 
     def run(self):
+        initial_read_method = None
+        initial_close_method = None
+
         try:
             self._readArgs['parsing_pipeline'].reset()
             min_position = self._readArgs['parsing_pipeline'].get_min_position()
@@ -98,7 +101,9 @@ class StreamReader(StreamEntity):
 
             if self.isMultiThreading is True:
                 initial_read_method = read_method
-                read_method = READING_WRAPPER.get_method(read_method, self)
+                read_method = HandlersConfiguration.READING_WRAPPER.get_method(read_method, self)
+                initial_close_method = close_method
+                close_method = HandlersConfiguration.CLOSING_WRAPPER.get_method(close_method, self)
 
             current_position = -min_position
             ar_index = list()
@@ -145,22 +150,31 @@ class StreamReader(StreamEntity):
                     else:
                         seek_method(0)
                 else:
-                    pass
+                    close_method(self)
 
                 self._readArgs = dict()
             else:
-                close_method()
+                if self.isMultiThreading is False:
+                    close_method()
+                else:
+                    close_method(self)
                 self._readResult = {'parsing_result': None,
                                    'error': ValueError("Not enough characters to parse : " + str(len(element)))}
         except Exception as error:
             self._isInitialized.set()
             if hasattr(self, 'close_method'):
-                close_method()
+                if self.isMultiThreading is False:
+                    close_method()
+                else:
+                    close_method(self)
             self._readResult = {'parsing_result': None,
                                'error': error}
         finally:
             if self.isMultiThreading is True:
-                READING_WRAPPER.arWrapper[initial_read_method].remove(self)
+                if initial_read_method is not None:
+                    HandlersConfiguration.READING_WRAPPER.arWrapper[initial_read_method].remove(self)
+                if initial_close_method is not None:
+                    HandlersConfiguration.CLOSING_WRAPPER.arWrapper[initial_close_method].remove(self)
 
     def read(self, parsing_pipeline, close_stream=True):
         self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
@@ -175,9 +189,9 @@ class StreamReader(StreamEntity):
         else:
             raise self._readResult['error']
 
-    def launch(self, parsing_pipeline, close_stream=True):
+    def launch(self, parsing_pipeline):
         self.isMultiThreading = True
-        self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
+        self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': False}
         self._readResult = {'parsing_result': None, 'error': None}
         self.start()
 

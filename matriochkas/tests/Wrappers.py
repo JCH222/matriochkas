@@ -1,6 +1,7 @@
 # coding: utf8
 
 from matriochkas.core.Wrappers import ReadingWrapper
+from matriochkas.core.Wrappers import ClosingWrapper
 from io import StringIO
 
 from threading import Thread
@@ -141,3 +142,89 @@ def test_reading_wrapper():
         assert thread_d.arCharacter == {1: 'a'}
     except RuntimeError:
         pass
+
+
+class ThreadE(ThreadRoot):
+    def __init__(self, method, name):
+        super(ThreadE, self).__init__(method, name)
+
+    def run(self):
+        sleep(4)
+        self.method(self.name)
+
+
+class ThreadF(ThreadRoot):
+    def __init__(self, method, name):
+        super(ThreadF, self).__init__(method, name)
+
+    def run(self):
+        sleep(8)
+        self.method(self.name)
+
+
+class ThreadG(ThreadRoot):
+    def __init__(self, method, name, wrapper):
+        super(ThreadG, self).__init__(method, name)
+        self.wrapper = wrapper
+
+    def run(self):
+        sleep(8)
+        self.wrapper.remove(self.name)
+
+
+def test_closing_wrapper():
+    initial_text = 'abcd'
+
+    closer_1 = StringIO(initial_text)
+    wrapper_1 = ClosingWrapper(closer_1.close)
+
+    assert wrapper_1.arClosingEvent == dict()
+    method_1_a = wrapper_1.get_method("stream_reader_A")
+    assert method_1_a == wrapper_1.close
+    assert list(wrapper_1.arClosingEvent.keys()) == ["stream_reader_A"]
+
+    method_1_b = wrapper_1.get_method("stream_reader_B")
+    assert method_1_b == wrapper_1.close
+    assert list(wrapper_1.arClosingEvent.keys()) == ["stream_reader_A", "stream_reader_B"]
+
+    method_1_a_2 = wrapper_1.get_method("stream_reader_A")
+    assert method_1_a_2 == wrapper_1.close
+    assert list(wrapper_1.arClosingEvent.keys()) == ["stream_reader_A", "stream_reader_B"]
+
+    ###################################################################################################################
+
+    closer_2 = StringIO(initial_text)
+    wrapper_2 = ClosingWrapper(closer_2.close)
+
+    thread_e = ThreadE(wrapper_2.get_method("stream_reader_A"), "stream_reader_A")
+    thread_f = ThreadF(wrapper_2.get_method("stream_reader_B"), "stream_reader_B")
+
+    thread_e.start()
+    thread_f.start()
+    wrapper_2.start()
+    assert closer_2.closed is False
+    sleep(5)
+    assert closer_2.closed is False
+    sleep(5)
+    assert closer_2.closed is True
+
+    ###################################################################################################################
+
+    closer_3 = StringIO(initial_text)
+    wrapper_3 = ClosingWrapper(closer_3.close)
+
+    thread_e = ThreadE(wrapper_3.get_method("stream_reader_A"), "stream_reader_A")
+    thread_g = ThreadG(wrapper_3.get_method("stream_reader_B"), "stream_reader_B", wrapper_3)
+
+    thread_e.start()
+    thread_g.start()
+    wrapper_3.start()
+    assert closer_3.closed is False
+    sleep(2)
+    assert closer_3.closed is False
+    sleep(3)
+    assert closer_3.closed is False
+    sleep(4)
+    assert closer_3.closed is True
+
+    ###################################################################################################################
