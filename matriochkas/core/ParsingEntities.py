@@ -1157,6 +1157,11 @@ class ParsingResult:
            Inputs : {'args': ('a,b,c.1;2;3',), 'kwargs': {}}
            Index result : [(1, ',', Counter({None: 1})), (3, ',', Counter({None: 1})), (5, '.', Counter({None: 1})),
            (7, ';', Counter({None: 1})), (9, ';', Counter({None: 1}))]
+
+        The index array structure will differ if parsing origin is MODIFICATION or READING:
+
+        - READING : tuple array -> (int, character, Counter)
+        - MODIFICATION : tuple array -> (int, character, ModificationSide) [ModificationSide is optional]
     """
 
     def __init__(self, stream_class, origin, result_type, read_method, write_method, return_method, close_method,
