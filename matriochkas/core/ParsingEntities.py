@@ -1102,7 +1102,7 @@ class ParsingBlock(ParsingStructure):
 
     def get_min_position(self):
         """
-            Gets the minimum relative position (in comparison to the reference position) during check method execution.
+            Gets the minimum relative position (in comparison to the reference position) during check method execution
 
             :return: minimum relative position (int <= 0)
         """
@@ -1114,7 +1114,7 @@ class ParsingBlock(ParsingStructure):
 
     def get_max_position(self):
         """
-            Gets the maximum relative position (in comparison to the reference position) during check method execution.
+            Gets the maximum relative position (in comparison to the reference position) during check method execution
 
             :return: maximum relative position (int >= 0)
         """
@@ -1126,8 +1126,57 @@ class ParsingBlock(ParsingStructure):
 
 
 class ParsingResult:
+    """
+        Parsing result returned by read methods from StreamReader objects
+        =================================================================
+
+        This class contains parsed characters and information about parsing process:
+
+            - Stream class used during parsing
+            - Parsing origin (see ParsingResultOrigin class)
+            - Result type (see ParsingResultType)
+            - Parsing inputs
+            - Parsed characters
+
+
+        :Example:
+
+        >>> from matriochkas import ParsingCondition
+        >>> from matriochkas import StreamReader
+        >>> # ParsingPipeline creation
+        >>>  pipeline = ((ParsingCondition(',') | ParsingCondition('.') | ParsingCondition(';')) >> None) + None
+        >>> # Text to parse (gets all characters separated by ',' or ';' or '.')
+        >>> text = 'a,b,c.1;2;3'
+        >>> # StreamReader creation
+        >>> reader = StreamReader(text)
+        >>> reader.read(pipeline)
+        Parsing result :
+           Stream class : StringIO
+           Origin : ParsingResultOrigin.READING
+           Result type : ParsingResultType.VALUE
+           Inputs : {'args': ('a,b,c.1;2;3',), 'kwargs': {}}
+           Index result : [(1, ',', Counter({None: 1})), (3, ',', Counter({None: 1})), (5, '.', Counter({None: 1})),
+           (7, ';', Counter({None: 1})), (9, ';', Counter({None: 1}))]
+    """
+
     def __init__(self, stream_class, origin, result_type, read_method, write_method, return_method, close_method,
                  seek_method, args, kwargs, ar_index):
+        """
+            Initialization.
+
+            :param stream_class: stream class used to generate the parsing result
+            :param origin: parsing origin (see ParsingResultOrigin class)
+            :param result_type: result type (see ParsingResultType)
+            :param read_method: reading method used during parsing process (str)
+            :param write_method: writing method used during parsing process (str)
+            :param return_method: return method used during parsing process (str)
+            :param close_method: closing method used during parsing process (str)
+            :param seek_method: seeking method used during parsing process (str)
+            :param args: arguments in the input list (list)
+            :param kwargs: arguments in the input dictionary (dict)
+            :param ar_index: parsed characters (list)
+        """
+
         if hasattr(stream_class, '__name__'):
             self.streamClass = stream_class
         else:
@@ -1181,6 +1230,42 @@ class ParsingResult:
         self.iterPosition = 0
 
     def __add__(self, other):
+        """
+            Merge two ParsingResult objects
+
+            They have to have the same content except the parsed characters (ar_index).
+            If two parsed characters have the same position, the parsed character contained in the first operator will
+            be preserved
+
+            :Example:
+
+            >>> from matriochkas import ParsingResult
+            >>> from matriochkas import ParsingResultOrigin
+            >>> from matriochkas import ParsingResultType
+            >>> from io import StringIO
+            >>> from collections import Counter
+            >>> # Input creation
+            >>> ar_index_a = [(1, ',', Counter({None: 1})), (3, ',', Counter({None: 1}))]
+            >>> ar_index_b = [(2, 'x', Counter({None: 1})), (3, 'y', Counter({None: 1})), (5, 'z', Counter({None: 1}))]
+            >>> io_entity = StringIO('abc')
+            >>> # ParsingResult creation
+            >>> result_a = ParsingResult(StringIO, ParsingResultOrigin.READING, ParsingResultType.VALUE, 'close',
+            'write', 'getvalue', 'close', 'seek', [], {}, ar_index_a)
+            >>> result_b = ParsingResult(StringIO, ParsingResultOrigin.READING, ParsingResultType.VALUE, 'close',
+            'write', 'getvalue', 'close', 'seek', [], {}, ar_index_b)
+            >>> result_a + result_b
+            Parsing result :
+               Stream class : StringIO
+               Origin : ParsingResultOrigin.READING
+               Result type : ParsingResultType.VALUE
+               Inputs : {'args': [], 'kwargs': {}}
+               Index result : [(1, ',', Counter({None: 1})), (2, 'x', Counter({None: 1})),
+               (3, ',', Counter({None: 1})), (5, 'z', Counter({None: 1}))]
+
+            :param other: the second parsing result to merge (ParsingResult object)
+            :return: the merged parsing result (ParsingResult object)
+        """
+
         if isinstance(other, ParsingResult) and isinstance(self, ParsingResult):
             if ParsingResult.are_from_the_same_parsing(self, other):
                 new_parsing_result = copy.deepcopy(self)
@@ -1200,6 +1285,37 @@ class ParsingResult:
             raise TypeError("Operands have to be ParsingResult classes or subclasses")
 
     def __sub__(self, other):
+        """
+            Delete the similar elements between the two parsing results
+
+            :Example:
+
+            >>> from matriochkas import ParsingResult
+            >>> from matriochkas import ParsingResultOrigin
+            >>> from matriochkas import ParsingResultType
+            >>> from io import StringIO
+            >>> from collections import Counter
+            >>> # Input creation
+            >>> ar_index_a = [(1, ',', Counter({None: 1})), (3, ',', Counter({None: 1}))]
+            >>> ar_index_b = [(2, 'x', Counter({None: 1})), (3, ',', Counter({None: 1})), (5, 'z', Counter({None: 1}))]
+            >>> io_entity = StringIO('abc')
+            >>> # ParsingResult creation
+            >>> result_a = ParsingResult(StringIO, ParsingResultOrigin.READING, ParsingResultType.VALUE, 'close',
+            'write', 'getvalue', 'close', 'seek', [], {}, ar_index_a)
+            >>> result_b = ParsingResult(StringIO, ParsingResultOrigin.READING, ParsingResultType.VALUE, 'close',
+            'write', 'getvalue', 'close', 'seek', [], {}, ar_index_b)
+            >>> result_a - result_b
+            Parsing result :
+               Stream class : StringIO
+               Origin : ParsingResultOrigin.READING
+               Result type : ParsingResultType.VALUE
+               Inputs : {'args': [], 'kwargs': {}}
+               Index result : [(1, ',', Counter({None: 1}))]
+
+            :param other: the second parsing result to differentiate (ParsingResult object)
+            :return: the differentiated parsing result (ParsingResult object)
+        """
+
         if isinstance(other, ParsingResult) and isinstance(self, ParsingResult):
             if ParsingResult.are_from_the_same_parsing(self, other):
                 new_parsing_result = ParsingResult(self.streamClass, self.origin, self.resultType, self.readMethod,
@@ -1219,6 +1335,42 @@ class ParsingResult:
             raise TypeError("Operands have to be ParsingResult classes or subclasses")
 
     def __contains__(self, item):
+        """
+            Check if the parsing result contains the element
+
+            :Example:
+
+            >>> from matriochkas import ParsingResult
+            >>> from matriochkas import ParsingResultOrigin
+            >>> from matriochkas import ParsingResultType
+            >>> from io import StringIO
+            >>> from collections import Counter
+            >>> # Input creation
+            >>> ar_index = [(1, ',', Counter({None: 1})), (3, ',', Counter({'key': 1})), (3, 'c', Counter({None: 1}))]
+            >>> # ParsingResult creation
+            >>> result = ParsingResult(StringIO, ParsingResultOrigin.READING, ParsingResultType.VALUE, 'close', 'write',
+             'getvalue', 'close', 'seek', [], {}, ar_index)
+            >>> 1 in result
+            True
+            >>> 2 in result
+            False
+            >>> (3, ',') in result
+            False
+            >>> (3, ',', Counter({'key': 1})) in result
+            True
+            >>> (3, 'a') in result
+            False
+            >>> (4, ',') in result
+            False
+            >>> (3, ',', Counter({None: 1})) in result
+            False
+            >>> (3, None, Counter({None: 1})) in result
+            False
+
+            :param item: element to check in the parsing result (int or tuple [size: 2 or 3])
+            :return: True if the parsing result contains the element else False
+        """
+
         if isinstance(item, int):
             for element in self.arIndex:
                 if element[0] == item:
@@ -1258,17 +1410,50 @@ class ParsingResult:
                + '   Inputs : ' + str(self.arInput) + '\n' + '   Index result : ' + str(self.arIndex)
 
     def __copy__(self):
+        """
+            ParsingResult's shallow copy
+
+            :return: ParsingResult object
+        """
         return ParsingResult(self.streamClass, self.origin, self.resultType, self.readMethod, self.writeMethod,
                              self.returnMethod, self.closeMethod, self.seekMethod, self.arInput['args'],
                              self.arInput['kwargs'], self.arIndex)
 
     def __deepcopy__(self, memodict={}):
+        """
+            ParsingResult's deep copy
+
+            :return: ParsingResult object
+        """
         return self.__copy__()
 
     def __iter__(self):
         return self
 
     def __next__(self):
+        """
+            'in' keyword definition
+
+            :Example:
+
+            >>> from matriochkas import ParsingResult
+            >>> from matriochkas import ParsingResultOrigin
+            >>> from matriochkas import ParsingResultType
+            >>> from io import StringIO
+            >>> from collections import Counter
+            >>> # Input creation
+            >>> ar_index = [(1, ',', Counter({None: 1})), (3, ',', Counter({'key': 1})), (3, 'c', Counter({None: 1}))]
+            >>> # ParsingResult creation
+            >>> result = ParsingResult(StringIO, ParsingResultOrigin.READING, ParsingResultType.VALUE, 'close', 'write',
+             'getvalue', 'close', 'seek', [], {}, ar_index)
+            >>> for element in result:
+                    print(element)
+            (1, ',', Counter({None: 1}))
+            (3, ',', Counter({'key': 1}))
+            (3, 'c', Counter({None: 1}))
+
+            :return: element in the parsing result (tuple)
+        """
         if self.iterPosition < len(self.arIndex):
             result = self.arIndex[self.iterPosition]
             self.iterPosition += 1
@@ -1279,6 +1464,13 @@ class ParsingResult:
 
     @staticmethod
     def are_from_the_same_parsing(parsing_result_a, parsing_result_b):
+        """
+            Check if two parsing results come from the same parsing process
+
+            :param parsing_result_a: (ParsingResult object)
+            :param parsing_result_b: (ParsingResult object)
+            :return: True if they come from the same parsing process else False
+        """
         if isinstance(parsing_result_a, ParsingResult) and isinstance(parsing_result_b, ParsingResult):
             return (parsing_result_a.streamClass == parsing_result_b.streamClass and
                     parsing_result_a.origin == parsing_result_b.origin and
@@ -1294,6 +1486,11 @@ class ParsingResult:
             raise TypeError("Operands have to be ParsingResult classes or subclasses")
 
     def check_indexes(self):
+        """
+            Check if index array is consistent
+
+            :return: True if index array is consistent else raise exception
+        """
         previous_index_value = -1
         for index in self.arIndex:
             if index[0] > previous_index_value:
@@ -1306,6 +1503,15 @@ class ParsingResult:
         return True
 
     def create_stream_generator(self, thread_ref=None,  sleep_time=0.5):
+        """
+            Create index array iterator
+
+            :param thread_ref: thread used to define the end of iteration (Thread object or None)
+            :param sleep_time: waiting duration if the current index array is iterated and the thread reference is not
+            finished (float)
+            :return: element in the parsing result (tuple)
+        """
+
         current_position = 0
         if isinstance(thread_ref, Thread):
             while thread_ref.is_alive() or current_position < len(self.arIndex):
