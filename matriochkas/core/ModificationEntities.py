@@ -167,7 +167,7 @@ class ModificationEntity(Thread, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def create_indexes_generator(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
         """
-            Create index array iterator
+            Create modification index array iterator
 
             :param thread_ref: thread used to define the end of iteration (Thread object or None)
             :param sleep_time: waiting duration if the current index array is iterated and the thread reference is not
