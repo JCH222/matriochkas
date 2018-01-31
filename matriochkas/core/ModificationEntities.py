@@ -1,5 +1,30 @@
 # coding: utf8
 
+
+"""
+    Parsing result modification module
+    ==================================
+
+    This module contains classes required to create modification parsing result.
+
+    Modification parsing results are used with StreamWriter objects (see ParsingResultOrigin)
+
+    It contains 6 classes:
+
+    - ModificationSide
+    - ModificationEntity
+    - ModificationOperator
+    - ModificationOperation
+    - ModificationAdd
+    - ModificationRemove
+
+    They can be classified in 2 groups:
+
+        - Enumerations
+        - Parsing results modification operations
+"""
+
+
 from enum import Enum
 from matriochkas.core.ParsingEntities import ParsingResult
 from matriochkas.core.ParsingEntities import ParsingResultOrigin
@@ -9,17 +34,41 @@ import abc
 
 
 class ModificationSide(Enum):
+    """
+        Position in comparison to the parsing cursor during the parsing process
+        =======================================================================
+
+        Nothing more to say...
+    """
     LEFT = -1
     RIGHT = 1
 
 
 class ModificationEntity(Thread, metaclass=abc.ABCMeta):
+    """
+        Fundamental parsing result modification operation class
+        =======================================================
+
+        Superclass for all parsing results modification operations from this module.
+    """
+
     def __init__(self):
+        """
+            Initialization
+        """
+
         super(ModificationEntity, self).__init__()
         self._modificationArgs = dict()
         self._modificationResult = {'parsing_result': None, 'error': None}
 
     def __add__(self, other):
+        """
+            Associates two ModificationEntity objects.
+
+            :param other: ModificationEntity object to associate
+            :return: ModificationOperator object
+        """
+
         if isinstance(self, ModificationEntity) and isinstance(other, ModificationEntity):
             modification_operator = ModificationOperator(self, other)
             return modification_operator
@@ -27,6 +76,13 @@ class ModificationEntity(Thread, metaclass=abc.ABCMeta):
             raise TypeError("Operands have to be ModificationEntity's subclasses")
 
     def run(self):
+        """
+            Thread used to convert 'classic' parsing result (ParsingResultOrigin.READING) into modification parsing
+            result (ParsingResultOrigin.MODIFICATION).
+
+            :return: None
+        """
+
         try:
             ar_index = list()
             if self._modificationArgs['thread_ref'] is not None:
@@ -54,6 +110,43 @@ class ModificationEntity(Thread, metaclass=abc.ABCMeta):
             self._modificationResult = {'parsing_result': None, 'error': error}
 
     def generate_parsing_result(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
+        """
+            Convert 'classic' parsing result (ParsingResultOrigin.READING) into modification parsing
+            result (ParsingResultOrigin.MODIFICATION).
+
+            :Example:
+
+            >>> from matriochkas import ParsingResult
+            >>> from matriochkas import ParsingResultOrigin
+            >>> from matriochkas import ParsingResultType
+            >>> from matriochkas import ModificationAdd
+            >>> from matriochkas import ModificationRemove
+            >>> from io import StringIO
+            >>> from collections import Counter
+            >>> # Input creation
+            >>> ar_index = [(1, ',', Counter({None: 1})), (3, ',', Counter({'key': 1})), (3, 'c', Counter({None: 1}))]
+            >>> # ParsingResult creation
+            >>> result = ParsingResult(StringIO, ParsingResultOrigin.READING, ParsingResultType.VALUE, 'close', 'write',
+             'getvalue', 'close', 'seek', [], {}, ar_index)
+            >>> # Modification pattern creation
+            >>> modification_pattern = ModificationAdd(';') + ModificationRemove()
+            >>> modification_pattern.generate_parsing_result(result)
+            Parsing result :
+               Stream class : StringIO
+               Origin : ParsingResultOrigin.MODIFICATION
+               Result type : ParsingResultType.VALUE
+               Inputs : {'args': [], 'kwargs': {}}
+               Index result : [(1, ''), (1, ';', <ModificationSide.RIGHT: 1>), (3, ''), (3, ''),
+               (3, ';', <ModificationSide.RIGHT: 1>), (3, ';', <ModificationSide.RIGHT: 1>)]
+
+            :param initial_parsing_result: parsing result with origin is ParsingResultOrigin.READING
+            :param thread_ref: thread used to define the end of iteration (Thread object or None)
+            :param sleep_time: waiting duration if the current index array from intial parsing result is iterated and
+            the thread reference is not finished (float)
+            :return: the modification parsing result (ParsingResult object with origin is
+            ParsingResultOrigin.MODIFICATION)
+        """
+
         # Don't ask me why...
         from matriochkas.core.IO import StreamReader
 
@@ -73,6 +166,15 @@ class ModificationEntity(Thread, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def create_indexes_generator(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
+        """
+            Create index array iterator
+
+            :param thread_ref: thread used to define the end of iteration (Thread object or None)
+            :param sleep_time: waiting duration if the current index array is iterated and the thread reference is not
+            finished (float)
+            :return: element in the parsing result (tuple)
+        """
+
         raise NotImplementedError('<create_indexes_generator> method has to be implemented')
 
 

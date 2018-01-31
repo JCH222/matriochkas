@@ -1420,6 +1420,7 @@ class ParsingResult:
 
             :return: ParsingResult object
         """
+
         return ParsingResult(self.streamClass, self.origin, self.resultType, self.readMethod, self.writeMethod,
                              self.returnMethod, self.closeMethod, self.seekMethod, self.arInput['args'],
                              self.arInput['kwargs'], self.arIndex)
@@ -1430,6 +1431,7 @@ class ParsingResult:
 
             :return: ParsingResult object
         """
+
         return self.__copy__()
 
     def __iter__(self):
@@ -1459,6 +1461,7 @@ class ParsingResult:
 
             :return: element in the parsing result (tuple)
         """
+
         if self.iterPosition < len(self.arIndex):
             result = self.arIndex[self.iterPosition]
             self.iterPosition += 1
@@ -1476,6 +1479,7 @@ class ParsingResult:
             :param parsing_result_b: (ParsingResult object)
             :return: True if they come from the same parsing process else False
         """
+
         if isinstance(parsing_result_a, ParsingResult) and isinstance(parsing_result_b, ParsingResult):
             return (parsing_result_a.streamClass == parsing_result_b.streamClass and
                     parsing_result_a.origin == parsing_result_b.origin and
@@ -1496,6 +1500,7 @@ class ParsingResult:
 
             :return: True if index array is consistent else raise exception
         """
+
         previous_index_value = -1
         for index in self.arIndex:
             if index[0] > previous_index_value:
