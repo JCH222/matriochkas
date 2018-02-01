@@ -66,7 +66,6 @@ class ModificationEntity(Thread, metaclass=abc.ABCMeta):
         self.run()
 
         if self._modificationResult['parsing_result'] is not None:
-            self._modificationResult['parsing_result'].arIndex.sort()
             return self._modificationResult['parsing_result']
         else:
             raise self._modificationResult['error']
@@ -92,7 +91,9 @@ class ModificationOperator(ModificationEntity):
             while True:
                 index_a = operator_a.__next__()
                 index_b = operator_b.__next__()
-                yield index_a + index_b
+                result = index_a + index_b
+                result.sort()
+                yield result
         except StopIteration:
             raise StopIteration()
 
