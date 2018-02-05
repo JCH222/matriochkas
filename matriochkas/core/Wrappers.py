@@ -29,6 +29,7 @@ class ReadingWrapper(Thread):
         self.arTriggerEvent = dict()
         self.currentCharacter = read_method(1)
         self.nextCurrentCharacter = read_method(1)
+        self.arCollector = dict()
 
     def get_method(self, stream_reader):
         if stream_reader not in self.arReadingEvent:
@@ -36,6 +37,13 @@ class ReadingWrapper(Thread):
             self.arReadingEvent[stream_reader].set()
             self.arTriggerEvent[stream_reader] = Event()
         return self.read
+
+    def get_collector_method(self, stream_writer):
+        if stream_writer not in self.arCollector:
+            self.arCollector[stream_writer] = ReadingCollector()
+            self.arCollector[stream_writer].add_character(self.currentCharacter)
+            self.arCollector[stream_writer].add_character(self.nextCurrentCharacter)
+        return self.arCollector[stream_writer].read
 
     def read(self, size, stream_reader):
         result = ''
@@ -75,6 +83,8 @@ class ReadingWrapper(Thread):
                         self.arTriggerEvent[key].wait()
                 self.currentCharacter = self.nextCurrentCharacter
                 self.nextCurrentCharacter = self.readMethod(1)
+                for key in self.arCollector:
+                    self.arCollector[key].add_character(self.nextCurrentCharacter)
                 for key in self.key_generator():
                     if key is not None:
                         self.arTriggerEvent[key].clear()
@@ -84,6 +94,35 @@ class ReadingWrapper(Thread):
             for key in  self.arTriggerEvent:
                 self.arReadingEvent[key].set()
                 self.arTriggerEvent[key].set()
+            for key in self.arCollector:
+                self.arCollector[key].close()
+
+
+class ReadingCollector:
+    def __init__(self):
+        super(ReadingCollector, self).__init__()
+        self.stream = str()
+        self.waitingEvent = Event()
+        self.isClosed = False
+
+    def read(self, size):
+        while len(self.stream) < size and self.isClosed is False:
+            self.waitingEvent.clear()
+            self.waitingEvent.wait()
+        result = self.stream[0:size]
+        self.stream = self.stream[size:]
+        return result
+
+    def add_character(self, character):
+        if character:
+            self.stream += character
+            self.waitingEvent.set()
+        else:
+            self.close()
+
+    def close(self):
+        self.isClosed = True
+        self.waitingEvent.set()
 
 
 class ReadingWrappersHandler(WrappersHandler):
