@@ -1,8 +1,12 @@
 # coding: utf8
 
 from matriochkas.core import ModificationEntities
+from matriochkas.core import IO
+from matriochkas.core.Configuration import HandlersConfiguration
 from matriochkas.tests.ParsingEntities import MockThread
+
 from collections import Counter
+from time import sleep
 
 import matriochkas.core.ParsingEntities
 import matriochkas.tests.ParsingEntities
@@ -256,3 +260,33 @@ def test_modification_remove():
             assert index == [(3, '')]
         else:
             assert False
+
+
+def test_multi_threading_integration():
+    text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et ' \
+           'dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip' \
+           'ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu' \
+           'fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt' \
+           'mollit anim id est laborum'
+
+    parsing_pipeline = (matriochkas.core.ParsingEntities.ParsingCondition('. ') >> None) + None
+    reader = IO.StreamReader(text, result_type=matriochkas.core.ParsingEntities.ParsingResultType.REFERENCE)
+
+    modification_pattern = ModificationEntities.ModificationRemove() + ModificationEntities.ModificationAdd(';', rel_position=2)
+
+    reader.launch(parsing_pipeline)
+    modification_pattern.launch(reader.get_result(), reader)
+
+    reader.wait_initialization()
+    modification_pattern.wait_initialization()
+
+    HandlersConfiguration.launch()
+
+    assert modification_pattern.get_result().arIndex == []
+    sleep(5)
+    assert modification_pattern.get_result().arIndex == [(122, ''),
+                                                         (124, ';', ModificationEntities.ModificationSide.RIGHT),
+                                                         (229, ''),
+                                                         (231, ';', ModificationEntities.ModificationSide.RIGHT),
+                                                         (331, ''),
+                                                         (333, ';', ModificationEntities.ModificationSide.RIGHT)]
