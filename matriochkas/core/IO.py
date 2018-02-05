@@ -161,7 +161,6 @@ class StreamReader(StreamEntity):
                 self._readResult = {'parsing_result': None,
                                    'error': ValueError("Not enough characters to parse : " + str(len(element)))}
         except Exception as error:
-            self._isInitialized.set()
             if hasattr(self, 'close_method'):
                 if self.isMultiThreading is False:
                     close_method()
@@ -169,6 +168,7 @@ class StreamReader(StreamEntity):
                     close_method(self)
             self._readResult = {'parsing_result': None,
                                'error': error}
+            self._isInitialized.set()
         finally:
             if self.isMultiThreading is True:
                 if initial_read_method is not None:

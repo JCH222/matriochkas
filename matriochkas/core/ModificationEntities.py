@@ -29,6 +29,7 @@ from enum import Enum
 from matriochkas.core.ParsingEntities import ParsingResult
 from matriochkas.core.ParsingEntities import ParsingResultOrigin
 from threading import Thread
+from threading import Event
 
 import abc
 
@@ -60,6 +61,7 @@ class ModificationEntity(Thread, metaclass=abc.ABCMeta):
         super(ModificationEntity, self).__init__()
         self._modificationArgs = dict()
         self._modificationResult = {'parsing_result': None, 'error': None}
+        self._isInitialized = Event()
 
     def __add__(self, other):
         """
@@ -102,12 +104,15 @@ class ModificationEntity(Thread, metaclass=abc.ABCMeta):
                                                       ar_index),
                                         'error': None}
 
+            self._isInitialized.set()
+
             for index in self.create_indexes_generator(self._modificationArgs['initial_parsing_result'],
                                                        self._modificationArgs['thread_ref'],
                                                        self._modificationArgs['sleep_time']):
                 ar_index += index
         except Exception as error:
             self._modificationResult = {'parsing_result': None, 'error': error}
+            self._isInitialized.set()
 
     def generate_parsing_result(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
         """
@@ -159,7 +164,28 @@ class ModificationEntity(Thread, metaclass=abc.ABCMeta):
         self.run()
 
         if self._modificationResult['parsing_result'] is not None:
-            self._modificationResult['parsing_result'].arIndex.sort()
+            return self._modificationResult['parsing_result']
+        else:
+            raise self._modificationResult['error']
+
+    def launch(self, initial_parsing_result, thread_ref=None, sleep_time=0.5):
+        # Don't ask me why...
+        from matriochkas.core.IO import StreamReader
+
+        if thread_ref is not None and not isinstance(thread_ref, StreamReader):
+            raise ValueError('Thread reference has to be a StreamReader object or None')
+
+        self._modificationArgs = {'initial_parsing_result': initial_parsing_result, 'thread_ref': thread_ref,
+                                  'sleep_time': sleep_time}
+        self._modificationResult = {'parsing_result': None, 'error': None}
+        self.start()
+
+    def wait_initialization(self):
+        self._isInitialized.wait()
+
+    def get_result(self):
+        self.wait_initialization()
+        if self._modificationResult['error'] is None:
             return self._modificationResult['parsing_result']
         else:
             raise self._modificationResult['error']
@@ -194,7 +220,9 @@ class ModificationOperator(ModificationEntity):
             while True:
                 index_a = operator_a.__next__()
                 index_b = operator_b.__next__()
-                yield index_a + index_b
+                result = index_a + index_b
+                result.sort()
+                yield result
         except StopIteration:
             raise StopIteration()
 
