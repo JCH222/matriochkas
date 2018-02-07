@@ -293,6 +293,9 @@ class StreamWriter(StreamEntity):
             else:
                 output_close_method = StreamEntity.generate_method(output_stream, 'close_method')
 
+            if self.isMultiThreading is True:
+                input_read_method = HandlersConfiguration.READING_WRAPPER.get_collector_method(input_read_method, self)
+
             index = 0
             input_parsing_result_index = 0
             character = input_read_method(1)

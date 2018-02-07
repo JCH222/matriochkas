@@ -401,3 +401,15 @@ def test_stream_writer():
         assert False
     except TypeError:
         assert True
+
+    ###################################################################################################################
+
+    HandlersConfiguration.reset_reading_wrapper()
+    HandlersConfiguration.reset_closing_wrapper()
+
+    stream_entity_2 = IO.StreamWriter()
+    stream_entity_2.launch(parsing_result)
+
+    HandlersConfiguration.launch()
+
+    assert (stream_entity_2.get_result() == text_result) is True
