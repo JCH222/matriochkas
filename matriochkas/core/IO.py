@@ -327,15 +327,17 @@ class StreamWriter(StreamEntity):
                 index += 1
             result = output_return_method()
 
-            if self.writeArgs['close_reading_stream']:
-                input_close_method()
-            else:
-                input_seek_method(0)
+            if self.isMultiThreading is False:
+                if self.writeArgs['close_reading_stream']:
+                    input_close_method()
+                else:
+                    input_seek_method(0)
             output_close_method()
             self.writeResult = {'result': result, 'error': None}
         except Exception as error:
-            if 'input_close_method' in locals():
-                input_close_method()
+            if self.isMultiThreading is False:
+                if 'input_close_method' in locals():
+                    input_close_method()
             if 'output_close_method' in locals():
                 output_close_method()
             self.writeResult = {'result': None, 'error': error}
