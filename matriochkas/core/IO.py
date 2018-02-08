@@ -305,8 +305,7 @@ class StreamWriter(StreamEntity):
                 right_side = None
                 other = None
                 while is_ended is False:
-                    if input_parsing_result_index < len(input_parsing_result.arIndex) \
-                            and index == input_parsing_result.arIndex[input_parsing_result_index][0]:
+                    if input_parsing_result_index < len(input_parsing_result.arIndex) and index == input_parsing_result.arIndex[input_parsing_result_index][0]:
                         if len(input_parsing_result.arIndex[input_parsing_result_index]) == 3:
                             if input_parsing_result.arIndex[input_parsing_result_index][2] == ModificationSide.LEFT:
                                 left_side = input_parsing_result.arIndex[input_parsing_result_index]
@@ -358,11 +357,11 @@ class StreamWriter(StreamEntity):
             raise self.writeResult['error']
 
     def launch(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
-               seek_method=None, args=None, kwargs=None, close_reading_stream=True):
+               seek_method=None, args=None, kwargs=None):
         self.isMultiThreading = True
         self.writeArgs = {'parsing_result': parsing_result, 'stream_class': stream_class, 'read_method': read_method,
                           'return_method': return_method, 'close_method': close_method, 'seek_method': seek_method,
-                          'args': args, 'kwargs': kwargs, 'close_reading_stream': close_reading_stream}
+                          'args': args, 'kwargs': kwargs, 'close_reading_stream': None}
         self.writeResult = {'result': None, 'error': None}
         self.start()
 
