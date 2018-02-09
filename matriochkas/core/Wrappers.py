@@ -134,6 +134,11 @@ class ReadingWrappersHandler(WrappersHandler):
             self.arWrapper[read_method] = ReadingWrapper(read_method)
         return self.arWrapper[read_method].get_method(stream_reader)
 
+    def get_collector_method(self, read_method, stream_writer):
+        if read_method not in self.arWrapper:
+            self.arWrapper[read_method] = ReadingWrapper(read_method)
+        return self.arWrapper[read_method].get_collector_method(stream_writer)
+
 
 class ClosingWrapper(Thread):
     def __init__(self, close_method):

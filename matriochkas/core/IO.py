@@ -293,6 +293,9 @@ class StreamWriter(StreamEntity):
             else:
                 output_close_method = StreamEntity.generate_method(output_stream, 'close_method')
 
+            if self.isMultiThreading is True:
+                input_read_method = HandlersConfiguration.READING_WRAPPER.get_collector_method(input_read_method, self)
+
             index = 0
             input_parsing_result_index = 0
             character = input_read_method(1)
@@ -302,8 +305,7 @@ class StreamWriter(StreamEntity):
                 right_side = None
                 other = None
                 while is_ended is False:
-                    if input_parsing_result_index < len(input_parsing_result.arIndex) \
-                            and index == input_parsing_result.arIndex[input_parsing_result_index][0]:
+                    if input_parsing_result_index < len(input_parsing_result.arIndex) and index == input_parsing_result.arIndex[input_parsing_result_index][0]:
                         if len(input_parsing_result.arIndex[input_parsing_result_index]) == 3:
                             if input_parsing_result.arIndex[input_parsing_result_index][2] == ModificationSide.LEFT:
                                 left_side = input_parsing_result.arIndex[input_parsing_result_index]
@@ -324,15 +326,17 @@ class StreamWriter(StreamEntity):
                 index += 1
             result = output_return_method()
 
-            if self.writeArgs['close_reading_stream']:
-                input_close_method()
-            else:
-                input_seek_method(0)
+            if self.isMultiThreading is False:
+                if self.writeArgs['close_reading_stream']:
+                    input_close_method()
+                else:
+                    input_seek_method(0)
             output_close_method()
             self.writeResult = {'result': result, 'error': None}
         except Exception as error:
-            if 'input_close_method' in locals():
-                input_close_method()
+            if self.isMultiThreading is False:
+                if 'input_close_method' in locals():
+                    input_close_method()
             if 'output_close_method' in locals():
                 output_close_method()
             self.writeResult = {'result': None, 'error': error}
@@ -353,11 +357,11 @@ class StreamWriter(StreamEntity):
             raise self.writeResult['error']
 
     def launch(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
-               seek_method=None, args=None, kwargs=None, close_reading_stream=True):
+               seek_method=None, args=None, kwargs=None):
         self.isMultiThreading = True
         self.writeArgs = {'parsing_result': parsing_result, 'stream_class': stream_class, 'read_method': read_method,
                           'return_method': return_method, 'close_method': close_method, 'seek_method': seek_method,
-                          'args': args, 'kwargs': kwargs, 'close_reading_stream': close_reading_stream}
+                          'args': args, 'kwargs': kwargs, 'close_reading_stream': None}
         self.writeResult = {'result': None, 'error': None}
         self.start()
 
