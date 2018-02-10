@@ -296,8 +296,13 @@ class StreamWriter(StreamEntity):
             if self.isMultiThreading is True:
                 input_read_method = HandlersConfiguration.READING_WRAPPER.get_collector_method(input_read_method, self)
 
-            index = 0
-            input_parsing_result_index = 0
+            index_generator = input_parsing_result.create_stream_generator(thread_ref=self.writeArgs['thread_ref'],
+                                                                           sleep_time=self.writeArgs['sleep_time'])
+            try:
+                index = index_generator.__next__()
+            except StopIteration:
+                index = None
+            index_position = 0
             character = input_read_method(1)
             while character:
                 is_ended = False
@@ -305,15 +310,19 @@ class StreamWriter(StreamEntity):
                 right_side = None
                 other = None
                 while is_ended is False:
-                    if input_parsing_result_index < len(input_parsing_result.arIndex) and index == input_parsing_result.arIndex[input_parsing_result_index][0]:
-                        if len(input_parsing_result.arIndex[input_parsing_result_index]) == 3:
-                            if input_parsing_result.arIndex[input_parsing_result_index][2] == ModificationSide.LEFT:
-                                left_side = input_parsing_result.arIndex[input_parsing_result_index]
+
+                    if index is not None and index_position == index[0]:
+                        if len(index) == 3:
+                            if index[2] == ModificationSide.LEFT:
+                                left_side = index
                             else:
-                                right_side = input_parsing_result.arIndex[input_parsing_result_index]
+                                right_side = index
                         else:
-                            other = input_parsing_result.arIndex[input_parsing_result_index]
-                        input_parsing_result_index += 1
+                            other = index
+                        try:
+                            index = index_generator.__next__()
+                        except StopIteration:
+                            index = None
                     else:
                         if left_side is not None:
                             output_write_method(left_side[1])
@@ -323,7 +332,7 @@ class StreamWriter(StreamEntity):
                             output_write_method(right_side[1])
                         is_ended = True
                 character = input_read_method(1)
-                index += 1
+                index_position += 1
             result = output_return_method()
 
             if self.isMultiThreading is False:
@@ -347,7 +356,8 @@ class StreamWriter(StreamEntity):
               seek_method=None, args=None, kwargs=None, close_reading_stream=True):
         self.writeArgs = {'parsing_result': parsing_result, 'stream_class': stream_class, 'read_method': read_method,
                           'return_method': return_method, 'close_method': close_method, 'seek_method': seek_method,
-                          'args': args, 'kwargs': kwargs, 'close_reading_stream': close_reading_stream}
+                          'args': args, 'kwargs': kwargs, 'close_reading_stream': close_reading_stream,
+                          'thread_ref': None, 'sleep_time': 0.5}
         self.writeResult = {'result': None, 'error': None}
 
         self.run()
@@ -357,11 +367,12 @@ class StreamWriter(StreamEntity):
             raise self.writeResult['error']
 
     def launch(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
-               seek_method=None, args=None, kwargs=None):
+               seek_method=None, args=None, kwargs=None, thread_ref=None, sleep_time=0.5):
         self.isMultiThreading = True
         self.writeArgs = {'parsing_result': parsing_result, 'stream_class': stream_class, 'read_method': read_method,
                           'return_method': return_method, 'close_method': close_method, 'seek_method': seek_method,
-                          'args': args, 'kwargs': kwargs, 'close_reading_stream': None}
+                          'args': args, 'kwargs': kwargs, 'close_reading_stream': None, 'thread_ref': thread_ref,
+                          'sleep_time': sleep_time}
         self.writeResult = {'result': None, 'error': None}
         self.start()
 
