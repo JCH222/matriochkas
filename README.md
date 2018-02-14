@@ -146,7 +146,14 @@ Création de la convergence des deux resultats de parsages modifiés précédent
 
     merged_modification_result = sentence_final_parsing_result + word_final_parsing_result
     
-Dans le cas où deux positions sont identiques dans les deux résultats de parsages, la position dans la première opérande (dans ce cas sentence_final_parsing_result) sera gardée. Dans ce cas, cette condition permet de supprimer les séparations des mots de fin de phrase (;) et de les remplacer par des séparations de phrases (*).
+Dans le cas où deux positions sont identiques dans les deux résultats de parsages, la position dans le premier opérande (dans ce cas sentence_final_parsing_result) sera gardée. Dans ce cas, cette condition permet de supprimer les séparations des mots de fin de phrase (;) et de les remplacer par des séparations de phrases (*):
+    
+    Parsing result :
+        Stream class : StringIO
+        Origin : ParsingResultOrigin.MODIFICATION
+        Result type : ParsingResultType.REFERENCE
+        Inputs : {'args': (), 'kwargs': {'reference': <_io.StringIO object at 0x051F6080>}}
+        Index result : [(5, ''), (5, ';', <ModificationSide.RIGHT: 1>), (11, ''), (11, ';', <ModificationSide.RIGHT: 1>), ..., (122, ''), (122, '*', <ModificationSide.RIGHT: 1>), ...]
 
 Création du tableau:
 
