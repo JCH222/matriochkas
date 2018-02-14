@@ -142,11 +142,11 @@ Création des textes modifiés:
     new_text_1 = word_writer.write(word_final_parsing_result, close_reading_stream=False)
     new_text_2 = sentence_writer.write(sentence_final_parsing_result, close_reading_stream=False)
     
-Création de la convergence des deux resultats de parsages modifiés précédents (sentence_final_parsing_result et word_final_parsing_result).
+Création de la convergence des deux resultats de parsages modifiés précédents (*sentence_final_parsing_result* et *word_final_parsing_result*).
 
     merged_modification_result = sentence_final_parsing_result + word_final_parsing_result
     
-Dans le cas où deux positions sont identiques dans les deux résultats de parsages, la position dans le premier opérande (dans ce cas sentence_final_parsing_result) sera gardée. Dans ce cas, cette condition permet de supprimer les séparations des mots de fin de phrase (;) et de les remplacer par des séparations de phrases (*):
+Dans le cas où deux positions sont identiques dans les deux résultats de parsages, la position dans le premier opérande (dans ce cas *sentence_final_parsing_result*) sera gardée. Dans ce cas, cette condition permet de supprimer les séparations des mots de fin de phrase (;) et de les remplacer par des séparations de phrases (*):
     
     Parsing result :
         Stream class : StringIO
@@ -158,6 +158,8 @@ Dans le cas où deux positions sont identiques dans les deux résultats de parsa
 Création du tableau:
 
     array = StreamWriter(stream_class=StreamTwoDimDeque, column_separator=';', row_separator='*').write(merged_modification_result, close_reading_stream=True)
+    
+La classe *StreamWriter* génère par défaut une chaine de caractères (*str*) à l'appel de la méthode *write*. Il est donc nécessaire d'utiliser le paramètre *stream_class* lors de la création d'une instance avec comme valeur la classe *StreamTwoDimDeque* (classe qui nécessite à l'instanciation deux paramètres : *column_separator*, le caractère de séparation des colonnes] et *row_separator*, le caractère de séparation des lignes.
     
 On obtient ces textes et ce tableau:
 
