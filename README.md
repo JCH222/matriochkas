@@ -1,4 +1,6 @@
-﻿Matriochkas
+﻿<img align="left" src="MatriochkasLogo.png" alt="Matriochkas logo" width="75" height="75">
+ 
+ Matriochkas
 ===========
 
 Qu'est ce que c'est ?
