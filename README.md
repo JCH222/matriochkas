@@ -18,9 +18,10 @@ Matriochkas permet de conçevoir des schémas de parsage ou de modification sur 
 Exemple
 -------
 
-L'objectif est double:  
+L'objectif est triple:  
 - Détecter les mots du texte et les séparer par un point-virgule :
-- Détecter les phrases du texte et les séparer par un point-virgule :
+- Détecter les phrases du texte et les séparer par une étoile :
+- Obtenir un tableau de dimension 2 contenant les mots de chaque phrase :
 
 Ci-dessous le texte à parser:
 
@@ -105,10 +106,10 @@ Création du résulat de parsage modifié pour la détection des mots:
 
 Le paramère *key_word* dans les schémas de modifition permet d'éffectuer certaines modifications uniquement lorsque le tuple du résultat de parsage possède ce mot clé. Dans cet exemple, on souhaite supprimer le caractère suivant le curseur uniquement dans le cas où une ponctuation a été détectée (un espace).
 
-Création du résulat de parsage modifié pour la détection des phrases:
+Création du résultat de parsage modifié pour la détection des phrases:
 
     #Création du schéma de modification
-    sentence_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1)
+    sentence_modification_pattern = ModificationRemove() + ModificationAdd('*') + ModificationRemove(rel_position=1)
 
     #Application de la modification au résultat de parsage précédent
     sentence_final_parsing_result = sentence_modification_pattern.generate_parsing_result(sentence_parsing_result)
@@ -129,7 +130,7 @@ On obtient deux nouveaux résultats de parsage (la variable *word_final_parsing_
         Origin : ParsingResultOrigin.MODIFICATION
         Result type : ParsingResultType.REFERENCE
         Inputs : {'args': (), 'kwargs': {'reference': <_io.StringIO object at 0x00468D50>}}
-        Index result : [(123, ''), (123, ';', <ModificationSide.RIGHT: 1>), ...]
+        Index result : [(123, ''), (123, '*', <ModificationSide.RIGHT: 1>), ...]
         
 Création des textes modifiés:
 
@@ -139,19 +140,34 @@ Création des textes modifiés:
     
     #Création des textes modifiés
     new_text_1 = word_writer.write(word_final_parsing_result, close_reading_stream=False)
-    new_text_2 = sentence_writer.write(sentence_final_parsing_result, close_reading_stream=True)
+    new_text_2 = sentence_writer.write(sentence_final_parsing_result, close_reading_stream=False)
     
-On obtient ces textes:
+Création de la convergence des deux resultats de parsages modifiés précédents (sentence_final_parsing_result et word_final_parsing_result).
+
+    merged_modification_result = sentence_final_parsing_result + word_final_parsing_result
+    
+Dans le cas où deux positions sont identiques dans les deux résultats de parsages, la position dans la première opérande (dans ce cas sentence_final_parsing_result) sera gardée. Dans ce cas, cette condition permet de supprimer les séparations des mots de fin de phrase (;) et de les remplacer par des séparations de phrases (*).
+
+Création du tableau:
+
+    array = StreamWriter(stream_class=StreamTwoDimDeque, column_separator=';', row_separator='*').write(merged_modification_result, close_reading_stream=True)
+    
+On obtient ces textes et ce tableau:
 
     Lorem;ipsum;dolor;sit;amet;consectetur;adipiscing;elit;sed;do;eiusmod;tempor;incididunt;ut;labore;et;dolore;magna;aliqua;
     Ut;enim;ad;minim;veniam;quis;nostrud;exercitation;ullamco;laboris;nisi;ut;aliquip;ex;ea;commodo;consequat;Duis;aute;irure;
     dolor;in;reprehenderit;in;voluptate;velit;esse;cillum;dolore;eu;fugiat;nulla;pariatur;Excepteur;sint;occaecat;cupidatat;non;
     proident;sunt;in;culpa;qui;officia;deserunt;mollit;anim;id;est;laborum
     
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua;
-    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat;
-    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur;
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua*
+    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat*
+    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur*
     Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+    
+    deque([ deque(['Lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore', 'magna', 'aliqua']), 
+            deque(['Ut', 'enim', 'ad', 'minim', 'veniam', 'quis', 'nostrud', 'exercitation', 'ullamco', 'laboris', 'nisi', 'ut', 'aliquipex', 'ea', 'commodo', 'consequat']), 
+            deque(['Duis', 'aute', 'irure', 'dolor', 'in', 'reprehenderit', 'in', 'voluptate', 'velit', 'esse', 'cillum', 'dolore', 'eufugiat', 'nulla', 'pariatur']), 
+            deque(['Excepteur', 'sint', 'occaecat', 'cupidatat', 'non', 'proident', 'sunt', 'in', 'culpa', 'qui', 'officia', 'deseruntmollit', 'anim', 'id', 'est', 'laborum'])])
     
 Ci-dessous l'exemple entier et condensé:
 
@@ -175,11 +191,14 @@ Ci-dessous l'exemple entier et condensé:
     word_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1, key_word='key 1')
     word_final_parsing_result = word_modification_pattern.generate_parsing_result(word_parsing_result)
 
-    sentence_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1)
+    sentence_modification_pattern = ModificationRemove() + ModificationAdd('*') + ModificationRemove(rel_position=1)
     sentence_final_parsing_result = sentence_modification_pattern.generate_parsing_result(sentence_parsing_result)
+    merged_modification_result = sentence_final_parsing_result + word_final_parsing_result
 
     new_text_1 = StreamWriter().write(word_final_parsing_result, close_reading_stream=False)
-    new_text_2 = StreamWriter().write(sentence_final_parsing_result, close_reading_stream=True)
+    new_text_2 = StreamWriter().write(sentence_final_parsing_result, close_reading_stream=False)
+    array = StreamWriter(stream_class=StreamTwoDimDeque, column_separator=';', row_separator='*').write(merged_modification_result, close_reading_stream=True)
 
     print(new_text_1)
     print(new_text_2)
+    print(array)
