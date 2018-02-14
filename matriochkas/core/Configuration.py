@@ -80,18 +80,25 @@ class HandlersConfiguration:
     CLOSING_WRAPPER = ClosingWrappersHandler()
 
     @staticmethod
-    def reset_reading_wrapper():
+    def reset_reading_wrapper(raise_exception=True):
         if HandlersConfiguration.READING_WRAPPER.is_alive() is False:
             HandlersConfiguration.READING_WRAPPER = ReadingWrappersHandler()
         else:
-            raise RuntimeError("Reading wrapper is still running, it can't be reseted")
+            if raise_exception is True:
+                raise RuntimeError("Reading wrapper is still running, it can't be reseted")
 
     @staticmethod
-    def reset_closing_wrapper():
+    def reset_closing_wrapper(raise_exception=True):
         if HandlersConfiguration.CLOSING_WRAPPER.is_alive() is False:
             HandlersConfiguration.CLOSING_WRAPPER = ClosingWrappersHandler()
         else:
-            raise RuntimeError("Closing wrapper is still running, it can't be reseted")
+            if raise_exception is True:
+                raise RuntimeError("Closing wrapper is still running, it can't be reseted")
+
+    @staticmethod
+    def reset_all(raise_exception=True):
+        HandlersConfiguration.reset_reading_wrapper(raise_exception)
+        HandlersConfiguration.reset_closing_wrapper(raise_exception)
 
     @staticmethod
     def launch():
