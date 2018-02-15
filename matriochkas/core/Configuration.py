@@ -76,11 +76,25 @@ class StreamClassConfiguration(Enum):
 
 
 class HandlersConfiguration:
+    """
+        Configuration handlers class
+        ============================
+
+        This class contains and manages the two global handlers : READING_WRAPPER and CLOSING_WRAPPER.
+    """
+
     READING_WRAPPER = ReadingWrappersHandler()
     CLOSING_WRAPPER = ClosingWrappersHandler()
 
     @staticmethod
     def reset_reading_wrapper(raise_exception=True):
+        """
+            Resets reading handler.
+
+            :param raise_exception: raise exception if the reading handler is running during reset
+            :return: None
+        """
+
         if HandlersConfiguration.READING_WRAPPER.is_alive() is False:
             HandlersConfiguration.READING_WRAPPER = ReadingWrappersHandler()
         else:
@@ -89,6 +103,13 @@ class HandlersConfiguration:
 
     @staticmethod
     def reset_closing_wrapper(raise_exception=True):
+        """
+            Resets closing handler.
+
+            :param raise_exception: raise exception if the closing handler is running during reset
+            :return: None
+        """
+
         if HandlersConfiguration.CLOSING_WRAPPER.is_alive() is False:
             HandlersConfiguration.CLOSING_WRAPPER = ClosingWrappersHandler()
         else:
@@ -97,10 +118,24 @@ class HandlersConfiguration:
 
     @staticmethod
     def reset_all(raise_exception=True):
+        """
+            Resets reading handler and closing handler.
+
+            :param raise_exception: raise exception if the closing handler or the reading handler is running during
+            reset
+            :return: None
+        """
+
         HandlersConfiguration.reset_reading_wrapper(raise_exception)
         HandlersConfiguration.reset_closing_wrapper(raise_exception)
 
     @staticmethod
     def launch():
+        """
+            Launch the global handlers thread.
+
+            :return: None
+        """
+
         HandlersConfiguration.READING_WRAPPER.start()
         HandlersConfiguration.CLOSING_WRAPPER.start()

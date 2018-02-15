@@ -21,6 +21,7 @@ from matriochkas.core.IO import LinkedStreamReader
 from matriochkas.core.IO import StreamWriter
 
 from matriochkas.core.Configuration import StreamClassConfiguration
+from matriochkas.core.Configuration import HandlersConfiguration
 
 from matriochkas.core.StreamEntities import StreamTwoDimDeque
 
