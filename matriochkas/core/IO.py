@@ -1,5 +1,21 @@
 # coding: utf8
 
+
+"""
+    Parsing execution module
+    ========================
+
+    This module contains classes required to execute parsing operations.
+
+    It contains 4 classes:
+
+    - StreamEntity
+    - StreamReader
+    - LinkedStreamReader
+    - StreamWriter
+"""
+
+
 from io import StringIO
 from collections import deque
 from matriochkas.core.ModificationEntities import ModificationSide
@@ -16,9 +32,34 @@ import copy
 
 
 class StreamEntity(Thread, metaclass=abc.ABCMeta):
+    """
+        Fundamental parsing execution class
+        ===================================
+
+        Superclass for all parsing execution classes from this module.
+    """
+
     @abc.abstractmethod
-    def __init__(self, args, kwargs, stream_class=None, read_method=None, write_method=None,
-                 return_method=None, close_method=None, seek_method=None):
+    def __init__(self, *args, stream_class=None, read_method=None, write_method=None,
+                 return_method=None, close_method=None, seek_method=None, **kwargs):
+        """
+            Initialization
+
+            :param args: args used during the parsing stream object creation (without parameters names)
+            :param stream_class: class used to create parsing stream object (class)
+            :param read_method: method contained in the parsing stream class and used to read characters during parsing
+            process (method of stream_class)
+            :param write_method: method contained in the parsing stream class and used to write characters during
+            parsing process (method of stream_class)
+            :param return_method: method contained in the parsing stream class and used to return characters during
+            parsing process (method of stream_class)
+            :param close_method: method contained in the parsing stream class and used to close stream process
+            (method of stream_class)
+            :param seek_method: method contained in the parsing stream class and used for repositioning parsing cursor
+             (method of stream_class)
+            :param kwargs: args used during the parsing stream object creation (with parameters names)
+        """
+
         super(StreamEntity, self).__init__()
         self.streamClass = stream_class
         self.readMethod = read_method
@@ -40,13 +81,33 @@ class StreamEntity(Thread, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def launch(self):
+        """
+            Executes parsing execution with thread mode.
+
+            :return: None
+        """
+
         pass
 
     def _get_stream_object(self):
+        """
+            Gets stream object used during parsing process
+
+            :return: stream object (object)
+        """
+
         return self.streamClass(*self.args, **self.kwargs)
 
     @staticmethod
     def generate_method(stream_object, method_key):
+        """
+            Generates methods from the stream object (see '[...]_method' parameters in __init__ method).
+
+            :param stream_object: stream object (object)
+            :param method_key: [...]_method parameter (str)
+            :return: dedicated method (method) or None
+        """
+
         def none_return():
             return None
 
