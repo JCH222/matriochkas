@@ -213,3 +213,108 @@ Ci-dessous l'exemple entier et condensé:
     print(new_text_1)
     print(new_text_2)
     print(array)
+    
+Mutithreading
+-------------
+
+L'exemple précédent peut être conçu en taches parallèles (hormis la création de l'objet *merged_modification_result*). Une instance de classe *StreamReader*, *StreamWriter* ou *ModificationEntity* correspond donc à un thread spécifique et peut être dépendant des résultats d'un autre thread.
+
+La création des pipelines de parsages est identique à la méthode séquentielle:
+
+    from matriochkas import *
+    
+    text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et ' \
+           'dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip' \
+           'ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu' \
+           'fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt' \
+           'mollit anim id est laborum'
+
+    space_parsing_pattern = ParsingCondition(' ') & (~ParsingCondition('.', rel_position=-1)) & (~ParsingCondition(',', rel_position=-1))
+    punctuation_parsing_pattern = ParsingCondition(', ', key_word='key 1') | ParsingCondition('. ', key_word='key 1')
+
+    word_parsing_pipeline = ((space_parsing_pattern | punctuation_parsing_pattern) >> None) + None
+    sentence_parsing_pipeline = (ParsingCondition('. ') >> None) + None
+    
+Création des instances de classe *StreamReader* et lancement des threads de lecture:
+
+    word_reader = StreamReader(text, result_type=ParsingResultType.REFERENCE)
+    # Lancement du parsage de détection des mots
+    word_reader.launch(word_parsing_pipeline)
+    
+    sentence_reader = LinkedStreamReader(word_reader.get_result())
+    # Lancement du parsage de détection des phrases
+    sentence_reader.launch(sentence_parsing_pipeline)
+    
+La méthode *launch* démarre le thread d'un parsage. Elle est donc non bloquante mais ne retourne rien. C'est pourquoi il est nécessaire d'utiliser la méthode *get_result* (non bloquante pour les instance de la classe *StreamReader* et *ModificationEntity*) à la création de l'objet *sentence_reader*.
+
+Remarque: la méthode *launch* doit toujours être appelée avant la méthode *get_result* pour ne pas avoir une attente infinie.
+
+La création des schémas de modification est identique à l'exemple précédent:
+
+    word_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1, key_word='key 1')
+    sentence_modification_pattern = ModificationRemove() + ModificationAdd('*') + ModificationRemove(rel_position=1)
+
+Démarrage des threads de modification:
+    
+    word_modification_pattern.launch(word_reader.get_result(), thread_ref=word_reader)
+    sentence_modification_pattern.launch(sentence_reader.get_result(), thread_ref=sentence_reader)
+    
+Le paramètre *thread_ref* permet de définir un thread de référence sur lequel se baser pour arrêter le thread de modification. La plupart du temps ce sera l'objet *StreamReader* utilisé pour créer le résultat de parsage en paramètre d'entrée. Le thread de modification s'arrêtera donc au même moment que le thread de l'objet *StreamReader* afin de s'assurer d'avoir entièrement modifié le résultat de parsage initial.
+
+Création des instance de classe *StreamWriter* et démarrage des threads d'écriture:
+
+    word_writer = StreamWriter()
+    word_writer.launch(word_modification_pattern.get_result(), thread_ref=word_modification_pattern)
+
+    sentence_writer = StreamWriter()
+    sentence_writer.launch(sentence_modification_pattern.get_result(), thread_ref=sentence_modification_pattern)
+    
+Après avoir démarrer tous les threads de parsage, il est indispensable de démarrer le thread de l'objet *HandlersConfiguration* qui s'occupe de gérer les accès concurrentiels aux streams:
+
+    HandlersConfiguration.launch()
+    
+Récupération des résultats:
+
+    word_writer.get_result()
+    sentence_writer.get_result()
+    
+La méthode *get_result* de la classe *StreamWriter* est bloquante. Elle attendra la fin de l'execution du thread d'écriture pour retourner un résultat.
+
+Ci-dessous l'exemple entier et condensé:
+
+    from matriochkas import *
+
+    text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et ' \
+           'dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip' \
+           'ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu' \
+           'fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt' \
+           'mollit anim id est laborum'
+
+    space_parsing_pattern = ParsingCondition(' ') & (~ParsingCondition('.', rel_position=-1)) & (~ParsingCondition(',', rel_position=-1))
+    punctuation_parsing_pattern = ParsingCondition(', ', key_word='key 1') | ParsingCondition('. ', key_word='key 1')
+
+    word_parsing_pipeline = ((space_parsing_pattern | punctuation_parsing_pattern) >> None) + None
+    sentence_parsing_pipeline = (ParsingCondition('. ') >> None) + None
+
+    word_reader = StreamReader(text, result_type=ParsingResultType.REFERENCE)
+    word_reader.launch(word_parsing_pipeline)
+
+    sentence_reader = LinkedStreamReader(word_reader.get_result())
+    sentence_reader.launch(sentence_parsing_pipeline)
+
+    word_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1, key_word='key 1')
+    word_modification_pattern.launch(word_reader.get_result(), thread_ref=word_reader)
+
+    sentence_modification_pattern = ModificationRemove() + ModificationAdd('*') + ModificationRemove(rel_position=1)
+    sentence_modification_pattern.launch(sentence_reader.get_result(), thread_ref=sentence_reader)
+
+    word_writer = StreamWriter()
+    word_writer.launch(word_modification_pattern.get_result(), thread_ref=word_modification_pattern)
+
+    sentence_writer = StreamWriter()
+    sentence_writer.launch(sentence_modification_pattern.get_result(), thread_ref=sentence_modification_pattern)
+
+    HandlersConfiguration.launch()
+
+    print(word_writer.get_result())
+    print(sentence_writer.get_result())
