@@ -284,11 +284,12 @@ class StreamReader(StreamEntity):
             >>> # Executes parsing process
             >>> parsing_result = reader.read(pipeline)
             >>> parsing_result
-            {'Stream class': 'StringIO', 'Origin': 'ParsingResultOrigin.READING',
-            'Result type': 'ParsingResultType.VALUE', 'Inputs': "{'args': ('a,b,c,d',), 'kwargs': {}}",
-            'Index result': "[(1, ',', Counter({None: 1})), (3, ',', Counter({None: 1})),
-            (5, ',', Counter({None: 1}))]"}
-
+            Parsing result :
+               Stream class : StringIO
+               Origin : ParsingResultOrigin.READING
+               Result type : ParsingResultType.VALUE
+               Inputs : {'args': ('a,b,c,d',), 'kwargs': {}}
+               Index result : [(1, ',', Counter({None: 1})), (3, ',', Counter({None: 1})), (5, ',', Counter({None: 1}))]
 
             :param parsing_pipeline: parsing pipeline used during parsing process (ParsingPipeline object)
             :param close_stream: closes stream object at the end of the parsing process
@@ -347,6 +348,31 @@ class LinkedStreamReader(StreamReader):
     """
         Reading parsing execution class
         ===============================
+
+        :Example:
+
+        >>> from matriochkas import LinkedStreamReader
+        >>> from matriochkas import ParsingResult
+        >>> from matriochkas import ParsingResultOrigin
+        >>> from matriochkas import ParsingResultType
+        >>> from matriochkas import ParsingCondition
+        >>> from io import StringIO
+        >>> text = "a,b,c,d"
+        >>> # Creates parsing pipeline
+        >>> pipeline = (ParsingCondition(',') >> None) + None
+        >>> # Create parsing result
+        >>> parsing_result = ParsingResult(stream_class=StringIO, origin=ParsingResultOrigin.READING, result_type=ParsingResultType.VALUE, args=('a,b,c,d',), kwargs={}, ar_index=[], read_method='read', write_method='write', return_method='getvalue', close_method='close', seek_method='seek')
+        >>> # Creates stream reader object
+        >>> reader = LinkedStreamReader(parsing_result=parsing_result)
+        >>> # Executes parsing process
+        >>> parsing_result = reader.read(parsing_pipeline=pipeline)
+        >>> parsing_result
+        Parsing result :
+           Stream class : StringIO
+           Origin : ParsingResultOrigin.READING
+           Result type : ParsingResultType.VALUE
+           Inputs : {'args': ('a,b,c,d',), 'kwargs': {}}
+           Index result : [(1, ',', Counter({None: 1})), (3, ',', Counter({None: 1})), (5, ',', Counter({None: 1}))]
 
         Parsing execution class used for stream reading.
     """
