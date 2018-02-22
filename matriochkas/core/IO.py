@@ -123,8 +123,33 @@ class StreamEntity(Thread, metaclass=abc.ABCMeta):
 
 
 class StreamReader(StreamEntity):
+    """
+        Reading parsing execution class
+        ===============================
+
+        Parsing execution class used for stream reading.
+    """
+
     def __init__(self, *args, stream_class=StringIO, result_type=ParsingResultType.VALUE, read_method=None,
                  return_method=None, close_method=None, seek_method=None, **kwargs):
+        """
+            Initialization.
+
+            :param args: args used during the parsing stream object creation (without parameters names)
+            :param stream_class: class used to create parsing stream object (class)
+            :param result_type: parsing result type used to create parsing result object during read method execution
+            (See ParsingResultType class)
+            :param read_method: method contained in the parsing stream class and used to read characters during parsing
+            process (method of stream_class)
+            :param return_method: method contained in the parsing stream class and used to return characters during
+            parsing process (method of stream_class)
+            :param close_method: method contained in the parsing stream class and used to close stream process
+            (method of stream_class)
+            :param seek_method: method contained in the parsing stream class and used for repositioning parsing cursor
+             (method of stream_class)
+            :param kwargs: args used during the parsing stream object creation (with parameters names)
+        """
+
         super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class,
                                            read_method=read_method, return_method=return_method,
                                            close_method=close_method, seek_method=seek_method)
@@ -138,6 +163,12 @@ class StreamReader(StreamEntity):
         self._isInitialized = Event()
 
     def run(self):
+        """
+            Thread used to execute reading parsing process.
+
+            :return: None
+        """
+
         initial_read_method = None
         initial_close_method = None
 
@@ -238,6 +269,14 @@ class StreamReader(StreamEntity):
                     HandlersConfiguration.CLOSING_WRAPPER.arWrapper[initial_close_method].remove(self)
 
     def read(self, parsing_pipeline, close_stream=True):
+        """
+            Executes reading parsing process (sequential).
+
+            :param parsing_pipeline: parsing pipeline used during parsing process (ParsingPipeline object)
+            :param close_stream: closes stream object at the end of the parsing process
+            :return: ParsingResult object
+        """
+
         self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
         self._readResult = {'parsing_result': None, 'error': None}
 
@@ -251,15 +290,34 @@ class StreamReader(StreamEntity):
             raise self._readResult['error']
 
     def launch(self, parsing_pipeline):
+        """
+            Executes reading parsing process (multi-thread).
+
+            :param parsing_pipeline: parsing pipeline used during parsing process (ParsingPipeline object)
+            :return: None
+        """
+
         self.isMultiThreading = True
         self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': False}
         self._readResult = {'parsing_result': None, 'error': None}
         self.start()
 
     def wait_initialization(self):
+        """
+            Waits the ParsingResult object initialization during parsing process.
+
+            :return: None
+        """
+
         self._isInitialized.wait()
 
     def get_result(self):
+        """
+            Gets ParsingResult object generated during parsing process.
+
+            :return: ParsingResult object
+        """
+
         self.wait_initialization()
         if self._readResult['error'] is None:
             return self._readResult['parsing_result']
