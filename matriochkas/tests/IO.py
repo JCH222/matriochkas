@@ -15,10 +15,10 @@ from time import sleep
 
 
 class InstanceStreamEntity(IO.StreamEntity):
-    def __init__(self, name, args, kwargs, stream_class=None, read_method=None, write_method=None,
-                 return_method=None, close_method=None):
-        super(InstanceStreamEntity, self).__init__(args, kwargs, stream_class, read_method, write_method,
-                                                   return_method, close_method)
+    def __init__(self, name, *args, stream_class=None, read_method=None, write_method=None,
+                 return_method=None, close_method=None, **kwargs):
+        super(InstanceStreamEntity, self).__init__(*args, stream_class=stream_class, read_method=read_method, write_method=write_method,
+                                                   return_method=return_method, close_method=close_method, **kwargs)
         self.name = name
 
     def launch(self):
@@ -56,27 +56,15 @@ class SlowErrorStringIO(StringIO):
 
 
 def test_stream_entity():
-    stream_entity = InstanceStreamEntity('entity 1', [], {})
+    stream_entity = InstanceStreamEntity('entity 1')
     assert isinstance(stream_entity, IO.StreamEntity) is True
     assert (stream_entity.name == 'entity 1') is True
     assert stream_entity.streamClass is None
     assert stream_entity.readMethod is None
     assert stream_entity.writeMethod is None
     assert stream_entity.returnMethod is None
-    assert (stream_entity.args == []) is True
+    assert (stream_entity.args == ()) is True
     assert (stream_entity.kwargs == {}) is True
-
-    try:
-        InstanceStreamEntity('entity', None, {})
-        assert False
-    except TypeError:
-        assert True
-
-    try:
-        InstanceStreamEntity('entity', [], None)
-        assert False
-    except TypeError:
-        assert True
 
     ###################################################################################################################
 

@@ -150,7 +150,7 @@ class StreamReader(StreamEntity):
             :param kwargs: args used during the parsing stream object creation (with parameters names)
         """
 
-        super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class,
+        super(StreamReader, self).__init__(*args, **kwargs, stream_class=stream_class,
                                            read_method=read_method, return_method=return_method,
                                            close_method=close_method, seek_method=seek_method)
         if isinstance(result_type, ParsingResultType):
@@ -368,9 +368,9 @@ class LinkedStreamReader(StreamReader):
 class StreamWriter(StreamEntity):
     def __init__(self, *args, stream_class=StringIO, write_method=None, return_method=None, close_method=None,
                  seek_method=None, **kwargs):
-        super(StreamWriter, self).__init__(args, kwargs, stream_class=stream_class, write_method=write_method,
+        super(StreamWriter, self).__init__(*args, stream_class=stream_class, write_method=write_method,
                                            return_method=return_method, close_method=close_method,
-                                           seek_method=seek_method)
+                                           seek_method=seek_method, **kwargs)
 
         self.writeArgs = dict()
         self.writeResult = {'result': None, 'error': None}
