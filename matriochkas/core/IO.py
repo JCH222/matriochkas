@@ -326,7 +326,20 @@ class StreamReader(StreamEntity):
 
 
 class LinkedStreamReader(StreamReader):
+    """
+        Reading parsing execution class
+        ===============================
+
+        Parsing execution class used for stream reading.
+    """
+
     def __init__(self, parsing_result):
+        """
+            Initialization.
+
+            :param parsing_result: Parsing result object used to initialize StreamReader parameters (ParsingResult object)
+        """
+
         if isinstance(parsing_result, ParsingResult):
             super(LinkedStreamReader, self).__init__(*parsing_result.arInput['args'],
                                                      **parsing_result.arInput['kwargs'],
@@ -340,6 +353,12 @@ class LinkedStreamReader(StreamReader):
             raise TypeError('Parsing result has to be ParsingResult object')
 
     def _get_stream_object(self):
+        """
+            Gets stream object used during parsing process
+
+            :return: stream object (object)
+        """
+
         if self.resultType == ParsingResultType.VALUE:
             return self.streamClass(*self.args, **self.kwargs)
         else:
