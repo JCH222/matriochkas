@@ -272,6 +272,24 @@ class StreamReader(StreamEntity):
         """
             Executes reading parsing process (sequential).
 
+            :Example:
+
+            >>> from matriochkas import StreamReader
+            >>> from matriochkas import ParsingCondition
+            >>> text = "a,b,c,d"
+            >>> # Creates parsing pipeline
+            >>> pipeline = (ParsingCondition(',') >> None) + None
+            >>> # Creates stream reader object
+            >>> reader = StreamReader(text)
+            >>> # Executes parsing process
+            >>> parsing_result = reader.read(pipeline)
+            >>> parsing_result
+            {'Stream class': 'StringIO', 'Origin': 'ParsingResultOrigin.READING',
+            'Result type': 'ParsingResultType.VALUE', 'Inputs': "{'args': ('a,b,c,d',), 'kwargs': {}}",
+            'Index result': "[(1, ',', Counter({None: 1})), (3, ',', Counter({None: 1})),
+            (5, ',', Counter({None: 1}))]"}
+
+
             :param parsing_pipeline: parsing pipeline used during parsing process (ParsingPipeline object)
             :param close_stream: closes stream object at the end of the parsing process
             :return: ParsingResult object
