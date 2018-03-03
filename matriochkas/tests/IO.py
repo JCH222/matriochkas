@@ -3,45 +3,68 @@
 from matriochkas.core import IO
 from matriochkas.core import ParsingEntities
 from matriochkas.core import ModificationEntities
+from matriochkas.core.Configuration import HandlersConfiguration
+from matriochkas.core.Wrappers import ReadingWrappersHandler
+from matriochkas.core.Wrappers import ClosingWrappersHandler
 from io import StringIO
 from collections import Counter
+from time import sleep
 
 
 ########################################################################################################################
 
 
 class InstanceStreamEntity(IO.StreamEntity):
-    def __init__(self, name, args, kwargs, stream_class=None, read_method=None, write_method=None,
-                 return_method=None, close_method=None):
-        super(InstanceStreamEntity, self).__init__(args, kwargs, stream_class, read_method, write_method,
-                                                   return_method, close_method)
+    def __init__(self, name, *args, stream_class=None, read_method=None, write_method=None,
+                 return_method=None, close_method=None, **kwargs):
+        super(InstanceStreamEntity, self).__init__(*args, stream_class=stream_class, read_method=read_method, write_method=write_method,
+                                                   return_method=return_method, close_method=close_method, **kwargs)
         self.name = name
+
+    def launch(self):
+        pass
+
+
+########################################################################################################################
+
+class SlowStringIO(StringIO):
+    def __init__(self, *args, **kwargs):
+        super(SlowStringIO, self).__init__(*args, **kwargs)
+
+    def read(self, *args, **kwargs):
+        sleep(0.1)
+        result = super(SlowStringIO, self).read(*args, **kwargs)
+        return result
+
+
+########################################################################################################################
+
+class SlowErrorStringIO(StringIO):
+    def __init__(self, *args, **kwargs):
+        super(SlowErrorStringIO, self).__init__(*args, **kwargs)
+        self.counter = 0
+
+    def read(self, *args, **kwargs):
+        sleep(0.1)
+        self.counter += 1
+        if self.counter <= 100:
+            return super(SlowErrorStringIO, self).read(*args, **kwargs)
+        else:
+            raise ValueError('Unit test error')
 
 ########################################################################################################################
 
 
 def test_stream_entity():
-    stream_entity = InstanceStreamEntity('entity 1', [], {})
+    stream_entity = InstanceStreamEntity('entity 1')
     assert isinstance(stream_entity, IO.StreamEntity) is True
     assert (stream_entity.name == 'entity 1') is True
     assert stream_entity.streamClass is None
     assert stream_entity.readMethod is None
     assert stream_entity.writeMethod is None
     assert stream_entity.returnMethod is None
-    assert (stream_entity.args == []) is True
+    assert (stream_entity.args == ()) is True
     assert (stream_entity.kwargs == {}) is True
-
-    try:
-        InstanceStreamEntity('entity', None, {})
-        assert False
-    except TypeError:
-        assert True
-
-    try:
-        InstanceStreamEntity('entity', [], None)
-        assert False
-    except TypeError:
-        assert True
 
     ###################################################################################################################
 
@@ -53,8 +76,11 @@ def test_stream_entity():
     result = method_1(3)
     assert (result == 'bcd') is True
 
-    method_2 = IO.StreamEntity.generate_method('Unknown object', 'read_method')
-    assert method_2 is None
+    try:
+        IO.StreamEntity.generate_method('Unknown object', 'read_method')
+        assert False
+    except ValueError:
+        assert True
 
     method_3 = IO.StreamEntity.generate_method(stream_object, 'write_method')
     assert (str(type(method_3)) == "<class 'builtin_function_or_method'>") is True
@@ -63,16 +89,22 @@ def test_stream_entity():
     method_3("234")
     assert (stream_object.getvalue() == 'abcd1234ijklmnopqrstuvwxyz') is True
 
-    method_4 = IO.StreamEntity.generate_method('Unknown object', 'write_method')
-    assert method_4 is None
+    try:
+        IO.StreamEntity.generate_method('Unknown object', 'write_method')
+        assert False
+    except ValueError:
+        assert True
 
     method_5 = IO.StreamEntity.generate_method(stream_object, 'return_method')
     assert (str(type(method_5)) == "<class 'builtin_function_or_method'>") is True
     result = method_5()
     assert (result == 'abcd1234ijklmnopqrstuvwxyz') is True
 
-    method_6 = IO.StreamEntity.generate_method('Unknown object', 'return_method')
-    assert method_6 is None
+    try:
+        IO.StreamEntity.generate_method('Unknown object', 'return_method')
+        assert False
+    except ValueError:
+        assert True
 
     stream_object.close()
 
@@ -127,6 +159,123 @@ def test_stream_reader():
     stream_object = stream_entity_2._get_stream_object()
     assert isinstance(stream_object, StringIO) is True
     assert (stream_object.getvalue() == text) is True
+
+    ###################################################################################################################
+
+    HandlersConfiguration.reset_reading_wrapper()
+    HandlersConfiguration.reset_closing_wrapper()
+
+    pipeline_2 = (ParsingEntities.ParsingCondition('in') >> None) + None
+
+    stream_entity_4 = IO.StreamReader(text, stream_class=SlowStringIO,
+                                      result_type=ParsingEntities.ParsingResultType.REFERENCE, read_method='read',
+                                      return_method='return', close_method='close', seek_method='seek')
+    stream_entity_4.launch(pipeline)
+
+    stream_entity_5 = IO.LinkedStreamReader(stream_entity_4.get_result())
+    stream_entity_5.launch(pipeline_2)
+
+    stream_entity_4.wait_initialization()
+    stream_entity_5.wait_initialization()
+
+    HandlersConfiguration.launch()
+
+    sleep(10)
+    stream_entity_6 = IO.LinkedStreamReader(stream_entity_4.get_result())
+    stream_entity_6.launch(pipeline_2)
+
+    sleep(10)
+    assert stream_entity_4.get_result().arIndex == [(26, ',', Counter({None: 2})), (55, ',', Counter({None: 2})),
+                                                    (122, '.', Counter({None: 2})), (147, ',', Counter({None: 2}))]
+    assert stream_entity_5.get_result().arIndex == [(47, 'i', Counter({None: 2})), (79, 'i', Counter({None: 2})),
+                                                   (136, 'i', Counter({None: 2}))]
+    assert stream_entity_6.get_result().arIndex == [(37, 'i', Counter({None: 2}))]
+
+    sleep(10)
+    assert stream_entity_4.get_result().arIndex == [(26, ',', Counter({None: 2})), (55, ',', Counter({None: 2})),
+                                                    (122, '.', Counter({None: 2})), (147, ',', Counter({None: 2})),
+                                                    (230, '.', Counter({None: 2}))]
+    assert stream_entity_5.get_result().arIndex == [(47, 'i', Counter({None: 2})), (79, 'i', Counter({None: 2})),
+                                                    (136, 'i', Counter({None: 2})), (254, 'i', Counter({None: 2})),
+                                                    (271, 'i', Counter({None: 2}))]
+    assert stream_entity_6.get_result().arIndex == [(37, 'i', Counter({None: 2})), (155, 'i', Counter({None: 2})),
+                                                    (172, 'i', Counter({None: 2}))]
+
+    sleep(10)
+    assert stream_entity_4.get_result().arIndex == [(26, ',', Counter({None: 2})), (55, ',', Counter({None: 2})),
+                                                    (122, '.', Counter({None: 2})), (147, ',', Counter({None: 2})),
+                                                    (230, '.', Counter({None: 2})), (333, '.', Counter({None: 2})),
+                                                    (381, ',', Counter({None: 2}))]
+    assert stream_entity_5.get_result().arIndex == [(47, 'i', Counter({None: 2})), (79, 'i', Counter({None: 2})),
+                                                    (136, 'i', Counter({None: 2})), (254, 'i', Counter({None: 2})),
+                                                    (271, 'i', Counter({None: 2})), (346, 'i', Counter({None: 2})),
+                                                    (388, 'i', Counter({None: 2}))]
+    assert stream_entity_6.get_result().arIndex == [(37, 'i', Counter({None: 2})), (155, 'i', Counter({None: 2})),
+                                                    (172, 'i', Counter({None: 2})), (247, 'i', Counter({None: 2})),
+                                                    (289, 'i', Counter({None: 2}))]
+
+    sleep(10)
+    assert stream_entity_4.get_result().arIndex == [(26, ',', Counter({None: 2})), (55, ',', Counter({None: 2})),
+                                                    (122, '.', Counter({None: 2})), (147, ',', Counter({None: 2})),
+                                                    (230, '.', Counter({None: 2})), (333, '.', Counter({None: 2})),
+                                                    (381, ',', Counter({None: 2})), (444, '.', Counter({None: 2}))]
+    assert stream_entity_5.get_result().arIndex == [(47, 'i', Counter({None: 2})), (79, 'i', Counter({None: 2})),
+                                                    (136, 'i', Counter({None: 2})), (254, 'i', Counter({None: 2})),
+                                                    (271, 'i', Counter({None: 2})), (346, 'i', Counter({None: 2})),
+                                                    (388, 'i', Counter({None: 2}))]
+    assert stream_entity_6.get_result().arIndex == [(37, 'i', Counter({None: 2})), (155, 'i', Counter({None: 2})),
+                                                    (172, 'i', Counter({None: 2})), (247, 'i', Counter({None: 2})),
+                                                    (289, 'i', Counter({None: 2}))]
+
+    sleep(10)
+    assert stream_entity_4.get_result().arIndex == [(26, ',', Counter({None: 2})), (55, ',', Counter({None: 2})),
+                                                    (122, '.', Counter({None: 2})), (147, ',', Counter({None: 2})),
+                                                    (230, '.', Counter({None: 2})), (333, '.', Counter({None: 2})),
+                                                    (381, ',', Counter({None: 2})), (444, '.', Counter({None: 2}))]
+    assert stream_entity_5.get_result().arIndex == [(47, 'i', Counter({None: 2})), (79, 'i', Counter({None: 2})),
+                                                    (136, 'i', Counter({None: 2})), (254, 'i', Counter({None: 2})),
+                                                    (271, 'i', Counter({None: 2})), (346, 'i', Counter({None: 2})),
+                                                    (388, 'i', Counter({None: 2}))]
+    assert stream_entity_6.get_result().arIndex == [(37, 'i', Counter({None: 2})), (155, 'i', Counter({None: 2})),
+                                                    (172, 'i', Counter({None: 2})), (247, 'i', Counter({None: 2})),
+                                                    (289, 'i', Counter({None: 2}))]
+
+    ###################################################################################################################
+
+    HandlersConfiguration.reset_reading_wrapper()
+    HandlersConfiguration.reset_closing_wrapper()
+
+    stream_entity_7 = IO.StreamReader(text, stream_class=SlowStringIO,
+                                      result_type=ParsingEntities.ParsingResultType.REFERENCE, read_method='read',
+                                      return_method='return', close_method='close', seek_method='seek')
+    stream_entity_7.launch(pipeline)
+
+    stream_entity_8 = IO.StreamReader(text, stream_class=SlowErrorStringIO,
+                                      result_type=ParsingEntities.ParsingResultType.REFERENCE, read_method='read',
+                                      return_method='return', close_method='close', seek_method='seek')
+    stream_entity_8.launch(pipeline_2)
+
+    stream_entity_7.wait_initialization()
+    stream_entity_8.wait_initialization()
+
+    HandlersConfiguration.launch()
+
+    sleep(5)
+
+    assert stream_entity_7.get_result().arIndex == [(26, ',', Counter({None: 2}))]
+    assert stream_entity_8.get_result().arIndex == [(47, 'i', Counter({None: 2}))]
+
+    sleep(55)
+
+    assert stream_entity_7.get_result().arIndex == [(26, ',', Counter({None: 2})), (55, ',', Counter({None: 2})),
+                                                    (122, '.', Counter({None: 2})), (147, ',', Counter({None: 2})),
+                                                    (230, '.', Counter({None: 2})), (333, '.', Counter({None: 2})),
+                                                    (381, ',', Counter({None: 2})), (444, '.', Counter({None: 2}))]
+    try:
+        stream_entity_8.get_result().arIndex
+        assert False
+    except ValueError:
+        assert True
 
 
 def test_linked_stream_reader():
@@ -240,3 +389,15 @@ def test_stream_writer():
         assert False
     except TypeError:
         assert True
+
+    ###################################################################################################################
+
+    HandlersConfiguration.reset_reading_wrapper()
+    HandlersConfiguration.reset_closing_wrapper()
+
+    stream_entity_2 = IO.StreamWriter()
+    stream_entity_2.launch(parsing_result)
+
+    HandlersConfiguration.launch()
+
+    assert (stream_entity_2.get_result() == text_result) is True

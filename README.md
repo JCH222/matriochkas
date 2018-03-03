@@ -1,4 +1,6 @@
-﻿Matriochkas
+﻿<img align="left" src="MatriochkasLogo.png" alt="Matriochkas logo" width="75" height="75">
+ 
+ Matriochkas
 ===========
 
 Qu'est ce que c'est ?
@@ -18,9 +20,10 @@ Matriochkas permet de conçevoir des schémas de parsage ou de modification sur 
 Exemple
 -------
 
-L'objectif est double:  
+L'objectif est triple:  
 - Détecter les mots du texte et les séparer par un point-virgule :
-- Détecter les phrases du texte et les séparer par un point-virgule :
+- Détecter les phrases du texte et les séparer par une étoile :
+- Obtenir un tableau de dimension 2 contenant les mots de chaque phrase :
 
 Ci-dessous le texte à parser:
 
@@ -105,10 +108,10 @@ Création du résulat de parsage modifié pour la détection des mots:
 
 Le paramère *key_word* dans les schémas de modifition permet d'éffectuer certaines modifications uniquement lorsque le tuple du résultat de parsage possède ce mot clé. Dans cet exemple, on souhaite supprimer le caractère suivant le curseur uniquement dans le cas où une ponctuation a été détectée (un espace).
 
-Création du résulat de parsage modifié pour la détection des phrases:
+Création du résultat de parsage modifié pour la détection des phrases:
 
     #Création du schéma de modification
-    sentence_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1)
+    sentence_modification_pattern = ModificationRemove() + ModificationAdd('*') + ModificationRemove(rel_position=1)
 
     #Application de la modification au résultat de parsage précédent
     sentence_final_parsing_result = sentence_modification_pattern.generate_parsing_result(sentence_parsing_result)
@@ -129,7 +132,7 @@ On obtient deux nouveaux résultats de parsage (la variable *word_final_parsing_
         Origin : ParsingResultOrigin.MODIFICATION
         Result type : ParsingResultType.REFERENCE
         Inputs : {'args': (), 'kwargs': {'reference': <_io.StringIO object at 0x00468D50>}}
-        Index result : [(123, ''), (123, ';', <ModificationSide.RIGHT: 1>), ...]
+        Index result : [(123, ''), (123, '*', <ModificationSide.RIGHT: 1>), ...]
         
 Création des textes modifiés:
 
@@ -139,19 +142,43 @@ Création des textes modifiés:
     
     #Création des textes modifiés
     new_text_1 = word_writer.write(word_final_parsing_result, close_reading_stream=False)
-    new_text_2 = sentence_writer.write(sentence_final_parsing_result, close_reading_stream=True)
+    new_text_2 = sentence_writer.write(sentence_final_parsing_result, close_reading_stream=False)
     
-On obtient ces textes:
+Création de la convergence des deux resultats de parsages modifiés précédents (*sentence_final_parsing_result* et *word_final_parsing_result*).
+
+    merged_modification_result = sentence_final_parsing_result + word_final_parsing_result
+    
+Dans le cas où deux positions sont identiques dans les deux résultats de parsages, la position dans le premier opérande (dans ce cas *sentence_final_parsing_result*) sera gardée. Dans ce cas, cette condition permet de supprimer les séparations des mots de fin de phrase (;) et de les remplacer par des séparations de phrases (*):
+    
+    Parsing result :
+        Stream class : StringIO
+        Origin : ParsingResultOrigin.MODIFICATION
+        Result type : ParsingResultType.REFERENCE
+        Inputs : {'args': (), 'kwargs': {'reference': <_io.StringIO object at 0x051F6080>}}
+        Index result : [(5, ''), (5, ';', <ModificationSide.RIGHT: 1>), (11, ''), (11, ';', <ModificationSide.RIGHT: 1>), ..., (122, ''), (122, '*', <ModificationSide.RIGHT: 1>), ...]
+
+Création du tableau:
+
+    array = StreamWriter(stream_class=StreamTwoDimDeque, column_separator=';', row_separator='*').write(merged_modification_result, close_reading_stream=True)
+    
+La classe *StreamWriter* génère par défaut une chaine de caractères (*str*) à l'appel de la méthode *write*. Il est donc nécessaire d'utiliser le paramètre *stream_class* lors de la création d'une instance avec comme valeur la classe *StreamTwoDimDeque* (classe qui nécessite à l'instanciation deux paramètres : *column_separator*, le caractère de séparation des colonnes] et *row_separator*, le caractère de séparation des lignes.
+    
+On obtient ces textes et ce tableau:
 
     Lorem;ipsum;dolor;sit;amet;consectetur;adipiscing;elit;sed;do;eiusmod;tempor;incididunt;ut;labore;et;dolore;magna;aliqua;
     Ut;enim;ad;minim;veniam;quis;nostrud;exercitation;ullamco;laboris;nisi;ut;aliquip;ex;ea;commodo;consequat;Duis;aute;irure;
     dolor;in;reprehenderit;in;voluptate;velit;esse;cillum;dolore;eu;fugiat;nulla;pariatur;Excepteur;sint;occaecat;cupidatat;non;
     proident;sunt;in;culpa;qui;officia;deserunt;mollit;anim;id;est;laborum
     
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua;
-    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat;
-    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur;
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua*
+    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat*
+    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur*
     Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+    
+    deque([ deque(['Lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore', 'magna', 'aliqua']), 
+            deque(['Ut', 'enim', 'ad', 'minim', 'veniam', 'quis', 'nostrud', 'exercitation', 'ullamco', 'laboris', 'nisi', 'ut', 'aliquipex', 'ea', 'commodo', 'consequat']), 
+            deque(['Duis', 'aute', 'irure', 'dolor', 'in', 'reprehenderit', 'in', 'voluptate', 'velit', 'esse', 'cillum', 'dolore', 'eufugiat', 'nulla', 'pariatur']), 
+            deque(['Excepteur', 'sint', 'occaecat', 'cupidatat', 'non', 'proident', 'sunt', 'in', 'culpa', 'qui', 'officia', 'deseruntmollit', 'anim', 'id', 'est', 'laborum'])])
     
 Ci-dessous l'exemple entier et condensé:
 
@@ -175,11 +202,119 @@ Ci-dessous l'exemple entier et condensé:
     word_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1, key_word='key 1')
     word_final_parsing_result = word_modification_pattern.generate_parsing_result(word_parsing_result)
 
-    sentence_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1)
+    sentence_modification_pattern = ModificationRemove() + ModificationAdd('*') + ModificationRemove(rel_position=1)
     sentence_final_parsing_result = sentence_modification_pattern.generate_parsing_result(sentence_parsing_result)
+    merged_modification_result = sentence_final_parsing_result + word_final_parsing_result
 
     new_text_1 = StreamWriter().write(word_final_parsing_result, close_reading_stream=False)
-    new_text_2 = StreamWriter().write(sentence_final_parsing_result, close_reading_stream=True)
+    new_text_2 = StreamWriter().write(sentence_final_parsing_result, close_reading_stream=False)
+    array = StreamWriter(stream_class=StreamTwoDimDeque, column_separator=';', row_separator='*').write(merged_modification_result, close_reading_stream=True)
 
     print(new_text_1)
     print(new_text_2)
+    print(array)
+    
+Mutithreading
+-------------
+
+L'exemple précédent peut être conçu en taches parallèles (hormis la création de l'objet *merged_modification_result*). Une instance de classe *StreamReader*, *StreamWriter* ou *ModificationEntity* correspond donc à un thread spécifique et peut être dépendant des résultats d'un autre thread.
+
+La création des pipelines de parsages est identique à la méthode séquentielle:
+
+    from matriochkas import *
+    
+    text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et ' \
+           'dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip' \
+           'ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu' \
+           'fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt' \
+           'mollit anim id est laborum'
+
+    space_parsing_pattern = ParsingCondition(' ') & (~ParsingCondition('.', rel_position=-1)) & (~ParsingCondition(',', rel_position=-1))
+    punctuation_parsing_pattern = ParsingCondition(', ', key_word='key 1') | ParsingCondition('. ', key_word='key 1')
+
+    word_parsing_pipeline = ((space_parsing_pattern | punctuation_parsing_pattern) >> None) + None
+    sentence_parsing_pipeline = (ParsingCondition('. ') >> None) + None
+    
+Création des instances de classe *StreamReader* et lancement des threads de lecture:
+
+    word_reader = StreamReader(text, result_type=ParsingResultType.REFERENCE)
+    # Lancement du parsage de détection des mots
+    word_reader.launch(word_parsing_pipeline)
+    
+    sentence_reader = LinkedStreamReader(word_reader.get_result())
+    # Lancement du parsage de détection des phrases
+    sentence_reader.launch(sentence_parsing_pipeline)
+    
+La méthode *launch* démarre le thread d'un parsage. Elle est donc non bloquante mais ne retourne rien. C'est pourquoi il est nécessaire d'utiliser la méthode *get_result* (non bloquante pour les instance de la classe *StreamReader* et *ModificationEntity*) à la création de l'objet *sentence_reader*.
+
+Remarque: la méthode *launch* doit toujours être appelée avant la méthode *get_result* pour ne pas avoir une attente infinie.
+
+La création des schémas de modification est identique à l'exemple précédent:
+
+    word_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1, key_word='key 1')
+    sentence_modification_pattern = ModificationRemove() + ModificationAdd('*') + ModificationRemove(rel_position=1)
+
+Démarrage des threads de modification:
+    
+    word_modification_pattern.launch(word_reader.get_result(), thread_ref=word_reader)
+    sentence_modification_pattern.launch(sentence_reader.get_result(), thread_ref=sentence_reader)
+    
+Le paramètre *thread_ref* permet de définir un thread de référence sur lequel se baser pour arrêter le thread de modification. La plupart du temps ce sera l'objet *StreamReader* utilisé pour créer le résultat de parsage en paramètre d'entrée. Le thread de modification s'arrêtera donc au même moment que le thread de l'objet *StreamReader* afin de s'assurer d'avoir entièrement modifié le résultat de parsage initial.
+
+Création des instance de classe *StreamWriter* et démarrage des threads d'écriture:
+
+    word_writer = StreamWriter()
+    word_writer.launch(word_modification_pattern.get_result(), thread_ref=word_modification_pattern)
+
+    sentence_writer = StreamWriter()
+    sentence_writer.launch(sentence_modification_pattern.get_result(), thread_ref=sentence_modification_pattern)
+    
+Après avoir démarrer tous les threads de parsage, il est indispensable de démarrer le thread de l'objet *HandlersConfiguration* qui s'occupe de gérer les accès concurrentiels aux streams:
+
+    HandlersConfiguration.launch()
+    
+Récupération des résultats:
+
+    word_writer.get_result()
+    sentence_writer.get_result()
+    
+La méthode *get_result* de la classe *StreamWriter* est bloquante. Elle attendra la fin de l'execution du thread d'écriture pour retourner un résultat.
+
+Ci-dessous l'exemple entier et condensé:
+
+    from matriochkas import *
+
+    text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et ' \
+           'dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip' \
+           'ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu' \
+           'fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt' \
+           'mollit anim id est laborum'
+
+    space_parsing_pattern = ParsingCondition(' ') & (~ParsingCondition('.', rel_position=-1)) & (~ParsingCondition(',', rel_position=-1))
+    punctuation_parsing_pattern = ParsingCondition(', ', key_word='key 1') | ParsingCondition('. ', key_word='key 1')
+
+    word_parsing_pipeline = ((space_parsing_pattern | punctuation_parsing_pattern) >> None) + None
+    sentence_parsing_pipeline = (ParsingCondition('. ') >> None) + None
+
+    word_reader = StreamReader(text, result_type=ParsingResultType.REFERENCE)
+    word_reader.launch(word_parsing_pipeline)
+
+    sentence_reader = LinkedStreamReader(word_reader.get_result())
+    sentence_reader.launch(sentence_parsing_pipeline)
+
+    word_modification_pattern = ModificationRemove() + ModificationAdd(';') + ModificationRemove(rel_position=1, key_word='key 1')
+    word_modification_pattern.launch(word_reader.get_result(), thread_ref=word_reader)
+
+    sentence_modification_pattern = ModificationRemove() + ModificationAdd('*') + ModificationRemove(rel_position=1)
+    sentence_modification_pattern.launch(sentence_reader.get_result(), thread_ref=sentence_reader)
+
+    word_writer = StreamWriter()
+    word_writer.launch(word_modification_pattern.get_result(), thread_ref=word_modification_pattern)
+
+    sentence_writer = StreamWriter()
+    sentence_writer.launch(sentence_modification_pattern.get_result(), thread_ref=sentence_modification_pattern)
+
+    HandlersConfiguration.launch()
+
+    print(word_writer.get_result())
+    print(sentence_writer.get_result())

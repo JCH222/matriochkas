@@ -569,7 +569,7 @@ def test_parsing_structure():
 def test_parsing_pipeline():
     parsing_pipeline_1 = ParsingEntities.ParsingPipeline(InstanceParsingStructure('structure 1'))
     assert (len(parsing_pipeline_1.arParsingStructure) == 1) is True
-    assert (parsing_pipeline_1.current_parsing_block_index == 0) is True
+    assert (parsing_pipeline_1.current_parsing_structure_index == 0) is True
     assert parsing_pipeline_1.isEnded is False
 
     try:
@@ -581,13 +581,13 @@ def test_parsing_pipeline():
     ###################################################################################################################
 
     parsing_pipeline_1.add_structure(ParsingEntities.ParsingPipeline(InstanceParsingStructure('structure 2')))
-    assert (parsing_pipeline_1.current_parsing_block_index == 0) is True
+    assert (parsing_pipeline_1.current_parsing_structure_index == 0) is True
     assert parsing_pipeline_1.isEnded is False
     assert (parsing_pipeline_1.check(None, None) == ((True, Counter({None: 1})), (True, Counter({None: 1})))) is True
-    assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
+    assert (parsing_pipeline_1.current_parsing_structure_index == 1) is True
     assert parsing_pipeline_1.isEnded is False
     assert (parsing_pipeline_1.check(None, None) == ((True, Counter({None: 1})), (True, Counter({None: 1})))) is True
-    assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
+    assert (parsing_pipeline_1.current_parsing_structure_index == 1) is True
     assert parsing_pipeline_1.isEnded is True
     assert parsing_pipeline_1.check(None, None) is None
 
@@ -611,10 +611,10 @@ def test_parsing_pipeline():
     ###################################################################################################################
 
     assert parsing_pipeline_1.isEnded is True
-    assert (parsing_pipeline_1.current_parsing_block_index == 1) is True
+    assert (parsing_pipeline_1.current_parsing_structure_index == 1) is True
     parsing_pipeline_1.reset()
     assert parsing_pipeline_1.isEnded is False
-    assert (parsing_pipeline_1.current_parsing_block_index == 0) is True
+    assert (parsing_pipeline_1.current_parsing_structure_index == 0) is True
 
 
 def test_parsing_block():
@@ -659,7 +659,10 @@ def test_parsing_result():
                                                      ParsingEntities.ParsingResultType.VALUE,
                                                      'read method 1', 'write method 1', 'return method 1',
                                                      'close method 1', 'seek method 1', ['arg a', 'arg b'],
-                                                     {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                                     {'arg c': 'c', 'arg d': 'd'}, [(0, 'A',
+                                                                                     Counter({None: 1, 'key 1': 2})),
+                                                                                    (2, 'B',
+                                                                                     Counter({None: 3, 'key 2': 4}))])
     assert (parsing_result_1.streamClass == MockStreamClass) is True
     assert (parsing_result_1.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_1.resultType == ParsingEntities.ParsingResultType.VALUE) is True
@@ -668,13 +671,15 @@ def test_parsing_result():
     assert (parsing_result_1.returnMethod == 'return method 1') is True
     assert (parsing_result_1.seekMethod == 'seek method 1') is True
     assert (parsing_result_1.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
-    assert (parsing_result_1.arIndex == [(0, 'A'), (2, 'B')])
+    assert (parsing_result_1.arIndex == [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                         (2, 'B', Counter({None: 3, 'key 2': 4}))])
 
     try:
         ParsingEntities.ParsingResult(None, ParsingEntities.ParsingResultOrigin.READING,
                                       ParsingEntities.ParsingResultType.VALUE, 'read method', 'write method',
                                       'return method', 'close method', ['arg a', 'arg b'],
-                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                                                     (2, 'B', Counter({None: 3, 'key 2': 4}))])
         assert False
     except TypeError:
         assert True
@@ -683,7 +688,8 @@ def test_parsing_result():
         ParsingEntities.ParsingResult(MockStreamClass, None, ParsingEntities.ParsingResultType.VALUE,
                                       'read method', 'write method', 'return method',
                                       'close method', ['arg a', 'arg b'],
-                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                                                     (2, 'B', Counter({None: 3, 'key 2': 4}))])
         assert False
     except TypeError:
         assert True
@@ -692,7 +698,8 @@ def test_parsing_result():
         ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING, None,
                                       'read method', 'write method', 'return method',
                                       'close method', ['arg a', 'arg b'],
-                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                                                     (2, 'B', Counter({None: 3, 'key 2': 4}))])
         assert False
     except TypeError:
         assert True
@@ -701,7 +708,8 @@ def test_parsing_result():
         ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                       ParsingEntities.ParsingResultType.VALUE, 'read method',
                                       'write method', 'return method', 'close method',
-                                      None, {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                      None, {'arg c': 'c', 'arg d': 'd'}, [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                                                           (2, 'B', Counter({None: 3, 'key 2': 4}))])
         assert False
     except TypeError:
         assert True
@@ -710,7 +718,8 @@ def test_parsing_result():
         ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                       ParsingEntities.ParsingResultType.VALUE,
                                       'read method', 'write method', 'return method', 'close method',
-                                      ['arg a', 'arg b'], None, [(0, 'A'), (2, 'B')])
+                                      ['arg a', 'arg b'], None, [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                                                 (2, 'B', Counter({None: 3, 'key 2': 4}))])
         assert False
     except TypeError:
         assert True
@@ -728,7 +737,10 @@ def test_parsing_result():
         ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                       ParsingEntities.ParsingResultType.VALUE,
                                       0, 'write method', 'return method', ['arg a', 'arg b'],
-                                      'close method', {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                      'close method', {'arg c': 'c', 'arg d': 'd'}, [(0, 'A',
+                                                                                      Counter({None: 1, 'key 1': 2})),
+                                                                                     (2, 'B',
+                                                                                      Counter({None: 3, 'key 2': 4}))])
         assert False
     except TypeError:
         assert True
@@ -737,7 +749,10 @@ def test_parsing_result():
         ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                       ParsingEntities.ParsingResultType.VALUE,
                                       'read method', 0, 'return method', 'close method',
-                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A',
+                                                                                          Counter({None: 1, 'key 1': 2})),
+                                                                                         (2, 'B',
+                                                                                          Counter({None: 3, 'key 2': 4}))])
         assert False
     except TypeError:
         assert True
@@ -746,7 +761,10 @@ def test_parsing_result():
         ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                       ParsingEntities.ParsingResultType.VALUE,
                                       'read method', 'write method', 0, 'close method',
-                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A',
+                                                                                          Counter({None: 1, 'key 1': 2})),
+                                                                                         (2, 'B',
+                                                                                          Counter({None: 3, 'key 2': 4}))])
         assert False
     except TypeError:
         assert True
@@ -755,7 +773,10 @@ def test_parsing_result():
         ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                       ParsingEntities.ParsingResultType.VALUE,
                                       'read method', 'write method', 'return method', 0,
-                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'}, [(0, 'A',
+                                                                                          Counter({None: 1, 'key 1': 2})),
+                                                                                         (2, 'B',
+                                                                                          Counter({None: 3, 'key 2': 4}))])
         assert False
     except TypeError:
         assert True
@@ -764,7 +785,10 @@ def test_parsing_result():
                                                      ParsingEntities.ParsingResultType.VALUE,
                                                      None, 'write method 2', 'return method 2',
                                                      'close method 2', 'seek method 2', ['arg a', 'arg b'],
-                                                     {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                                     {'arg c': 'c', 'arg d': 'd'}, [(0, 'A',
+                                                                                     Counter({None: 1, 'key 1': 2})),
+                                                                                    (2, 'B',
+                                                                                     Counter({None: 3, 'key 2': 4}))])
     assert (parsing_result_2.streamClass == MockStreamClass) is True
     assert (parsing_result_2.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_2.resultType == ParsingEntities.ParsingResultType.VALUE) is True
@@ -774,14 +798,16 @@ def test_parsing_result():
     assert (parsing_result_2.closeMethod == 'close method 2') is True
     assert (parsing_result_2.seekMethod == 'seek method 2') is True
     assert (parsing_result_2.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
-    assert (parsing_result_2.arIndex == [(0, 'A'), (2, 'B')])
+    assert (parsing_result_2.arIndex == [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                         (2, 'B', Counter({None: 3, 'key 2': 4}))])
 
     parsing_result_3 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                                      ParsingEntities.ParsingResultType.VALUE,
                                                      'read method 3', None, 'return method 3',
                                                      'close method 3', 'seek method 3',
                                                      ['arg a', 'arg b'], {'arg c': 'c', 'arg d': 'd'},
-                                                     [(0, 'A'), (2, 'B')])
+                                                     [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                                      (2, 'B', Counter({None: 3, 'key 2': 4}))])
     assert (parsing_result_3.streamClass == MockStreamClass) is True
     assert (parsing_result_3.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_3.resultType == ParsingEntities.ParsingResultType.VALUE) is True
@@ -791,14 +817,16 @@ def test_parsing_result():
     assert (parsing_result_3.closeMethod == 'close method 3') is True
     assert (parsing_result_3.seekMethod == 'seek method 3') is True
     assert (parsing_result_3.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
-    assert (parsing_result_3.arIndex == [(0, 'A'), (2, 'B')])
+    assert (parsing_result_3.arIndex == [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                         (2, 'B', Counter({None: 3, 'key 2': 4}))])
 
     parsing_result_4 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                                      ParsingEntities.ParsingResultType.VALUE,
                                                      'read method 4', 'write method 4', None,
                                                      'close method 4', 'seek method 4', ['arg a', 'arg b'],
                                                      {'arg c': 'c', 'arg d': 'd'},
-                                                     [(0, 'A'), (2, 'B')])
+                                                     [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                                      (2, 'B', Counter({None: 3, 'key 2': 4}))])
     assert (parsing_result_4.streamClass == MockStreamClass) is True
     assert (parsing_result_4.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_4.resultType == ParsingEntities.ParsingResultType.VALUE) is True
@@ -808,13 +836,16 @@ def test_parsing_result():
     assert (parsing_result_4.closeMethod == 'close method 4') is True
     assert (parsing_result_4.seekMethod == 'seek method 4') is True
     assert (parsing_result_4.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
-    assert (parsing_result_4.arIndex == [(0, 'A'), (2, 'B')])
+    assert (parsing_result_4.arIndex == [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                         (2, 'B', Counter({None: 3, 'key 2': 4}))])
 
     parsing_result_8 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                                      ParsingEntities.ParsingResultType.VALUE,
                                                      'read method 8', 'write method 8',
                                                      'return method 8', None, 'seek method 8', ['arg a', 'arg b'],
-                                                     {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                                     {'arg c': 'c', 'arg d': 'd'},
+                                                     [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                                      (2, 'B', Counter({None: 3, 'key 2': 4}))])
     assert (parsing_result_8.streamClass == MockStreamClass) is True
     assert (parsing_result_8.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_8.resultType == ParsingEntities.ParsingResultType.VALUE) is True
@@ -824,13 +855,16 @@ def test_parsing_result():
     assert parsing_result_8.closeMethod is None
     assert (parsing_result_8.seekMethod == 'seek method 8')
     assert (parsing_result_8.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
-    assert (parsing_result_8.arIndex == [(0, 'A'), (2, 'B')])
+    assert (parsing_result_8.arIndex == [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                         (2, 'B', Counter({None: 3, 'key 2': 4}))])
 
     parsing_result_9 = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                                      ParsingEntities.ParsingResultType.VALUE,
                                                      'read method 9', 'write method 9',
                                                      'return method 9', 'close method 9', None, ['arg a', 'arg b'],
-                                                     {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                                     {'arg c': 'c', 'arg d': 'd'},
+                                                     [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                                      (2, 'B', Counter({None: 3, 'key 2': 4}))])
     assert (parsing_result_9.streamClass == MockStreamClass) is True
     assert (parsing_result_9.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_9.resultType == ParsingEntities.ParsingResultType.VALUE) is True
@@ -840,7 +874,8 @@ def test_parsing_result():
     assert (parsing_result_9.closeMethod == 'close method 9') is True
     assert parsing_result_9.seekMethod is None
     assert (parsing_result_9.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
-    assert (parsing_result_9.arIndex == [(0, 'A'), (2, 'B')])
+    assert (parsing_result_9.arIndex == [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                         (2, 'B', Counter({None: 3, 'key 2': 4}))])
 
     ###################################################################################################################
 
@@ -849,13 +884,19 @@ def test_parsing_result():
                                                       'read method 1', 'write method 1',
                                                       'return method 1', 'close method 1', 'seek method 1',
                                                       ['arg a', 'arg b'],
-                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A'), (2, 'B')])
+                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'A',
+                                                                                      Counter({None: 1, 'key 1': 2})),
+                                                                                     (2, 'B',
+                                                                                      Counter({None: 3, 'key 2': 4}))])
     parsing_result_5b = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                                       ParsingEntities.ParsingResultType.VALUE,
                                                       'read method 1', 'write method 1',
                                                       'return method 1', 'close method 1', 'seek method 1',
                                                       ['arg a', 'arg b'],
-                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
+                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C',
+                                                                                      Counter({None: 1, 'key 1': 2})),
+                                                                                     (4, 'D',
+                                                                                      Counter({None: 7, 'key 4': 8}))])
     parsing_result_5 = parsing_result_5a + parsing_result_5b
     assert (parsing_result_5.streamClass == MockStreamClass) is True
     assert (parsing_result_5.origin == ParsingEntities.ParsingResultOrigin.READING) is True
@@ -866,14 +907,19 @@ def test_parsing_result():
     assert (parsing_result_5.closeMethod == 'close method 1') is True
     assert (parsing_result_5.seekMethod == 'seek method 1') is True
     assert (parsing_result_5.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
-    assert (parsing_result_5.arIndex == [(0, 'A'), (2, 'B'), (4, 'D')])
+    assert (parsing_result_5.arIndex == [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                         (2, 'B', Counter({None: 3, 'key 2': 4})),
+                                         (4, 'D', Counter({None: 7, 'key 4': 8}))])
 
     parsing_result_5c = ParsingEntities.ParsingResult(MockStreamClass, ParsingEntities.ParsingResultOrigin.READING,
                                                       ParsingEntities.ParsingResultType.VALUE,
                                                       'read method 1', 'write method 1',
                                                       'return method 1', 'close method 1', 'seek method 1',
                                                       ['arg e', 'arg f'],
-                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
+                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C',
+                                                                                      Counter({None: 1, 'key 1': 2})),
+                                                                                     (4, 'D',
+                                                                                      Counter({None: 7, 'key 4': 8}))])
     try:
         parsing_result_5a + parsing_result_5c
         assert False
@@ -885,7 +931,10 @@ def test_parsing_result():
                                                       'read method 2', 'write method 1',
                                                       'return method 1', 'close method 1', 'seek method 1',
                                                       ['arg a', 'arg b'],
-                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
+                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C',
+                                                                                      Counter({None: 1, 'key 1': 2})),
+                                                                                     (4, 'D',
+                                                                                      Counter({None: 7, 'key 4': 8}))])
     try:
         parsing_result_5a + parsing_result_5d
         assert False
@@ -897,7 +946,10 @@ def test_parsing_result():
                                                       'read method 1', 'write method 2',
                                                       'return method 1', 'close method 1', 'seek method 1',
                                                       ['arg a', 'arg b'],
-                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
+                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C',
+                                                                                      Counter({None: 1, 'key 1': 2})),
+                                                                                     (4, 'D',
+                                                                                      Counter({None: 7, 'key 4': 8}))])
     try:
         parsing_result_5a + parsing_result_5e
         assert False
@@ -909,7 +961,10 @@ def test_parsing_result():
                                                       'read method 1', 'write method 1',
                                                       'return method 2', 'close method 1', 'seek method 1',
                                                       ['arg a', 'arg b'],
-                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
+                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C',
+                                                                                      Counter({None: 1, 'key 1': 2})),
+                                                                                     (4, 'D',
+                                                                                      Counter({None: 7, 'key 4': 8}))])
     try:
         parsing_result_5a + parsing_result_5f
         assert False
@@ -921,7 +976,10 @@ def test_parsing_result():
                                                       'read method 1', 'write method 1',
                                                       'return method 1', 'close method 2', 'seek method 1',
                                                       ['arg a', 'arg b'],
-                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
+                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C',
+                                                                                      Counter({None: 1, 'key 1': 2})),
+                                                                                     (4, 'D',
+                                                                                      Counter({None: 7, 'key 4': 8}))])
     try:
         parsing_result_5a + parsing_result_5h
         assert False
@@ -933,7 +991,10 @@ def test_parsing_result():
                                                       'read method 1', 'write method 1',
                                                       'return method 1', 'close method 1', 'seek method 2',
                                                       ['arg a', 'arg b'],
-                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
+                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C',
+                                                                                      Counter({None: 1, 'key 1': 2})),
+                                                                                     (4, 'D',
+                                                                                      Counter({None: 7, 'key 4': 8}))])
     try:
         parsing_result_5a + parsing_result_5i
         assert False
@@ -945,7 +1006,10 @@ def test_parsing_result():
                                                       'read method 1', 'write method 1',
                                                       'return method 1', 'close method 1', 'seek method 1',
                                                       ['arg a', 'arg b'],
-                                                      {'arg d': 'd', 'arg e': 'e'}, [(0, 'C'), (4, 'D')])
+                                                      {'arg d': 'd', 'arg e': 'e'}, [(0, 'C',
+                                                                                      Counter({None: 1, 'key 1': 2})),
+                                                                                     (4, 'D',
+                                                                                      Counter({None: 7, 'key 4': 8}))])
     try:
         parsing_result_5a + parsing_result_5g
         assert False
@@ -957,7 +1021,10 @@ def test_parsing_result():
                                                       'read method 1', 'write method 1',
                                                       'return method 1', 'close method 1', 'seek method 1',
                                                       ['arg a', 'arg b'],
-                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C'), (4, 'D')])
+                                                      {'arg c': 'c', 'arg d': 'd'}, [(0, 'C',
+                                                                                      Counter({None: 1, 'key 1': 2})),
+                                                                                     (4, 'D',
+                                                                                      Counter({None: 7, 'key 4': 8}))])
     try:
         parsing_result_5a + parsing_result_5h
         assert False
@@ -982,7 +1049,7 @@ def test_parsing_result():
     assert (parsing_result_10.closeMethod == 'close method 1') is True
     assert (parsing_result_10.seekMethod == 'seek method 1') is True
     assert (parsing_result_10.arInput == {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
-    assert (parsing_result_10.arIndex == [(2, 'B')])
+    assert (parsing_result_10.arIndex == [(2, 'B', Counter({None: 3, 'key 2': 4}))])
 
     try:
         parsing_result_5a - parsing_result_5c
@@ -1079,7 +1146,8 @@ def test_parsing_result():
     assert (copy_parsing_result_1.seekMethod == 'seek method 1') is True
     assert (copy_parsing_result_1.arInput ==
             {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
-    assert (copy_parsing_result_1.arIndex == [(0, 'A'), (2, 'B')])
+    assert (copy_parsing_result_1.arIndex == [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                              (2, 'B', Counter({None: 3, 'key 2': 4}))])
     copy_parsing_result_1.arInput = {'args': ['arg c', 'arg d'], 'kwargs': {'arg e': 'e', 'arg f': 'f'}}
     assert (copy_parsing_result_1.streamClass == MockStreamClass) is True
     assert (copy_parsing_result_1.origin == ParsingEntities.ParsingResultOrigin.READING) is True
@@ -1091,7 +1159,8 @@ def test_parsing_result():
     assert (copy_parsing_result_1.seekMethod == 'seek method 1') is True
     assert (copy_parsing_result_1.arInput ==
             {'args': ['arg c', 'arg d'], 'kwargs': {'arg e': 'e', 'arg f': 'f'}}) is True
-    assert (copy_parsing_result_1.arIndex == [(0, 'A'), (2, 'B')])
+    assert (copy_parsing_result_1.arIndex == [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                              (2, 'B', Counter({None: 3, 'key 2': 4}))])
     assert (parsing_result_1.streamClass == MockStreamClass) is True
     assert (parsing_result_1.origin == ParsingEntities.ParsingResultOrigin.READING) is True
     assert (parsing_result_1.resultType == ParsingEntities.ParsingResultType.VALUE) is True
@@ -1102,7 +1171,8 @@ def test_parsing_result():
     assert (parsing_result_1.seekMethod == 'seek method 1') is True
     assert (parsing_result_1.arInput ==
             {'args': ['arg a', 'arg b'], 'kwargs': {'arg c': 'c', 'arg d': 'd'}}) is True
-    assert (parsing_result_1.arIndex == [(0, 'A'), (2, 'B')])
+    assert (copy_parsing_result_1.arIndex == [(0, 'A', Counter({None: 1, 'key 1': 2})),
+                                              (2, 'B', Counter({None: 3, 'key 2': 4}))])
 
     ###################################################################################################################
 
@@ -1111,9 +1181,9 @@ def test_parsing_result():
     ###################################################################################################################
 
     assert (parsing_result_1.iterPosition == 0) is True
-    assert (parsing_result_1.__next__() == (0, 'A')) is True
+    assert (parsing_result_1.__next__() == (0, 'A', Counter({None: 1, 'key 1': 2}))) is True
     assert (parsing_result_1.iterPosition == 1) is True
-    assert (parsing_result_1.__next__() == (2, 'B')) is True
+    assert (parsing_result_1.__next__() == (2, 'B', Counter({None: 3, 'key 2': 4}))) is True
     assert (parsing_result_1.iterPosition == 2) is True
     try:
         parsing_result_1.__next__()
@@ -1162,17 +1232,17 @@ def test_parsing_result():
     thread.start()
     for i, index in enumerate(parsing_result_1.create_stream_generator(thread)):
         if i == 0:
-            assert (index == (0, 'A')) is True
+            assert (index == (0, 'A', Counter({None: 1, 'key 1': 2}))) is True
         elif i == 1:
-            assert (index == (2, 'B')) is True
+            assert (index == (2, 'B', Counter({None: 3, 'key 2': 4}))) is True
         else:
             assert False
 
     for i, index in enumerate(parsing_result_1.create_stream_generator(None)):
         if i == 0:
-            assert (index == (0, 'A')) is True
+            assert (index == (0, 'A', Counter({None: 1, 'key 1': 2}))) is True
         elif i == 1:
-            assert (index == (2, 'B')) is True
+            assert (index == (2, 'B', Counter({None: 3, 'key 2': 4}))) is True
         else:
             assert False
 

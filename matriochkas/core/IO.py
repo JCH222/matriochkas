@@ -1,5 +1,21 @@
 # coding: utf8
 
+
+"""
+    Parsing execution module
+    ========================
+
+    This module contains classes required to execute parsing operations.
+
+    It contains 4 classes:
+
+    - StreamEntity
+    - StreamReader
+    - LinkedStreamReader
+    - StreamWriter
+"""
+
+
 from io import StringIO
 from collections import deque
 from matriochkas.core.ModificationEntities import ModificationSide
@@ -7,16 +23,43 @@ from matriochkas.core.ParsingEntities import ParsingResult
 from matriochkas.core.ParsingEntities import ParsingResultOrigin
 from matriochkas.core.ParsingEntities import ParsingResultType
 from matriochkas.core.Configuration import StreamClassConfiguration
+from matriochkas.core.Configuration import HandlersConfiguration
 from threading import Thread
+from threading import Event
 
 import abc
 import copy
 
 
 class StreamEntity(Thread, metaclass=abc.ABCMeta):
+    """
+        Fundamental parsing execution class
+        ===================================
+
+        Superclass for all parsing execution classes from this module.
+    """
+
     @abc.abstractmethod
-    def __init__(self, args, kwargs, stream_class=None, read_method=None, write_method=None,
-                 return_method=None, close_method=None, seek_method=None):
+    def __init__(self, *args, stream_class=None, read_method=None, write_method=None,
+                 return_method=None, close_method=None, seek_method=None, **kwargs):
+        """
+            Initialization
+
+            :param args: args used during the parsing stream object creation (without parameters names)
+            :param stream_class: class used to create parsing stream object (class)
+            :param read_method: method contained in the parsing stream class and used to read characters during parsing
+            process (method of stream_class)
+            :param write_method: method contained in the parsing stream class and used to write characters during
+            parsing process (method of stream_class)
+            :param return_method: method contained in the parsing stream class and used to return characters during
+            parsing process (method of stream_class)
+            :param close_method: method contained in the parsing stream class and used to close stream process
+            (method of stream_class)
+            :param seek_method: method contained in the parsing stream class and used for repositioning parsing cursor
+             (method of stream_class)
+            :param kwargs: args used during the parsing stream object creation (with parameters names)
+        """
+
         super(StreamEntity, self).__init__()
         self.streamClass = stream_class
         self.readMethod = read_method
@@ -24,6 +67,7 @@ class StreamEntity(Thread, metaclass=abc.ABCMeta):
         self.returnMethod = return_method
         self.closeMethod = close_method
         self.seekMethod = seek_method
+        self.isMultiThreading = False
 
         if isinstance(args, (list, tuple)):
             self.args = args
@@ -35,11 +79,35 @@ class StreamEntity(Thread, metaclass=abc.ABCMeta):
         else:
             raise TypeError('args has to be dict object')
 
+    @abc.abstractmethod
+    def launch(self):
+        """
+            Executes parsing execution with thread mode.
+
+            :return: None
+        """
+
+        pass
+
     def _get_stream_object(self):
+        """
+            Gets stream object used during parsing process
+
+            :return: stream object (object)
+        """
+
         return self.streamClass(*self.args, **self.kwargs)
 
     @staticmethod
     def generate_method(stream_object, method_key):
+        """
+            Generates methods from the stream object (see '[...]_method' parameters in __init__ method).
+
+            :param stream_object: stream object (object)
+            :param method_key: [...]_method parameter (str)
+            :return: dedicated method (method) or None
+        """
+
         def none_return():
             return None
 
@@ -50,13 +118,39 @@ class StreamEntity(Thread, metaclass=abc.ABCMeta):
                     return getattr(stream_object, configuration.value[method_key])
                 else:
                     return none_return
-        return None
+        raise ValueError(stream_class_name + " class not found in StreamClassConfiguration enumeration : please define "
+                                             "methods to use during parsing process")
 
 
 class StreamReader(StreamEntity):
+    """
+        Reading parsing execution class
+        ===============================
+
+        Parsing execution class used for stream reading.
+    """
+
     def __init__(self, *args, stream_class=StringIO, result_type=ParsingResultType.VALUE, read_method=None,
                  return_method=None, close_method=None, seek_method=None, **kwargs):
-        super(StreamReader, self).__init__(args, kwargs, stream_class=stream_class,
+        """
+            Initialization.
+
+            :param args: args used during the parsing stream object creation (without parameters names)
+            :param stream_class: class used to create parsing stream object (class)
+            :param result_type: parsing result type used to create parsing result object during read method execution
+            (See ParsingResultType class)
+            :param read_method: method contained in the parsing stream class and used to read characters during parsing
+            process (method of stream_class)
+            :param return_method: method contained in the parsing stream class and used to return characters during
+            parsing process (method of stream_class)
+            :param close_method: method contained in the parsing stream class and used to close stream process
+            (method of stream_class)
+            :param seek_method: method contained in the parsing stream class and used for repositioning parsing cursor
+             (method of stream_class)
+            :param kwargs: args used during the parsing stream object creation (with parameters names)
+        """
+
+        super(StreamReader, self).__init__(*args, **kwargs, stream_class=stream_class,
                                            read_method=read_method, return_method=return_method,
                                            close_method=close_method, seek_method=seek_method)
         if isinstance(result_type, ParsingResultType):
@@ -66,8 +160,18 @@ class StreamReader(StreamEntity):
 
         self._readArgs = dict()
         self._readResult = {'parsing_result': None, 'error': None}
+        self._isInitialized = Event()
 
     def run(self):
+        """
+            Thread used to execute reading parsing process.
+
+            :return: None
+        """
+
+        initial_read_method = None
+        initial_close_method = None
+
         try:
             self._readArgs['parsing_pipeline'].reset()
             min_position = self._readArgs['parsing_pipeline'].get_min_position()
@@ -86,6 +190,13 @@ class StreamReader(StreamEntity):
                 seek_method = getattr(stream, self.seekMethod)
             else:
                 seek_method = StreamEntity.generate_method(stream, 'seek_method')
+
+            if self.isMultiThreading is True:
+                initial_read_method = read_method
+                read_method = HandlersConfiguration.READING_WRAPPER.get_method(read_method, self)
+                initial_close_method = close_method
+                close_method = HandlersConfiguration.CLOSING_WRAPPER.get_method(close_method, self)
+
             current_position = -min_position
             ar_index = list()
 
@@ -102,13 +213,22 @@ class StreamReader(StreamEntity):
                                                                    tuple(), {'reference': stream}, ar_index),
                                    'error': None}
 
-            element = deque(read_method(length))
+            self._isInitialized.set()
+
+            if self.isMultiThreading is False:
+                element = deque(read_method(length))
+            else:
+                element = deque(read_method(length, self))
+
             if len(element) == length:
                 while True:
                     result = self._readArgs['parsing_pipeline'].check(element, ref_position=-min_position)
                     if result is not None and result[0][0]:
                         ar_index.append((current_position, element[-min_position], result[0][1]))
-                    next_character = read_method(1)
+                    if self.isMultiThreading is False:
+                        next_character = read_method(1)
+                    else:
+                        next_character = read_method(1, self)
                     if next_character and result is not None:
                         element.popleft()
                         element.append(next_character)
@@ -116,26 +236,108 @@ class StreamReader(StreamEntity):
                         break
                     current_position += 1
 
-                if self._readArgs['close_stream']:
-                    close_method()
+                if self.isMultiThreading is False:
+                    if self._readArgs['close_stream']:
+                        close_method()
+                    else:
+                        seek_method(0)
                 else:
-                    seek_method(0)
+                    close_method(self)
 
                 self._readArgs = dict()
             else:
-                close_method()
+                if self.isMultiThreading is False:
+                    close_method()
+                else:
+                    close_method(self)
                 self._readResult = {'parsing_result': None,
                                    'error': ValueError("Not enough characters to parse : " + str(len(element)))}
         except Exception as error:
-            close_method()
+            if hasattr(self, 'close_method'):
+                if self.isMultiThreading is False:
+                    close_method()
+                else:
+                    close_method(self)
             self._readResult = {'parsing_result': None,
                                'error': error}
+            self._isInitialized.set()
+        finally:
+            if self.isMultiThreading is True:
+                if initial_read_method is not None:
+                    HandlersConfiguration.READING_WRAPPER.arWrapper[initial_read_method].remove(self)
+                if initial_close_method is not None:
+                    HandlersConfiguration.CLOSING_WRAPPER.arWrapper[initial_close_method].remove(self)
 
     def read(self, parsing_pipeline, close_stream=True):
+        """
+            Executes reading parsing process (sequential).
+
+            :Example:
+
+            >>> from matriochkas import StreamReader
+            >>> from matriochkas import ParsingCondition
+            >>> text = "a,b,c,d"
+            >>> # Creates parsing pipeline
+            >>> pipeline = (ParsingCondition(',') >> None) + None
+            >>> # Creates stream reader object
+            >>> reader = StreamReader(text)
+            >>> # Executes parsing process
+            >>> parsing_result = reader.read(pipeline)
+            >>> parsing_result
+            Parsing result :
+               Stream class : StringIO
+               Origin : ParsingResultOrigin.READING
+               Result type : ParsingResultType.VALUE
+               Inputs : {'args': ('a,b,c,d',), 'kwargs': {}}
+               Index result : [(1, ',', Counter({None: 1})), (3, ',', Counter({None: 1})), (5, ',', Counter({None: 1}))]
+
+            :param parsing_pipeline: parsing pipeline used during parsing process (ParsingPipeline object)
+            :param close_stream: closes stream object at the end of the parsing process
+            :return: ParsingResult object
+        """
+
         self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': close_stream}
         self._readResult = {'parsing_result': None, 'error': None}
 
         self.run()
+        if self._readResult['error'] is None:
+            if self._readResult['parsing_result'] is not None:
+                return self._readResult['parsing_result']
+            else:
+                raise NotImplementedError('Parsing result is not implemented and no errors are detected')
+        else:
+            raise self._readResult['error']
+
+    def launch(self, parsing_pipeline):
+        """
+            Executes reading parsing process (multi-thread).
+
+            :param parsing_pipeline: parsing pipeline used during parsing process (ParsingPipeline object)
+            :return: None
+        """
+
+        self.isMultiThreading = True
+        self._readArgs = {'parsing_pipeline': parsing_pipeline, 'close_stream': False}
+        self._readResult = {'parsing_result': None, 'error': None}
+        self.start()
+
+    def wait_initialization(self):
+        """
+            Waits the ParsingResult object initialization during parsing process.
+
+            :return: None
+        """
+
+        self._isInitialized.wait()
+
+    def get_result(self):
+        """
+            Gets ParsingResult object generated during parsing process.
+
+            :return: ParsingResult object
+        """
+
+        self.wait_initialization()
         if self._readResult['error'] is None:
             return self._readResult['parsing_result']
         else:
@@ -143,7 +345,45 @@ class StreamReader(StreamEntity):
 
 
 class LinkedStreamReader(StreamReader):
+    """
+        Reading parsing execution class
+        ===============================
+
+        :Example:
+
+        >>> from matriochkas import LinkedStreamReader
+        >>> from matriochkas import ParsingResult
+        >>> from matriochkas import ParsingResultOrigin
+        >>> from matriochkas import ParsingResultType
+        >>> from matriochkas import ParsingCondition
+        >>> from io import StringIO
+        >>> text = "a,b,c,d"
+        >>> # Creates parsing pipeline
+        >>> pipeline = (ParsingCondition(',') >> None) + None
+        >>> # Create parsing result
+        >>> parsing_result = ParsingResult(stream_class=StringIO, origin=ParsingResultOrigin.READING, result_type=ParsingResultType.VALUE, args=('a,b,c,d',), kwargs={}, ar_index=[], read_method='read', write_method='write', return_method='getvalue', close_method='close', seek_method='seek')
+        >>> # Creates stream reader object
+        >>> reader = LinkedStreamReader(parsing_result=parsing_result)
+        >>> # Executes parsing process
+        >>> parsing_result = reader.read(parsing_pipeline=pipeline)
+        >>> parsing_result
+        Parsing result :
+           Stream class : StringIO
+           Origin : ParsingResultOrigin.READING
+           Result type : ParsingResultType.VALUE
+           Inputs : {'args': ('a,b,c,d',), 'kwargs': {}}
+           Index result : [(1, ',', Counter({None: 1})), (3, ',', Counter({None: 1})), (5, ',', Counter({None: 1}))]
+
+        Parsing execution class used for stream reading.
+    """
+
     def __init__(self, parsing_result):
+        """
+            Initialization.
+
+            :param parsing_result: Parsing result object used to initialize StreamReader parameters (ParsingResult object)
+        """
+
         if isinstance(parsing_result, ParsingResult):
             super(LinkedStreamReader, self).__init__(*parsing_result.arInput['args'],
                                                      **parsing_result.arInput['kwargs'],
@@ -157,6 +397,12 @@ class LinkedStreamReader(StreamReader):
             raise TypeError('Parsing result has to be ParsingResult object')
 
     def _get_stream_object(self):
+        """
+            Gets stream object used during parsing process
+
+            :return: stream object (object)
+        """
+
         if self.resultType == ParsingResultType.VALUE:
             return self.streamClass(*self.args, **self.kwargs)
         else:
@@ -164,16 +410,44 @@ class LinkedStreamReader(StreamReader):
 
 
 class StreamWriter(StreamEntity):
+    """
+        Writing parsing execution class
+        ===============================
+    """
+
     def __init__(self, *args, stream_class=StringIO, write_method=None, return_method=None, close_method=None,
                  seek_method=None, **kwargs):
-        super(StreamWriter, self).__init__(args, kwargs, stream_class=stream_class, write_method=write_method,
+        """
+            Initialization.
+
+            :param args: args used during the parsing stream object creation (without parameters names)
+            :param stream_class: class used to create parsing stream object (class)
+            :param write_method: method contained in the parsing stream class and used to write characters during parsing
+            process (method of stream_class)
+            :param return_method: method contained in the parsing stream class and used to return characters during
+            parsing process (method of stream_class)
+            :param close_method: method contained in the parsing stream class and used to close stream process
+            (method of stream_class)
+            :param seek_method: method contained in the parsing stream class and used for repositioning parsing cursor
+             (method of stream_class)
+            :param kwargs: args used during the parsing stream object creation (with parameters names)
+        """
+
+        super(StreamWriter, self).__init__(*args, stream_class=stream_class, write_method=write_method,
                                            return_method=return_method, close_method=close_method,
-                                           seek_method=seek_method)
+                                           seek_method=seek_method, **kwargs)
 
         self.writeArgs = dict()
         self.writeResult = {'result': None, 'error': None}
+        self._isFinished = Event()
 
     def run(self):
+        """
+            Thread used to execute writing parsing process.
+
+            :return: None
+        """
+
         try:
             if (isinstance(self.writeArgs['parsing_result'], ParsingResult) and
                         self.writeArgs['parsing_result'].origin == ParsingResultOrigin.MODIFICATION):
@@ -228,8 +502,16 @@ class StreamWriter(StreamEntity):
             else:
                 output_close_method = StreamEntity.generate_method(output_stream, 'close_method')
 
-            index = 0
-            input_parsing_result_index = 0
+            if self.isMultiThreading is True:
+                input_read_method = HandlersConfiguration.READING_WRAPPER.get_collector_method(input_read_method, self)
+
+            index_generator = input_parsing_result.create_stream_generator(thread_ref=self.writeArgs['thread_ref'],
+                                                                           sleep_time=self.writeArgs['sleep_time'])
+            try:
+                index = index_generator.__next__()
+            except StopIteration:
+                index = None
+            index_position = 0
             character = input_read_method(1)
             while character:
                 is_ended = False
@@ -237,16 +519,19 @@ class StreamWriter(StreamEntity):
                 right_side = None
                 other = None
                 while is_ended is False:
-                    if input_parsing_result_index < len(input_parsing_result.arIndex) \
-                            and index == input_parsing_result.arIndex[input_parsing_result_index][0]:
-                        if len(input_parsing_result.arIndex[input_parsing_result_index]) == 3:
-                            if input_parsing_result.arIndex[input_parsing_result_index][2] == ModificationSide.LEFT:
-                                left_side = input_parsing_result.arIndex[input_parsing_result_index]
+
+                    if index is not None and index_position == index[0]:
+                        if len(index) == 3:
+                            if index[2] == ModificationSide.LEFT:
+                                left_side = index
                             else:
-                                right_side = input_parsing_result.arIndex[input_parsing_result_index]
+                                right_side = index
                         else:
-                            other = input_parsing_result.arIndex[input_parsing_result_index]
-                        input_parsing_result_index += 1
+                            other = index
+                        try:
+                            index = index_generator.__next__()
+                        except StopIteration:
+                            index = None
                     else:
                         if left_side is not None:
                             output_write_method(left_side[1])
@@ -256,26 +541,106 @@ class StreamWriter(StreamEntity):
                             output_write_method(right_side[1])
                         is_ended = True
                 character = input_read_method(1)
-                index += 1
+                index_position += 1
             result = output_return_method()
 
-            if self.writeArgs['close_reading_stream']:
-                input_close_method()
-            else:
-                input_seek_method(0)
+            if self.isMultiThreading is False:
+                if self.writeArgs['close_reading_stream']:
+                    input_close_method()
+                else:
+                    input_seek_method(0)
             output_close_method()
             self.writeResult = {'result': result, 'error': None}
         except Exception as error:
+            if self.isMultiThreading is False:
+                if 'input_close_method' in locals():
+                    input_close_method()
+            if 'output_close_method' in locals():
+                output_close_method()
             self.writeResult = {'result': None, 'error': error}
+        finally:
+            self._isFinished.set()
 
     def write(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
               seek_method=None, args=None, kwargs=None, close_reading_stream=True):
+        """
+            Executes writing parsing process (sequential).
+
+            :Example:
+
+            >>> from matriochkas import StreamWriter
+            >>> from matriochkas import ParsingResult
+            >>> from matriochkas import ParsingResultOrigin
+            >>> from matriochkas import ParsingResultType
+            >>> from matriochkas import ModificationSide
+            >>> from io import StringIO
+            >>> text = "a,b,c,d"
+            >>> # Create parsing result
+            >>> parsing_result = ParsingResult(stream_class=StringIO, origin=ParsingResultOrigin.MODIFICATION, result_type=ParsingResultType.VALUE, args=('a,b,c,d',), kwargs={}, ar_index=[(1, ''), (1, '*', ModificationSide.RIGHT), (3, ''), (3, '*', ModificationSide.RIGHT), (5, ''), (5, '*', ModificationSide.RIGHT)], read_method='read', write_method='write', return_method='getvalue', close_method='close', seek_method='seek')
+            >>> # Creates stream writer object
+            >>> writer = StreamWriter()
+            >>> # Executes parsing process
+            >>> result = writer.write(parsing_result)
+            >>> result
+            'a*b*c*d'
+
+            :param parsing_result: parsing result used during parsing process (ParsingResult object)
+            :param stream_class: overrides stream class used during reading (stream class)
+            :param read_method: overrides read method used during reading (str)
+            :param return_method: overrides return method used during reading (str)
+            :param close_method: overrides close method used during reading (str)
+            :param seek_method: overrides seek method used during reading (str)
+            :param args: overrides arguments used during reading (list)
+            :param kwargs: overrides arguments used during reading (dict)
+            :param close_reading_stream: close reading stream used during writing process
+            :return: None|object
+        """
         self.writeArgs = {'parsing_result': parsing_result, 'stream_class': stream_class, 'read_method': read_method,
                           'return_method': return_method, 'close_method': close_method, 'seek_method': seek_method,
-                          'args': args, 'kwargs': kwargs, 'close_reading_stream': close_reading_stream}
+                          'args': args, 'kwargs': kwargs, 'close_reading_stream': close_reading_stream,
+                          'thread_ref': None, 'sleep_time': 0.5}
         self.writeResult = {'result': None, 'error': None}
 
         self.run()
+        if self.writeResult['error'] is None:
+            return self.writeResult['result']
+        else:
+            raise self.writeResult['error']
+
+    def launch(self, parsing_result, stream_class=None, read_method=None, return_method=None, close_method=None,
+               seek_method=None, args=None, kwargs=None, thread_ref=None, sleep_time=0.5):
+        """
+            Executes writing parsing process (multi-thread).
+
+            :param parsing_result:
+            :param stream_class:
+            :param read_method:
+            :param return_method:
+            :param close_method:
+            :param seek_method:
+            :param args:
+            :param kwargs:
+            :param thread_ref:
+            :param sleep_time:
+            :return: None
+        """
+
+        self.isMultiThreading = True
+        self.writeArgs = {'parsing_result': parsing_result, 'stream_class': stream_class, 'read_method': read_method,
+                          'return_method': return_method, 'close_method': close_method, 'seek_method': seek_method,
+                          'args': args, 'kwargs': kwargs, 'close_reading_stream': None, 'thread_ref': thread_ref,
+                          'sleep_time': sleep_time}
+        self.writeResult = {'result': None, 'error': None}
+        self.start()
+
+    def get_result(self):
+        """
+            Gets result object generated during parsing process.
+
+            :return: object
+        """
+
+        self._isFinished.wait()
         if self.writeResult['error'] is None:
             return self.writeResult['result']
         else:
