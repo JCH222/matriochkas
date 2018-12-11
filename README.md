@@ -1,6 +1,8 @@
-﻿<img align="left" src="MatriochkasLogo.png" alt="Matriochkas logo" width="75" height="75">
+# !! Projet non maintenu -> Version finale : 1.2 !!
+
+<img align="left" src="MatriochkasLogo.png" alt="Matriochkas logo" width="75" height="75">
  
- Matriochkas
+Matriochkas
 ===========
 
 Qu'est ce que c'est ?
