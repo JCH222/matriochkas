@@ -14,7 +14,7 @@ setup(
 
     author="Jean-Charles Hardy",
 
-    author_email="",
+    author_email="jeancharles.hardy2224@gmail.com",
 
     description="Flexible text parsing library",
 
